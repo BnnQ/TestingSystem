@@ -48,6 +48,9 @@ namespace TestingSystem.Models
             get => (ushort) Questions.Count;
             set
             {
+                if (Questions.Count == value)
+                    return;
+
                 if (Questions.Count < value)
                 {
                     while (Questions.Count < value)
@@ -57,6 +60,8 @@ namespace TestingSystem.Models
                 {
                     Questions = new ObservableCollection<Question>(Questions.Take(value));
                 }
+
+                OnPropertyChanged(nameof(Questions));
             }
         }
 
@@ -158,6 +163,8 @@ namespace TestingSystem.Models
                         ownerTeachers = value;
                     else
                         ownerTeachers = new ObservableCollection<Teacher>(value);
+
+                    OnPropertyChanged(nameof(OwnerTeachers));
                 }
             }
         }
