@@ -51,6 +51,7 @@ namespace TestingSystem.Models
                         answerOptions = new ObservableCollection<AnswerOption>(value);
 
                     OnPropertyChanged(nameof(AnswerOptions));
+                    OnPropertyChanged(nameof(NumberOfAnswerOptions));
                 }
             }
         }
@@ -61,6 +62,9 @@ namespace TestingSystem.Models
             get => (ushort) AnswerOptions.Count;
             set
             {
+                if (AnswerOptions.Count == value)
+                    return;
+
                 if (AnswerOptions.Count > value)
                 {
                     AnswerOptions = new ObservableCollection<AnswerOption>(AnswerOptions.Take(value));
@@ -70,6 +74,8 @@ namespace TestingSystem.Models
                     while (AnswerOptions.Count < value)
                         AnswerOptions.Add(new AnswerOption(this, ++answerOptionsSeed));
                 }
+
+                OnPropertyChanged(nameof(AnswerOptions));
             }
         }
 
