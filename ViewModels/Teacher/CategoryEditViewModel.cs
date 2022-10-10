@@ -56,7 +56,7 @@ namespace TestingSystem.ViewModels.Teacher
                 category.Name = Name;
                 category.Tests = Tests;
                 Close(true);
-            });
+            }, () => !string.IsNullOrWhiteSpace(Name));
         }
 
         private RelayCommand cancelCommand = null!;
