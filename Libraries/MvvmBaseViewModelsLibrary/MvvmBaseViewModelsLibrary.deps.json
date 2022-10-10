@@ -1,0 +1,109 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v6.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v6.0": {
+      "MvvmBaseViewModelsLibrary/1.0.0": {
+        "dependencies": {
+          "CommunityToolkit.Mvvm": "8.0.0",
+          "MvvmNavigation.Abstractions": "3.2.0",
+          "ReactiveValidation.Wpf": "2.0.1"
+        },
+        "runtime": {
+          "MvvmBaseViewModelsLibrary.dll": {}
+        }
+      },
+      "CommunityToolkit.Mvvm/8.0.0": {
+        "runtime": {
+          "lib/net6.0/CommunityToolkit.Mvvm.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.0.1"
+          }
+        }
+      },
+      "JetBrains.Annotations/2019.1.3": {
+        "runtime": {
+          "lib/netstandard2.0/JetBrains.Annotations.dll": {
+            "assemblyVersion": "2019.1.3.0",
+            "fileVersion": "2019.1.3.0"
+          }
+        }
+      },
+      "MvvmNavigation.Abstractions/3.2.0": {
+        "dependencies": {
+          "JetBrains.Annotations": "2019.1.3"
+        },
+        "runtime": {
+          "lib/netstandard2.0/MvvmNavigation.Abstractions.dll": {
+            "assemblyVersion": "3.2.0.0",
+            "fileVersion": "3.2.0.177"
+          }
+        }
+      },
+      "ReactiveValidation/2.0.1": {
+        "runtime": {
+          "lib/netcoreapp3.0/ReactiveValidation.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      },
+      "ReactiveValidation.Wpf/2.0.1": {
+        "dependencies": {
+          "ReactiveValidation": "2.0.1"
+        },
+        "runtime": {
+          "lib/netcoreapp3.1/ReactiveValidation.Wpf.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "MvvmBaseViewModelsLibrary/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "CommunityToolkit.Mvvm/8.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-Jiu2g5WUdXRwzhJkHB+B4JBKP5A5+fp8xKiW/ZQo5PI+DruI7MbPEcK9K/Aw0YzTiWRuG6CBluzYIWN5Eo7BkQ==",
+      "path": "communitytoolkit.mvvm/8.0.0",
+      "hashPath": "communitytoolkit.mvvm.8.0.0.nupkg.sha512"
+    },
+    "JetBrains.Annotations/2019.1.3": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-E0x48BwZJKoNMNCekWGKsV4saQS89lf58ydT2szseV44CMYIbaHXjc7+305WLw6up3ibZN9yH6QdGSZo5tQhLg==",
+      "path": "jetbrains.annotations/2019.1.3",
+      "hashPath": "jetbrains.annotations.2019.1.3.nupkg.sha512"
+    },
+    "MvvmNavigation.Abstractions/3.2.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-JbxN2+gZGr7V3/VHRQ9QyRcZU2RFFIQk5/ZXZsTC6iVR4fxmNBiu8s9El0vJn02IddBN3HZPBfecWJdVyp1c3Q==",
+      "path": "mvvmnavigation.abstractions/3.2.0",
+      "hashPath": "mvvmnavigation.abstractions.3.2.0.nupkg.sha512"
+    },
+    "ReactiveValidation/2.0.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-5mXGef0m9bOlrffyjLr/ah6IwvzvcmXxT61kVdTvG+1c9hb6bGxPrjW/cEfXi6n20T7i7y2A2zRkiCIx7hVHXQ==",
+      "path": "reactivevalidation/2.0.1",
+      "hashPath": "reactivevalidation.2.0.1.nupkg.sha512"
+    },
+    "ReactiveValidation.Wpf/2.0.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-O6uMC+HmnDebmNbwdzQm+XFO2yhSGp86Jcvg5uG7oeQhbww0ArRbme5OhlIdDdfUa+EpXXt+NYbZrwRQ8DRS/Q==",
+      "path": "reactivevalidation.wpf/2.0.1",
+      "hashPath": "reactivevalidation.wpf.2.0.1.nupkg.sha512"
+    }
+  }
+}
