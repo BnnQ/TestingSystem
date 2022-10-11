@@ -6,11 +6,9 @@ using MvvmBaseViewModels.Common;
 using NeoSmart.AsyncLock;
 using System;
 using System.Collections.ObjectModel;
-using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
-using System.Windows.Media.Animation;
 using TestingSystem.Models;
 using TestingSystem.Models.Contexts;
 using TestingSystem.Views.Teacher;
@@ -20,19 +18,7 @@ namespace TestingSystem.ViewModels.Teacher
 {
     public class MainViewModel : ViewModelBase
     {
-        private Models.Teacher teacher = null!;
-        public Models.Teacher Teacher
-        {
-            get => teacher;
-            set
-            {
-                if (teacher != value)
-                {
-                    teacher = value;
-                    OnPropertyChanged(nameof(Teacher));
-                }
-            }
-        }
+        private readonly Models.Teacher teacher;
 
         private readonly AsyncLock databaseContextLocker = new();
         private readonly TestingSystemTeacherContext databaseContext;
@@ -55,7 +41,7 @@ namespace TestingSystem.ViewModels.Teacher
 
         public MainViewModel(Models.Teacher teacher)
         {
-            Teacher = teacher;
+            this.teacher = teacher;
             databaseContext = new TestingSystemTeacherContext();
 
             SetupBackgroundWorkers();
@@ -130,7 +116,7 @@ namespace TestingSystem.ViewModels.Teacher
         {
             get => addTestAsyncCommand ??= new(async () =>
             {
-                Test testToBeAdded = new(new ObservableCollection<Models.Teacher>() { Teacher });
+                Test testToBeAdded = new(new ObservableCollection<Models.Teacher>() { teacher });
                 bool? editViewDialogResult = default;
                 Application.Current.Dispatcher.Invoke(() =>
                 {
@@ -162,23 +148,29 @@ namespace TestingSystem.ViewModels.Teacher
         {
             get => manageTestAsyncCommand ??= new(async (test) =>
             {
-                Test? testEntryFromDatabase = default;
+                Test? testEntityFromDatabase = default;
                 using (await databaseContextLocker.LockAsync())
                 {
-                    testEntryFromDatabase = await databaseContext.FindAsync<Test>(test!.Id);
-                    if (testEntryFromDatabase is not null)
+                    testEntityFromDatabase = await databaseContext.FindAsync<Test>(test!.Id);
+                    if (testEntityFromDatabase is not null)
                     {
-                        await databaseContext.Entry(testEntryFromDatabase)
+                        EntityEntry<Test> testEntry = databaseContext.Entry(testEntityFromDatabase);
+                        
+                        await testEntry
                         .Collection(test => test.Questions)
+                        .LoadAsync();
+
+                        await testEntry
+                        .Collection(test => test.OwnerTeachers)
                         .LoadAsync();
                     }
                 }
                 
-                if (testEntryFromDatabase is not null)
+                if (testEntityFromDatabase is not null)
                 {
                     Application.Current.Dispatcher.Invoke(() =>
                     {
-                        TestInfoView testInfoView = new(databaseContext, databaseContextLocker, testEntryFromDatabase);
+                        TestInfoView testInfoView = new(databaseContext, databaseContextLocker, testEntityFromDatabase, teacher);
                         testInfoView.ShowDialog();
                     });
                 }
@@ -191,21 +183,21 @@ namespace TestingSystem.ViewModels.Teacher
         {
             get => manageCategoryAsyncCommand ??= new(async (category) =>
             {
-                Category? categoryEntryFromDatabase = default;
+                Category? categoryEntityFromDatabase = default;
                 using (await databaseContextLocker.LockAsync())
                 {
-                    categoryEntryFromDatabase = await databaseContext.FindAsync<Category>(category!.Id);
-                    if (categoryEntryFromDatabase is not null)
+                    categoryEntityFromDatabase = await databaseContext.FindAsync<Category>(category!.Id);
+                    if (categoryEntityFromDatabase is not null)
                     {
-                        await databaseContext.Entry(categoryEntryFromDatabase)
+                        await databaseContext.Entry(categoryEntityFromDatabase)
                         .Collection(category => category.Tests)
                         .LoadAsync();
                     }
                 }
 
-                if (categoryEntryFromDatabase is not null)
+                if (categoryEntityFromDatabase is not null)
                 {
-                    CategoryInfoView categoryInfoView = new(databaseContext, databaseContextLocker, categoryEntryFromDatabase);
+                    CategoryInfoView categoryInfoView = new(databaseContext, databaseContextLocker, categoryEntityFromDatabase, teacher);
                     categoryInfoView.ShowDialog();
                 }
             }, (category) => category is not null);

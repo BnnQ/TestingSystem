@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using MvvmBaseViewModels.Common;
 using NeoSmart.AsyncLock;
+using System.Linq;
 using System.Windows;
 using TestingSystem.Models;
 using TestingSystem.Models.Contexts;
@@ -31,12 +32,16 @@ namespace TestingSystem.ViewModels.Teacher
 
         public int NumberOfTests => Category.Tests.Count;
 
+        private readonly Models.Teacher teacher;
 
-        public CategoryInfoViewModel(TestingSystemTeacherContext databaseContext, AsyncLock databaseContextLocker, Category category)
+
+        public CategoryInfoViewModel(TestingSystemTeacherContext databaseContext, AsyncLock databaseContextLocker, 
+            Category category, Models.Teacher teacher)
         {
             this.databaseContext = databaseContext;
             this.databaseContextLocker = databaseContextLocker;
             Category = category;
+            this.teacher = teacher;
         }
 
         #region Commands
@@ -71,7 +76,7 @@ namespace TestingSystem.ViewModels.Teacher
                     }
                 }
 
-            });
+            }, () => Category.Tests.Any(test => test.OwnerTeachers.Any(teacher => teacher.Id == this.teacher.Id)));
         }
 
         private AsyncRelayCommand removeCategoryAsyncCommand = null!;
@@ -88,7 +93,7 @@ namespace TestingSystem.ViewModels.Teacher
                         await databaseContext.SaveChangesAsync();
                     }
                 }
-            });
+            }, () => Category.Tests.All(test => test.OwnerTeachers.Any(teacher => teacher.Id == this.teacher.Id)));
         }
         #endregion
 

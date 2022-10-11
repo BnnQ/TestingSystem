@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using MvvmBaseViewModels.Common;
 using NeoSmart.AsyncLock;
+using System.Linq;
 using System.Windows;
 using TestingSystem.Models;
 using TestingSystem.Models.Contexts;
@@ -30,14 +31,20 @@ namespace TestingSystem.ViewModels.Teacher
             }
         }
 
-        public TestInfoViewModel(TestingSystemTeacherContext databaseContext, AsyncLock databaseContextLocker, Test test)
+        private readonly Models.Teacher teacher;
+
+        public TestInfoViewModel(TestingSystemTeacherContext databaseContext, AsyncLock databaseContextLocker,
+            Test test, Models.Teacher teacher)
         {
             this.databaseContext = databaseContext;
             this.databaseContextLocker = databaseContextLocker;
             Test = test;
+            this.teacher = teacher;
         }
 
         #region Commands
+        private bool IsTeacherOwner() => Test.OwnerTeachers.Any(t => t.Id == teacher.Id);
+
         private AsyncRelayCommand editTestAsyncCommand = null!;
         public AsyncRelayCommand EditTestAsyncCommand
         {
@@ -76,7 +83,7 @@ namespace TestingSystem.ViewModels.Teacher
                     }
                 }
                
-            });
+            }, IsTeacherOwner);
         }
 
         private AsyncRelayCommand removeTestAsyncCommand = null!;
@@ -93,7 +100,7 @@ namespace TestingSystem.ViewModels.Teacher
                         await databaseContext.SaveChangesAsync();
                     }
                 }
-            });
+            }, IsTeacherOwner);
         }
         #endregion
 

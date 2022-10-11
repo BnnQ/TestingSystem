@@ -12,11 +12,12 @@ namespace TestingSystem.Views.Teacher
     public partial class CategoryInfoView : Window
     {
         private readonly CategoryInfoViewModel viewModel;
-        public CategoryInfoView(TestingSystemTeacherContext databaseContext, AsyncLock databaseContextLocker, Category category)
+        public CategoryInfoView(TestingSystemTeacherContext databaseContext, AsyncLock databaseContextLocker, 
+            Category category, Models.Teacher teacher)
         {
             InitializeComponent();
 
-            viewModel = new CategoryInfoViewModel(databaseContext, databaseContextLocker, category);
+            viewModel = new CategoryInfoViewModel(databaseContext, databaseContextLocker, category, teacher);
             viewModel.Closed += (_) => Close();
 
             DataContext = viewModel;

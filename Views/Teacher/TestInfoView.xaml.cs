@@ -12,11 +12,12 @@ namespace TestingSystem.Views.Teacher
     public partial class TestInfoView : Window
     {
         private readonly TestInfoViewModel viewModel;
-        public TestInfoView(TestingSystemTeacherContext databaseContext, AsyncLock databaseContextLocker, Test test)
+        public TestInfoView(TestingSystemTeacherContext databaseContext, AsyncLock databaseContextLocker, Test test,
+            Models.Teacher teacher)
         {
             InitializeComponent();
 
-            viewModel = new TestInfoViewModel(databaseContext, databaseContextLocker, test);
+            viewModel = new TestInfoViewModel(databaseContext, databaseContextLocker, test, teacher);
             viewModel.Closed += (_) => Close();
 
             DataContext = viewModel;
