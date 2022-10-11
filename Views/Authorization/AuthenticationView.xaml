@@ -9,7 +9,7 @@
              xmlns:converters="clr-namespace:TestingSystem.Views.Converters"
              TextElement.Foreground="{DynamicResource MaterialDesignBody}"
              TextElement.FontWeight="Regular"
-             TextElement.FontSize="17"
+             TextElement.FontSize="{StaticResource ResourceKey=MainFontSize}"
              TextOptions.TextFormattingMode="Ideal"
              TextOptions.TextRenderingMode="Auto"
              FontFamily="{DynamicResource MaterialDesignFont}"
@@ -19,40 +19,21 @@
         <Grid.Resources>
             <converters:BoolInverserConverter x:Key="boolInverserConverter"/>
 
-            <Style TargetType="TextBlock" BasedOn="{StaticResource MaterialDesignTextBlock}">
-                <Setter Property="VerticalAlignment" Value="Center"/>
-                <Setter Property="TextAlignment" Value="Center"/>
-                <Setter Property="TextWrapping" Value="Wrap"/>
-                <Setter Property="FontFamily" Value="{DynamicResource MaterialDesignFont}"/>
-                <Setter Property="FontSize" Value="17"/>
-                <Setter Property="Margin" Value="5"/>
+            <Style TargetType="TextBox" BasedOn="{StaticResource ResourceKey=OutlinedTextBoxStyle}">
+                <Setter Property="Width" Value="300"/>
             </Style>
-
-            <Style TargetType="TextBox" BasedOn="{StaticResource MaterialDesignOutlinedTextBox}">
-                <Setter Property="VerticalAlignment" Value="Center"/>
-                <Setter Property="FontSize" Value="17"/>
-                <Setter Property="Margin" Value="5"/>
-            </Style>
-
-            <Style TargetType="Button" BasedOn="{StaticResource MaterialDesignFlatMidBgButton}">
-                <Setter Property="VerticalAlignment" Value="Center"/>
-                <Setter Property="Margin" Value="50"/>
-                <Setter Property="md:ShadowAssist.ShadowDepth" Value="Depth0"/>
-                <Setter Property="md:ButtonAssist.CornerRadius" Value="10"/>
-            </Style>
+            <Style TargetType="Button" BasedOn="{StaticResource ResourceKey=RoundedRectangularButtonStyle}"/>
+            <Style TargetType="TextBlock" BasedOn="{StaticResource ResourceKey=MainTextBlockStyle}"/>
         </Grid.Resources>
 
-        <Button Grid.ColumnSpan="2" Style="{StaticResource MaterialDesignFlatButton}"
+        <Button Grid.ColumnSpan="2" Style="{StaticResource ResourceKey=FlatButton}"
                 Command="{Binding SwitchToRegistrationNavigationCommand}">
             <TextBlock Text="Зарегистрироваться"/>
         </Button>
 
         <ag:AutoGrid Rows="1*, 1*, 1*" Columns="1*" IsEnabled="{Binding AuthenticationBackgroundWorker.IsBusy, Converter={StaticResource boolInverserConverter}}">
-            <TextBox Text="{Binding Username}" Width="300" md:HintAssist.Hint="Имя пользователя" BorderThickness="2" 
-                     BorderBrush="{DynamicResource MaterialDesignDivider}"/>
-
-            <TextBox Text="{Binding Password}" Width="300" md:HintAssist.Hint="Пароль" BorderThickness="2" 
-                     BorderBrush="{DynamicResource MaterialDesignDivider}"/>
+            <TextBox Text="{Binding Username}" md:HintAssist.Hint="Имя пользователя"/>
+            <TextBox Text="{Binding Password}" md:HintAssist.Hint="Пароль"/>
 
             <Button Command="{Binding AuthenticateAsyncCommand}" Height="53" Width="300">
                 <TextBlock Text="Войти"/>
