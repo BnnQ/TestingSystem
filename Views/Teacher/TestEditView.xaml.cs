@@ -1,5 +1,7 @@
-﻿using System.Windows;
+﻿using NeoSmart.AsyncLock;
+using System.Windows;
 using TestingSystem.Models;
+using TestingSystem.Models.Contexts;
 using TestingSystem.ViewModels.Teacher;
 
 namespace TestingSystem.Views.Teacher
@@ -10,11 +12,11 @@ namespace TestingSystem.Views.Teacher
     public partial class TestEditView : Window
     {
         private readonly TestEditViewModel viewModel;
-        public TestEditView(Category[] categories, Test test)
+        public TestEditView(TestingSystemTeacherContext databaseContext, AsyncLock databaseContextLocker, Category[] categories, Test test)
         {
             InitializeComponent();
 
-            viewModel = new TestEditViewModel(categories, test);
+            viewModel = new TestEditViewModel(databaseContext, databaseContextLocker, categories, test);
             viewModel.Closed += (dialogResult) =>
             {
                 DialogResult = dialogResult;
