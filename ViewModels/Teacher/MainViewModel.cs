@@ -10,6 +10,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media.Animation;
 using TestingSystem.Models;
 using TestingSystem.Models.Contexts;
 using TestingSystem.Views.Teacher;
@@ -133,7 +134,7 @@ namespace TestingSystem.ViewModels.Teacher
                 bool? editViewDialogResult = default;
                 Application.Current.Dispatcher.Invoke(() =>
                 {
-                    TestEditView testEditView = new(Categories, testToBeAdded);
+                    TestEditView testEditView = new(databaseContext, databaseContextLocker, Categories, testToBeAdded);
                     editViewDialogResult = testEditView.ShowDialog();
                 });
 
@@ -161,28 +162,52 @@ namespace TestingSystem.ViewModels.Teacher
         {
             get => manageTestAsyncCommand ??= new(async (test) =>
             {
+                Test? testEntryFromDatabase = default;
                 using (await databaseContextLocker.LockAsync())
                 {
-                    EntityEntry<Test> testEntryFromDatabase = databaseContext.Entry(test!);
-                    await testEntryFromDatabase.Collection(test => test.Questions).LoadAsync();
-
+                    testEntryFromDatabase = await databaseContext.FindAsync<Test>(test!.Id);
+                    if (testEntryFromDatabase is not null)
+                    {
+                        await databaseContext.Entry(testEntryFromDatabase)
+                        .Collection(test => test.Questions)
+                        .LoadAsync();
+                    }
+                }
+                
+                if (testEntryFromDatabase is not null)
+                {
                     Application.Current.Dispatcher.Invoke(() =>
                     {
-                        TestInfoView testInfoView = new(databaseContext, databaseContextLocker, test!);
+                        TestInfoView testInfoView = new(databaseContext, databaseContextLocker, testEntryFromDatabase);
                         testInfoView.ShowDialog();
                     });
-
                 }
+
             }, (test) => test is not null);
         }
 
-        private RelayCommand<Category> manageCategoryCommand = null!;
-        public RelayCommand<Category> ManageCategoryCommand
+        private AsyncRelayCommand<Category> manageCategoryAsyncCommand = null!;
+        public AsyncRelayCommand<Category> ManageCategoryAsyncCommand
         {
-            get => manageCategoryCommand ??= new((category) =>
+            get => manageCategoryAsyncCommand ??= new(async (category) =>
             {
-                CategoryInfoView categoryInfoView = new(databaseContext, databaseContextLocker, category!);
-                categoryInfoView.ShowDialog();
+                Category? categoryEntryFromDatabase = default;
+                using (await databaseContextLocker.LockAsync())
+                {
+                    categoryEntryFromDatabase = await databaseContext.FindAsync<Category>(category!.Id);
+                    if (categoryEntryFromDatabase is not null)
+                    {
+                        await databaseContext.Entry(categoryEntryFromDatabase)
+                        .Collection(category => category.Tests)
+                        .LoadAsync();
+                    }
+                }
+
+                if (categoryEntryFromDatabase is not null)
+                {
+                    CategoryInfoView categoryInfoView = new(databaseContext, databaseContextLocker, categoryEntryFromDatabase);
+                    categoryInfoView.ShowDialog();
+                }
             }, (category) => category is not null);
         }
         #endregion

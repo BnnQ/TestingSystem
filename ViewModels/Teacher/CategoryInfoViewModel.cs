@@ -24,9 +24,12 @@ namespace TestingSystem.ViewModels.Teacher
                 {
                     category = value;
                     OnPropertyChanged(nameof(Category));
+                    OnPropertyChanged(nameof(NumberOfTests));
                 }
             }
         }
+
+        public int NumberOfTests => Category.Tests.Count;
 
 
         public CategoryInfoViewModel(TestingSystemTeacherContext databaseContext, AsyncLock databaseContextLocker, Category category)
