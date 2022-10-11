@@ -164,7 +164,7 @@ namespace TestingSystem.ViewModels.Teacher
                     bool? editViewDialogResult = default;
                     Application.Current.Dispatcher.Invoke(() =>
                     {
-                        AnswerOptionEditView editView = new(databaseContext, databaseContextLocker, answerOptionFromDatabase);
+                        AnswerOptionEditView editView = new(answerOptionFromDatabase);
                         editViewDialogResult = editView.ShowDialog();
                     });
 
