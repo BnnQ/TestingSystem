@@ -1,4 +1,5 @@
 ﻿using System.Windows;
+using System.Windows.Input;
 using TestingSystem.ViewModels.Teacher;
 
 namespace TestingSystem.Views.Teacher
@@ -18,6 +19,16 @@ namespace TestingSystem.Views.Teacher
 
             DataContext = viewModel;
             Dispatcher.ShutdownStarted += (_, _) => viewModel?.Dispose();
+        }
+
+        private void OnReferenceElementMouseEnter(object sender, MouseEventArgs e)
+        {
+            Mouse.OverrideCursor = Cursors.Hand;
+        }
+
+        private void OnReferenceElementMouseLeave(object sender, MouseEventArgs e)
+        {
+            Mouse.OverrideCursor = Cursors.Arrow;
         }
     }
 }
