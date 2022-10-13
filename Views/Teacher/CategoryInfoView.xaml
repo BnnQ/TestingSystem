@@ -4,17 +4,33 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:ag="clr-namespace:WpfAutoGrid;assembly=WpfAutoGrid.Core"
-        xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
         mc:Ignorable="d"
         TextElement.Foreground="{DynamicResource MaterialDesignBody}"
         TextElement.FontWeight="Regular"
-        TextElement.FontSize="17"
+        TextElement.FontSize="{StaticResource MainFontSize}"
         TextOptions.TextFormattingMode="Ideal"
         TextOptions.TextRenderingMode="Auto"
+        WindowStartupLocation="CenterScreen"
         FontFamily="{DynamicResource MaterialDesignFont}"
         Background="{DynamicResource MaterialDesignPaper}"
-        Title="CategoryInfoView" Height="450" Width="800">
+        Title="Информация о категории" Height="450" Width="800">
     <ag:AutoGrid Rows="1*, 1*, 1*" Columns="1*, 1*">
-        <TextBlock />
+        <Grid.Resources>
+            <Style TargetType="TextBlock" BasedOn="{StaticResource ResourceKey=MainTextBlockStyle}"/>
+            <Style TargetType="Button" BasedOn="{StaticResource ResourceKey=RectangularButtonStyle}">
+                <Setter Property="Width" Value="250"/>
+            </Style>
+        </Grid.Resources>
+        
+        <TextBlock Grid.ColumnSpan="2" FontSize="30" Text="{Binding Category.Name}"/>
+        <TextBlock Text="Количество тестов:"/>
+        <TextBlock Text="{Binding NumberOfTests}"/>
+
+        <Button Command="{Binding EditCategoryAsyncCommand}">
+            <TextBlock Text="Изменить категорию"/>
+        </Button>
+        <Button Command="{Binding RemoveCategoryAsyncCommand}" Background="DarkRed">
+            <TextBlock Text="Удалить категорию"/>
+        </Button>
     </ag:AutoGrid>
 </Window>
