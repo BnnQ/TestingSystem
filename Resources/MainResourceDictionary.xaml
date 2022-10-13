@@ -7,6 +7,8 @@
                     xmlns:system="clr-namespace:System;assembly=mscorlib">
 
     <system:Double x:Key="MainFontSize">17</system:Double>
+    <system:Double x:Key="EditViewWidth">400</system:Double>
+    <Thickness x:Key="MarginOfEditControl">10</Thickness>
 
     <Style x:Key="MainTextBlockStyle" TargetType="TextBlock" BasedOn="{StaticResource MaterialDesignTextBlock}">
         <Setter Property="VerticalAlignment" Value="Center"/>
@@ -116,6 +118,31 @@
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    
+    <Style x:Key="ConfirmButtonStyle" TargetType="Button" BasedOn="{StaticResource RectangularButtonStyle}">
+        <Setter Property="VerticalAlignment" Value="Bottom"/>
+        <Setter Property="Margin" Value="10 35"/>
+        <Setter Property="Background" Value="Green"/>
+        <Setter Property="BorderBrush" Value="LightSeaGreen"/>
+        <Setter Property="Padding" Value="-5"/>
+        <Setter Property="Content">
+            <Setter.Value>
+                <TextBlock Text="Подтвердить" Style="{StaticResource MainTextBlockStyle}"/>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style x:Key="CancelButtonStyle" TargetType="Button" BasedOn="{StaticResource RectangularButtonStyle}">
+        <Setter Property="VerticalAlignment" Value="Bottom"/>
+        <Setter Property="Margin" Value="10 35"/>
+        <Setter Property="Background" Value="DarkRed"/>
+        <Setter Property="BorderBrush" Value="IndianRed"/>
+        <Setter Property="Padding" Value="-5"/>
+        <Setter Property="Content">
+            <Setter.Value>
+                <TextBlock Text="Отмена" Style="{StaticResource MainTextBlockStyle}"/>
             </Setter.Value>
         </Setter>
     </Style>

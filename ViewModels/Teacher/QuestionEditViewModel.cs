@@ -129,10 +129,10 @@ namespace TestingSystem.ViewModels.Teacher
 
 
         #region Commands
-        private RelayCommand okCommand = null!;
-        public RelayCommand OkCommand 
+        private RelayCommand confirmCommand = null!;
+        public RelayCommand ConfirmCommand 
         {
-            get => okCommand ??= new(() =>
+            get => confirmCommand ??= new(() =>
             {
                 question.Content = Content;
                 question.PointsCost = PointsCost;

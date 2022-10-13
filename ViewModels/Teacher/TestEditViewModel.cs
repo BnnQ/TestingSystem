@@ -207,10 +207,10 @@ namespace TestingSystem.ViewModels.Teacher
             }, (question) => question is not null);
         }
 
-        private RelayCommand okCommand = null!;
-        public RelayCommand OkCommand
+        private RelayCommand confirmCommand = null!;
+        public RelayCommand ConfirmCommand
         {
-            get => okCommand ??= new(() =>
+            get => confirmCommand ??= new(() =>
             {
                 test.Name = Name;
                 test.Questions = Questions;
