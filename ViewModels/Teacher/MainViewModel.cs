@@ -59,6 +59,7 @@ namespace TestingSystem.ViewModels.Teacher
             databaseContext = new TestingSystemTeacherContext();
 
             SetupBackgroundWorkers();
+            UpdateCategoriesFromDatabaseAsyncCommand.Execute(null);
         }
 
         private void SetupBackgroundWorkers()
@@ -155,9 +156,9 @@ namespace TestingSystem.ViewModels.Teacher
                         {
                             categoryToWhichTestBeAdded.Tests.Add(testToBeAdded);
                             await databaseContext.SaveChangesAsync();
-                            UpdateCategoriesFromDatabaseAsyncCommand.Execute(null);
+                            await UpdateCategoriesFromDatabaseAsyncCommand.ExecuteAsync(null);
                         }
-
+                        
                     }
                 }
             });
@@ -182,8 +183,14 @@ namespace TestingSystem.ViewModels.Teacher
 
                 if (categoryEntityFromDatabase is not null)
                 {
-                    CategoryInfoView categoryInfoView = new(databaseContext, databaseContextLocker, categoryEntityFromDatabase, teacher);
-                    categoryInfoView.ShowDialog();
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        CategoryInfoView categoryInfoView = new(databaseContext, databaseContextLocker, categoryEntityFromDatabase, teacher);
+                        categoryInfoView.ShowDialog();
+                    });
+
+                    using (await databaseContextLocker.LockAsync())
+                        Categories = await databaseContext.Categories.ToArrayAsync();
                 }
             }, (category) => category is not null);
         }
@@ -218,6 +225,10 @@ namespace TestingSystem.ViewModels.Teacher
                         TestInfoView testInfoView = new(databaseContext, databaseContextLocker, testEntityFromDatabase, teacher);
                         testInfoView.ShowDialog();
                     });
+
+
+                    using (await databaseContextLocker.LockAsync())
+                        Categories = await databaseContext.Categories.ToArrayAsync();
                 }
 
             }, (test) => test is not null);
