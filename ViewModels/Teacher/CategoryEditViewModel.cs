@@ -1,11 +1,13 @@
 ﻿using HappyStudio.Mvvm.Input.Wpf;
 using MvvmBaseViewModels.Common;
-using System.Collections.ObjectModel;
+using MvvmBaseViewModels.Common.Validatable;
+using ReactiveValidation;
+using ReactiveValidation.Extensions;
 using TestingSystem.Models;
 
 namespace TestingSystem.ViewModels.Teacher
 {
-    public class CategoryEditViewModel : ViewModelBase
+    public class CategoryEditViewModel : ValidatableViewModelBase
     {
         private readonly Category category;
 
@@ -29,18 +31,33 @@ namespace TestingSystem.ViewModels.Teacher
             this.category = category;
 
             Name = category.Name;
+            SetupValidator();
         }
 
+        protected override void SetupValidator()
+        {
+            ValidationBuilder<CategoryEditViewModel> builder = new();
+            builder.PropertyCascadeMode = CascadeMode.Stop;
+
+            builder.RuleFor(viewModel => viewModel.Name)
+                .Must(name => !string.IsNullOrWhiteSpace(name))
+                .WithMessage("Название не может быть пустым");
+            builder.RuleFor(viewModel => viewModel.Name)
+                .MaxLength(128)
+                .WithMessage("Название не может быть длиннее 128 символов");
+
+            Validator = builder.Build(this);
+        }
 
         #region Commands
-        private RelayCommand okCommand = null!;
-        public RelayCommand OkCommand
+        private RelayCommand confirmCommand = null!;
+        public RelayCommand ConfirmCommand
         {
-            get => okCommand ??= new(() =>
+            get => confirmCommand ??= new(() =>
             {
                 category.Name = Name;
                 Close(true);
-            }, () => !string.IsNullOrWhiteSpace(Name));
+            }, () => !string.IsNullOrWhiteSpace(Name) && Name.Length <= 128);
         }
 
         private RelayCommand cancelCommand = null!;
