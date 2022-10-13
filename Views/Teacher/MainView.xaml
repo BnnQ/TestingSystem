@@ -35,7 +35,7 @@
                                 Command="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.ManageCategoryAsyncCommand}"
                                 CommandParameter="{Binding}">
                             <TextBlock Text="{Binding Name}" Style="{StaticResource ReferenceTextBlockStyle}"
-                                       FontSize="23" Padding="-5" FontWeight="Medium" TextAlignment="Left" Foreground="Black"
+                                       FontSize="23" FontWeight="Medium" TextAlignment="Left" Foreground="Black" Padding="5"
                                        MouseEnter="OnReferenceElementMouseEnter" MouseLeave="OnReferenceElementMouseLeave"/>
                         </Button>
                         <ListView ItemsSource="{Binding Tests}" 

@@ -17,19 +17,16 @@
     <ag:AutoGrid Rows="1*, 1*, 1*" Columns="1*, 1*">
         <Grid.Resources>
             <Style TargetType="TextBlock" BasedOn="{StaticResource ResourceKey=MainTextBlockStyle}"/>
-            <Style TargetType="Button" BasedOn="{StaticResource ResourceKey=RectangularButtonStyle}">
-                <Setter Property="Width" Value="250"/>
-            </Style>
         </Grid.Resources>
         
         <TextBlock Grid.ColumnSpan="2" FontSize="30" Text="{Binding Category.Name}"/>
         <TextBlock Text="Количество тестов:"/>
         <TextBlock Text="{Binding NumberOfTests}"/>
 
-        <Button Command="{Binding EditCategoryAsyncCommand}">
+        <Button Style="{StaticResource ResourceKey=EditButtonStyle}" Command="{Binding EditCategoryAsyncCommand}" Margin="50">
             <TextBlock Text="Изменить категорию"/>
         </Button>
-        <Button Command="{Binding RemoveCategoryAsyncCommand}" Background="DarkRed">
+        <Button Style="{StaticResource RemoveButtonStyle}" Command="{Binding RemoveCategoryAsyncCommand}" Margin="50">
             <TextBlock Text="Удалить категорию"/>
         </Button>
     </ag:AutoGrid>

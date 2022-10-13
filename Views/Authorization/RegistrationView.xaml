@@ -27,7 +27,7 @@
         </Grid.Resources>
 
         <Button Grid.ColumnSpan="2" Style="{StaticResource ResourceKey=FlatButtonWithoutHighlightStyle}"
-                Command="{Binding SwitchToAuthenticationNavigationCommand}" Padding="-5">
+                Command="{Binding SwitchToAuthenticationNavigationCommand}">
             <TextBlock Text="Войти в существующий аккаунт"/>
         </Button>
 

@@ -17,6 +17,7 @@
         <Setter Property="FontFamily" Value="{DynamicResource MaterialDesignFont}"/>
         <Setter Property="FontSize" Value="{StaticResource MainFontSize}"/>
         <Setter Property="Margin" Value="5"/>
+        <Setter Property="Padding" Value="5"/>
     </Style>
 
     <Style x:Key="ReferenceTextBlockStyle" TargetType="TextBlock" BasedOn="{StaticResource MaterialDesignTextBlock}">
@@ -38,6 +39,7 @@
     <Style x:Key="RoundedRectangularButtonStyle" TargetType="Button" BasedOn="{StaticResource MaterialDesignFlatMidBgButton}">
         <Setter Property="VerticalAlignment" Value="Center"/>
         <Setter Property="Margin" Value="5"/>
+        <Setter Property="Padding" Value="-5"/>
         <Setter Property="md:ShadowAssist.ShadowDepth" Value="Depth0"/>
         <Setter Property="md:ButtonAssist.CornerRadius" Value="10"/>
     </Style>
@@ -45,6 +47,7 @@
     <Style x:Key="RectangularButtonStyle" TargetType="Button" BasedOn="{StaticResource MaterialDesignRaisedButton}">
         <Setter Property="VerticalAlignment" Value="Center"/>
         <Setter Property="Margin" Value="5"/>
+        <Setter Property="Padding" Value="-5"/>
         <Setter Property="md:ShadowAssist.ShadowDepth" Value="Depth0"/>
         <Setter Property="md:ButtonAssist.CornerRadius" Value="3"/>
     </Style>
@@ -53,9 +56,12 @@
         <Setter Property="md:ShadowAssist.ShadowDepth" Value="Depth0"/>
     </Style>
 
-    <Style x:Key="FlatButtonStyle" TargetType="Button" BasedOn="{StaticResource MaterialDesignFlatButton}"/>
+    <Style x:Key="FlatButtonStyle" TargetType="Button" BasedOn="{StaticResource MaterialDesignFlatButton}">
+        <Setter Property="Padding" Value="-5"/>
+    </Style>
     <Style x:Key="FlatButtonWithoutHighlightStyle" TargetType="Button" BasedOn="{StaticResource MaterialDesignFlatButton}">
         <Setter Property="md:RippleAssist.IsDisabled" Value="True"/>
+        <Setter Property="Padding" Value="-5"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type ButtonBase}">
@@ -127,7 +133,6 @@
         <Setter Property="Margin" Value="10 35"/>
         <Setter Property="Background" Value="Green"/>
         <Setter Property="BorderBrush" Value="LightSeaGreen"/>
-        <Setter Property="Padding" Value="-5"/>
         <Setter Property="Content">
             <Setter.Value>
                 <TextBlock Text="Подтвердить" Style="{StaticResource MainTextBlockStyle}"/>
@@ -139,12 +144,16 @@
         <Setter Property="Margin" Value="10 35"/>
         <Setter Property="Background" Value="DarkRed"/>
         <Setter Property="BorderBrush" Value="IndianRed"/>
-        <Setter Property="Padding" Value="-5"/>
         <Setter Property="Content">
             <Setter.Value>
                 <TextBlock Text="Отмена" Style="{StaticResource MainTextBlockStyle}"/>
             </Setter.Value>
         </Setter>
+    </Style>
+    <Style x:Key="EditButtonStyle" TargetType="Button" BasedOn="{StaticResource RectangularButtonStyle}"/>
+    <Style x:Key="RemoveButtonStyle" TargetType="Button" BasedOn="{StaticResource RectangularButtonStyle}">
+        <Setter Property="Background" Value="DarkRed"/>
+        <Setter Property="BorderBrush" Value="IndianRed"/>
     </Style>
 
     <Style x:Key="MainGroupBoxStyle" TargetType="GroupBox" BasedOn="{StaticResource MaterialDesignGroupBox}"/>
