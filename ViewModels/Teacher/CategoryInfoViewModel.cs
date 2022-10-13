@@ -76,7 +76,13 @@ namespace TestingSystem.ViewModels.Teacher
                     }
                 }
 
-            }, () => Category.Tests.Any(test => test.OwnerTeachers.Any(teacher => teacher.Id == this.teacher.Id)));
+            }, 
+            () =>
+            {
+                return Category is not null &&
+                       (Category.Tests.Count <= 0 ||
+                       Category.Tests.Any(test => test.OwnerTeachers.Any(teacher => teacher.Id == this.teacher.Id)));
+            });
         }
 
         private AsyncRelayCommand removeCategoryAsyncCommand = null!;
@@ -91,9 +97,17 @@ namespace TestingSystem.ViewModels.Teacher
                     {
                         databaseContext.Categories.Remove(categoryToBeRemoved);
                         await databaseContext.SaveChangesAsync();
+
+                        Close();
                     }
                 }
-            }, () => Category.Tests.All(test => test.OwnerTeachers.Any(teacher => teacher.Id == this.teacher.Id)));
+            }, 
+            () =>
+            {
+                return Category is not null &&
+                       (Category.Tests.Count <= 0 ||
+                       Category.Tests.All(test => test.OwnerTeachers.Any(teacher => teacher.Id == this.teacher.Id)));
+            });
         }
         #endregion
 
