@@ -31,16 +31,32 @@ namespace TestingSystem.Views.Authorization
 
             databaseContext = new TestingSystemAuthorizationContext();
             databaseContextLocker = new AsyncLock();
+
             authenticationViewModel = new(navigationManager, databaseContext, databaseContextLocker);
+            authenticationViewModel.Closed += (_) =>
+            {
+                if (containerViewModel is not null && !containerViewModel.IsClosed)
+                    containerViewModel.Close();
+            };
+
             registrationViewModel = new(navigationManager, databaseContext, databaseContextLocker);
+            registrationViewModel.Closed += (_) =>
+            {
+                if (containerViewModel is not null && !containerViewModel.IsClosed)
+                    containerViewModel.Close();
+            };
 
             DataContext = containerViewModel;
             ConfigureNavigation();
 
             Dispatcher.ShutdownStarted += (_, _) =>
             {
-                authenticationViewModel?.Close();
-                registrationViewModel?.Close();
+                if (authenticationViewModel is not null && !authenticationViewModel.IsClosed)
+                    authenticationViewModel?.Close();
+                
+                if (registrationViewModel is not null && !registrationViewModel.IsClosed)
+                    registrationViewModel?.Close();
+
                 databaseContext.Dispose();
             };
         }
