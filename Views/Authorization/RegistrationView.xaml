@@ -26,8 +26,8 @@
             <Style TargetType="Button" BasedOn="{StaticResource ResourceKey=RoundedRectangularButtonStyle}"/>
         </Grid.Resources>
 
-        <Button Grid.ColumnSpan="2" Style="{StaticResource ResourceKey=FlatButton}"
-                Command="{Binding SwitchToAuthenticationNavigationCommand}">
+        <Button Grid.ColumnSpan="2" Style="{StaticResource ResourceKey=FlatButtonWithoutHighlightStyle}"
+                Command="{Binding SwitchToAuthenticationNavigationCommand}" Padding="-5">
             <TextBlock Text="Войти в существующий аккаунт"/>
         </Button>
 
@@ -36,7 +36,7 @@
 
             <TextBox Text="{Binding Password}" Width="300" md:HintAssist.Hint="Пароль"/>
 
-            <GroupBox Style="{StaticResource ResourceKey=MainGroupBox}" Header="Тип аккаунта" Width="300">
+            <GroupBox Style="{StaticResource ResourceKey=MainGroupBoxStyle}" Header="Тип аккаунта" Width="300">
                 <ag:AutoGrid Rows="1*" Columns="1*, 1*">
                     <RadioButton Content="Студент" IsThreeState="False" IsChecked="{Binding IsStudent}"/>
                     <RadioButton Content="Учитель" IsThreeState="False" 

@@ -26,8 +26,8 @@
             <Style TargetType="TextBlock" BasedOn="{StaticResource ResourceKey=MainTextBlockStyle}"/>
         </Grid.Resources>
 
-        <Button Grid.ColumnSpan="2" Style="{StaticResource ResourceKey=FlatButton}"
-                Command="{Binding SwitchToRegistrationNavigationCommand}">
+        <Button Grid.ColumnSpan="2" Style="{StaticResource ResourceKey=FlatButtonWithoutHighlightStyle}"
+                Command="{Binding SwitchToRegistrationNavigationCommand}" Padding="-5">
             <TextBlock Text="Зарегистрироваться"/>
         </Button>
 
