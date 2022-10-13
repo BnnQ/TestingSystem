@@ -23,27 +23,12 @@ namespace TestingSystem.ViewModels.Teacher
             }
         }
 
-        private ObservableCollection<Test> tests = null!;
-        public ObservableCollection<Test> Tests
-        {
-            get => tests;
-            set
-            {
-                if (tests != value)
-                {
-                    tests = value;
-                    OnPropertyChanged(nameof(Tests));
-                }
-            }
-        }
-
 
         public CategoryEditViewModel(Category category)
         {
             this.category = category;
 
             Name = category.Name;
-            Tests = new ObservableCollection<Test>(category.Tests);
         }
 
 
@@ -54,7 +39,6 @@ namespace TestingSystem.ViewModels.Teacher
             get => okCommand ??= new(() =>
             {
                 category.Name = Name;
-                category.Tests = Tests;
                 Close(true);
             }, () => !string.IsNullOrWhiteSpace(Name));
         }
