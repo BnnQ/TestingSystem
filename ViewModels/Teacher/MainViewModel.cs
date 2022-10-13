@@ -36,6 +36,20 @@ namespace TestingSystem.ViewModels.Teacher
             }
         }
 
+        private bool isAddMenuOpen = false;
+        public bool IsAddMenuOpen
+        {
+            get => isAddMenuOpen;
+            set
+            {
+                if (isAddMenuOpen != value)
+                {
+                    isAddMenuOpen = value;
+                    OnPropertyChanged(nameof(IsAddMenuOpen));
+                }
+            }
+        }
+
         private readonly BackgroundWorker categoriesUpdaterFromDatabaseBackgroundWorker = new();
 
 
@@ -83,6 +97,12 @@ namespace TestingSystem.ViewModels.Teacher
                 if (!categoriesUpdaterFromDatabaseBackgroundWorker.IsBusy)
                     await categoriesUpdaterFromDatabaseBackgroundWorker.RunWorkerAsync();
             });
+        }
+
+        private RelayCommand openAddMenuCommand = null!;
+        public RelayCommand OpenAddMenuCommand
+        {
+            get => openAddMenuCommand ??= new(() => IsAddMenuOpen = !IsAddMenuOpen);
         }
 
         private AsyncRelayCommand addCategoryAsyncCommand = null!;
@@ -143,6 +163,31 @@ namespace TestingSystem.ViewModels.Teacher
             });
         }
 
+        private AsyncRelayCommand<Category> manageCategoryAsyncCommand = null!;
+        public AsyncRelayCommand<Category> ManageCategoryAsyncCommand
+        {
+            get => manageCategoryAsyncCommand ??= new(async (category) =>
+            {
+                Category? categoryEntityFromDatabase = default;
+                using (await databaseContextLocker.LockAsync())
+                {
+                    categoryEntityFromDatabase = await databaseContext.FindAsync<Category>(category!.Id);
+                    if (categoryEntityFromDatabase is not null)
+                    {
+                        await databaseContext.Entry(categoryEntityFromDatabase)
+                        .Collection(category => category.Tests)
+                        .LoadAsync();
+                    }
+                }
+
+                if (categoryEntityFromDatabase is not null)
+                {
+                    CategoryInfoView categoryInfoView = new(databaseContext, databaseContextLocker, categoryEntityFromDatabase, teacher);
+                    categoryInfoView.ShowDialog();
+                }
+            }, (category) => category is not null);
+        }
+
         private AsyncRelayCommand<Test> manageTestAsyncCommand = null!;
         public AsyncRelayCommand<Test> ManageTestAsyncCommand
         {
@@ -176,31 +221,6 @@ namespace TestingSystem.ViewModels.Teacher
                 }
 
             }, (test) => test is not null);
-        }
-
-        private AsyncRelayCommand<Category> manageCategoryAsyncCommand = null!;
-        public AsyncRelayCommand<Category> ManageCategoryAsyncCommand
-        {
-            get => manageCategoryAsyncCommand ??= new(async (category) =>
-            {
-                Category? categoryEntityFromDatabase = default;
-                using (await databaseContextLocker.LockAsync())
-                {
-                    categoryEntityFromDatabase = await databaseContext.FindAsync<Category>(category!.Id);
-                    if (categoryEntityFromDatabase is not null)
-                    {
-                        await databaseContext.Entry(categoryEntityFromDatabase)
-                        .Collection(category => category.Tests)
-                        .LoadAsync();
-                    }
-                }
-
-                if (categoryEntityFromDatabase is not null)
-                {
-                    CategoryInfoView categoryInfoView = new(databaseContext, databaseContextLocker, categoryEntityFromDatabase, teacher);
-                    categoryInfoView.ShowDialog();
-                }
-            }, (category) => category is not null);
         }
         #endregion
 
