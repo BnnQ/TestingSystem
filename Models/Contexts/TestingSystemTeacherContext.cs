@@ -7,6 +7,7 @@ namespace TestingSystem.Models.Contexts
     public class TestingSystemTeacherContext : DbContext
     {
         public virtual DbSet<Category> Categories { get; set; } = null!;
+        public virtual DbSet<Teacher> Teachers { get; set; } = null!;
 
 
         public TestingSystemTeacherContext() : base()
@@ -206,6 +207,39 @@ namespace TestingSystem.Models.Contexts
             });
             modelBuilder.Entity<Category>()
                 .ToTable("Categories");
+
+            modelBuilder.Entity<Teacher>()
+                .HasMany(teacher => teacher.OwnedTests)
+                .WithMany(test => test.OwnerTeachers)
+                .UsingEntity("TestsTeacherOwners");
+            modelBuilder.Entity<Teacher>(teacherModel =>
+            {
+                teacherModel
+                .HasCheckConstraint("CK_Teachers_EncryptedName", "[EncryptedName] != ''")
+                .HasCheckConstraint("CK_Teachers_EncryptedPassword", "[EncryptedPassword] != ''")
+                .HasKey(teacher => teacher.Id);
+
+                teacherModel.Property(teacher => teacher.Id)
+                .HasColumnOrder(1)
+                .UseIdentityColumn()
+                .IsRequired();
+
+                teacherModel.Property(teacher => teacher.EncryptedName)
+                .HasColumnOrder(2)
+                .HasColumnType("VARCHAR(128)")
+                .IsRequired();
+
+                teacherModel.Property(teacher => teacher.EncryptedPassword)
+                .HasColumnOrder(3)
+                .HasColumnType("VARCHAR(128)")
+                .IsRequired();
+
+                teacherModel.Property(teacher => teacher.FullName)
+                .HasMaxLength(128)
+                .IsRequired();
+            });
+            modelBuilder.Entity<Teacher>()
+                .ToTable("Teachers");
 
             base.OnModelCreating(modelBuilder);
         }

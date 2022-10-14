@@ -31,10 +31,12 @@
             <TextBlock Text="Войти в существующий аккаунт"/>
         </Button>
 
-        <ag:AutoGrid Rows="1*, 1*, 1*, 1*" Columns="1*" IsEnabled="{Binding RegistrationBackgroundWorker.IsBusy, Converter={StaticResource boolInverserConverter}}">
+        <ag:AutoGrid Rows="1*, 1*, 1*, 1*, 1*" Columns="1*" IsEnabled="{Binding RegistrationBackgroundWorker.IsBusy, Converter={StaticResource boolInverserConverter}}">
             <TextBox Text="{Binding Username}" md:HintAssist.Hint="Имя пользователя"/>
 
-            <TextBox Text="{Binding Password}" Width="300" md:HintAssist.Hint="Пароль"/>
+            <TextBox Text="{Binding Password}" md:HintAssist.Hint="Пароль"/>
+
+            <TextBox Text="{Binding FullName}" md:HintAssist.Hint="ФИО"/>
 
             <GroupBox Style="{StaticResource ResourceKey=MainGroupBoxStyle}" Header="Тип аккаунта" Width="300">
                 <ag:AutoGrid Rows="1*" Columns="1*, 1*">

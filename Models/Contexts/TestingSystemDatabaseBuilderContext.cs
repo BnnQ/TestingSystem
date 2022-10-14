@@ -216,11 +216,17 @@ namespace TestingSystem.Models.Contexts
                 .IsRequired();
 
                 studentModel.Property(student => student.EncryptedName)
+                .HasColumnOrder(2)
                 .HasColumnType("VARCHAR(128)")
                 .IsRequired();
 
                 studentModel.Property(student => student.EncryptedPassword)
+                .HasColumnOrder(3)
                 .HasColumnType("VARCHAR(128)")
+                .IsRequired();
+
+                studentModel.Property(student => student.FullName)
+                .HasMaxLength(128)
                 .IsRequired();
             });
 
@@ -241,11 +247,17 @@ namespace TestingSystem.Models.Contexts
                 .IsRequired();
 
                 teacherModel.Property(teacher => teacher.EncryptedName)
+                .HasColumnOrder(2)
                 .HasColumnType("VARCHAR(128)")
                 .IsRequired();
 
                 teacherModel.Property(teacher => teacher.EncryptedPassword)
+                .HasColumnOrder(3)
                 .HasColumnType("VARCHAR(128)")
+                .IsRequired();
+
+                teacherModel.Property(teacher => teacher.FullName)
+                .HasMaxLength(128)
                 .IsRequired();
             });
 

@@ -9,6 +9,20 @@ namespace TestingSystem.Models
     {
         public int Id { get; set; }
 
+        private string fullName = null!;
+        public string FullName
+        {
+            get => fullName;
+            set
+            {
+                if (fullName != value)
+                {
+                    fullName = value;
+                    OnPropertyChanged(nameof(FullName));
+                }
+            }
+        }
+
         private ICollection<Test> ownedTests = null!;
         public virtual ICollection<Test> OwnedTests
         {
@@ -28,21 +42,23 @@ namespace TestingSystem.Models
         }
         
 
-        public Teacher(string encryptedName, string encryptedPassword) : base(encryptedName, encryptedPassword)
+        public Teacher(string encryptedName, string encryptedPassword, string fullName) : base(encryptedName, encryptedPassword)
         {
             OwnedTests = new ObservableCollection<Test>();
+            FullName = fullName;
         }
-        public Teacher(string encryptedName, string encryptedPassword, ICollection<Test> ownedTests) 
-            : this(encryptedName, encryptedPassword)
+        public Teacher(string encryptedName, string encryptedPassword, string fullName, ICollection<Test> ownedTests) 
+            : this(encryptedName, encryptedPassword, fullName)
         {
             OwnedTests = ownedTests;
         }
-        public Teacher(int id, string encryptedName, string encryptedPassword) : this(encryptedName, encryptedPassword)
+        public Teacher(int id, string encryptedName, string encryptedPassword, string fullName) 
+            : this(encryptedName, encryptedPassword, fullName)
         {
             Id = id;
         }
-        public Teacher(int id, string encryptedName, string encryptedPassword, ICollection<Test> ownedTests)
-            : this(encryptedName, encryptedPassword, ownedTests)
+        public Teacher(int id, string encryptedName, string encryptedPassword, string fullName, ICollection<Test> ownedTests)
+            : this(encryptedName, encryptedPassword, fullName, ownedTests)
         {
             Id = id;
         }

@@ -53,6 +53,20 @@ namespace TestingSystem.ViewModels.Authorization
             }
         }
 
+        private string fullName = null!;
+        public string FullName
+        {
+            get => fullName;
+            set
+            {
+                if (fullName != value)
+                {
+                    fullName = value;
+                    OnPropertyChanged(nameof(FullName));
+                }
+            }
+        }
+
         private bool isStudent = true;
         public bool IsStudent
         {
@@ -77,6 +91,7 @@ namespace TestingSystem.ViewModels.Authorization
 
         private ValidationState usernameValidationState = ValidationState.Disabled;
         private ValidationState passwordValidationState = ValidationState.Disabled;
+        private ValidationState fullNameValidationState = ValidationState.Disabled;
 
         //Performs registration of a user in the background,
         //including verification that the data matches the requirements and such a user is not yet registered
@@ -95,7 +110,7 @@ namespace TestingSystem.ViewModels.Authorization
 
         private async Task RegisterAsync()
         {
-            if (!await IsUsernameValidAsync() || !await IsPasswordValidAsync())
+            if (!await IsUsernameValidAsync() || !await IsPasswordValidAsync() || !await IsFullNameValidAsync())
                 return;
 
             string hashedUsername = encoder.Encode(Username);
@@ -103,7 +118,7 @@ namespace TestingSystem.ViewModels.Authorization
 
             if (IsStudent)
             {
-                Models.Student registeredStudent = new(hashedUsername, hashedPassword);
+                Models.Student registeredStudent = new(hashedUsername, hashedPassword, FullName);
                 using (await databaseContextLocker.LockAsync())
                 {
                     await databaseContext.Students.AddAsync(registeredStudent);
@@ -121,7 +136,7 @@ namespace TestingSystem.ViewModels.Authorization
             }
             else
             {
-                Models.Teacher registeredTeacher = new(hashedUsername, hashedPassword);
+                Models.Teacher registeredTeacher = new(hashedUsername, hashedPassword, FullName);
                 using (await databaseContextLocker.LockAsync())
                 {
                     await databaseContext.Teachers.AddAsync(registeredTeacher);
@@ -216,6 +231,15 @@ namespace TestingSystem.ViewModels.Authorization
                 .When(viewModel => viewModel.passwordValidationState == ValidationState.Enabled)
                 .WithMessage(errorMessageBuilder.ToString());
 
+            builder.RuleFor(viewModel => viewModel.FullName)
+                .NotEmpty()
+                .When(viewModel => viewModel.fullNameValidationState == ValidationState.Enabled)
+                .WithMessage("ФИО не может быть пустым");
+            builder.RuleFor(viewModel => viewModel.FullName)
+                .MaxLength(128)
+                .When(viewModel => viewModel.fullNameValidationState == ValidationState.Enabled)
+                .WithMessage("ФИО не может быть длиннее 128 символов");
+
             Validator = builder.Build(this);
         }
 
@@ -235,6 +259,16 @@ namespace TestingSystem.ViewModels.Authorization
             Validator!.Revalidate();
             await Validator.WaitValidatingCompletedAsync();
             passwordValidationState = ValidationState.Disabled;
+
+            return Validator.IsValid;
+        }
+
+        private async Task<bool> IsFullNameValidAsync()
+        {
+            fullNameValidationState = ValidationState.Enabled;
+            Validator!.Revalidate();
+            await Validator.WaitValidatingCompletedAsync();
+            fullNameValidationState = ValidationState.Disabled;
 
             return Validator.IsValid;
         }

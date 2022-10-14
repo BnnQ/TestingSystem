@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TestingSystem.Models.Contexts;
 
@@ -10,9 +11,10 @@ using TestingSystem.Models.Contexts;
 namespace TestingSystem.Migrations
 {
     [DbContext(typeof(TestingSystemDatabaseBuilderContext))]
-    partial class TestingSystemDatabaseBuilderContextModelSnapshot : ModelSnapshot
+    [Migration("20221014015518_TeacherAndStudentFullNameAdded")]
+    partial class TeacherAndStudentFullNameAdded
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
