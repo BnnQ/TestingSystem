@@ -1,13 +1,13 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
+                    xmlns:accb="clr-namespace:DotNetKit.Windows.Controls;assembly=DotNetKit.Wpf.AutoCompleteComboBox"
                     xmlns:wpf="http://materialdesigninxaml.net/winfx/xaml/themes"
-                    xmlns:po="http://schemas.microsoft.com/winfx/2006/xaml/presentation/options"
-                    xmlns:converters="clr-namespace:MaterialDesignThemes.Wpf.Converters.CircularProgressBar;assembly=MaterialDesignThemes.Wpf"
                     xmlns:system="clr-namespace:System;assembly=mscorlib">
 
     <system:Double x:Key="MainFontSize">17</system:Double>
-    <system:Double x:Key="EditViewWidth">400</system:Double>
+    <system:Double x:Key="ValidationMessageFontSize">11</system:Double>
+    <system:Double x:Key="MainEditViewWidth">450</system:Double>
     <Thickness x:Key="MarginOfEditControl">10</Thickness>
 
     <Style x:Key="MainTextBlockStyle" TargetType="TextBlock" BasedOn="{StaticResource MaterialDesignTextBlock}">
@@ -34,6 +34,22 @@
         <Setter Property="Margin" Value="5"/>
         <Setter Property="BorderThickness" Value="2"/>
         <Setter Property="BorderBrush" Value="{DynamicResource MaterialDesignDivider}"/>
+        <Setter Property="md:ValidationAssist.OnlyShowOnFocus" Value="False"/>
+        <Setter Property="md:ValidationAssist.FontSize" Value="{StaticResource ValidationMessageFontSize}"/>
+    </Style>
+
+    <Style x:Key="NumericTextBoxStyle" TargetType="TextBox" BasedOn="{StaticResource OutlinedTextBoxStyle}">
+        <Setter Property="HorizontalAlignment" Value="Left"/>
+        <Setter Property="Margin" Value="10 5"/>
+        <Setter Property="MinWidth" Value="50"/>
+    </Style>
+
+    <Style x:Key="ShortTimeTextBoxStyle" TargetType="TextBox" BasedOn="{StaticResource OutlinedTextBoxStyle}">
+        <Setter Property="HorizontalAlignment" Value="Left"/>
+        <Setter Property="Margin" Value="10 5"/>
+        <Setter Property="MinWidth" Value="80"/>
+        <Setter Property="md:HintAssist.Hint" Value="00:00"/>
+        <Setter Property="md:HintAssist.IsFloating" Value="False"/>
     </Style>
 
     <Style x:Key="RoundedRectangularButtonStyle" TargetType="Button" BasedOn="{StaticResource MaterialDesignFlatMidBgButton}">
@@ -150,13 +166,23 @@
             </Setter.Value>
         </Setter>
     </Style>
+    <Style x:Key="AddButtonStyle" TargetType="Button" BasedOn="{StaticResource MaterialDesignRaisedAccentButton}">
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Margin" Value="5"/>
+        <Setter Property="Padding" Value="-5"/>
+        <Setter Property="md:ShadowAssist.ShadowDepth" Value="Depth0"/>
+        <Setter Property="md:ButtonAssist.CornerRadius" Value="3"/>
+        <Setter Property="Foreground" Value="White"/>
+    </Style>
     <Style x:Key="EditButtonStyle" TargetType="Button" BasedOn="{StaticResource RectangularButtonStyle}"/>
     <Style x:Key="RemoveButtonStyle" TargetType="Button" BasedOn="{StaticResource RectangularButtonStyle}">
         <Setter Property="Background" Value="DarkRed"/>
         <Setter Property="BorderBrush" Value="IndianRed"/>
     </Style>
 
-    <Style x:Key="MainGroupBoxStyle" TargetType="GroupBox" BasedOn="{StaticResource MaterialDesignGroupBox}"/>
+    <Style x:Key="MainGroupBoxStyle" TargetType="GroupBox" BasedOn="{StaticResource MaterialDesignGroupBox}">
+        <Setter Property="FontSize" Value="{StaticResource MainFontSize}"/>
+    </Style>
 
     <Style x:Key="ListViewCardPanelStyle" TargetType="ListView" BasedOn="{StaticResource MaterialDesignListView}">
         <Setter Property="ItemContainerStyle">
@@ -181,15 +207,55 @@
         </Setter>
     </Style>
 
-    <Style x:Key="MainDataGridStyle" TargetType="DataGrid" BasedOn="{StaticResource MaterialDesignDataGrid}">
-        <Setter Property="AutoGenerateColumns" Value="False"/>
+    <Style x:Key="OnlyReadDataGridStyle" TargetType="DataGrid" BasedOn="{StaticResource MaterialDesignDataGrid}">
         <Setter Property="IsReadOnly" Value="True"/>
+        <Setter Property="AutoGenerateColumns" Value="False"/>
+        <Setter Property="CanUserAddRows" Value="False"/>
+        <Setter Property="CanUserDeleteRows" Value="False"/>
+        <Setter Property="CanUserReorderColumns" Value="False"/>
+        <Setter Property="CanUserResizeColumns" Value="False"/>
+        <Setter Property="CanUserResizeRows" Value="False"/>
+        <Setter Property="CanUserSortColumns" Value="True"/>
         <Setter Property="SelectionMode" Value="Single"/>
         <Setter Property="SelectionUnit" Value="FullRow"/>
+        <Setter Property="md:DataGridAssist.CornerRadius" Value="10"/>
+    </Style>
+
+    <Style x:Key="DataGridEditingCellStyle" TargetType="TextBox" BasedOn="{StaticResource MaterialDesignTextBox}">
+        <Setter Property="Background" Value="{DynamicResource MaterialDesignSelection}"/>
+    </Style>
+    <Style x:Key="OnlyEditDataGridStyle" TargetType="DataGrid" BasedOn="{StaticResource MaterialDesignDataGrid}">
+        <Setter Property="IsReadOnly" Value="False"/>
+        <Setter Property="AutoGenerateColumns" Value="False"/>
+        <Setter Property="CanUserAddRows" Value="False"/>
+        <Setter Property="CanUserDeleteRows" Value="False"/>
+        <Setter Property="CanUserReorderColumns" Value="False"/>
+        <Setter Property="CanUserResizeColumns" Value="False"/>
+        <Setter Property="CanUserResizeRows" Value="False"/>
+        <Setter Property="CanUserSortColumns" Value="True"/>
+        <Setter Property="SelectionMode" Value="Single"/>
+        <Setter Property="SelectionUnit" Value="FullRow"/>
+        <Setter Property="md:DataGridAssist.CornerRadius" Value="10"/>
+        <Setter Property="md:DataGridAssist.EnableEditBoxAssist" Value="True"/>
     </Style>
 
     <Style x:Key="MainScrollViewerStyle" TargetType="ScrollViewer" BasedOn="{StaticResource MaterialDesignScrollViewer}">
         <Setter Property="md:ScrollViewerAssist.SupportHorizontalScroll" Value="False"/>
         <Setter Property="md:ScrollViewerAssist.IsAutoHideEnabled" Value="True"/>
+    </Style>
+
+    <Style x:Key="MainAutoCompleteComboBoxStyle" TargetType="accb:AutoCompleteComboBox" BasedOn="{StaticResource MaterialDesignOutlinedComboBox}">
+        <Setter Property="Margin" Value="5"/>
+        <Setter Property="Padding" Value="5"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="md:ValidationAssist.OnlyShowOnFocus" Value="False"/>
+        <Setter Property="md:ValidationAssist.FontSize" Value="{StaticResource ValidationMessageFontSize}"/>
+        <Setter Property="ItemsPanel">
+            <Setter.Value>
+                <ItemsPanelTemplate>
+                    <VirtualizingStackPanel IsItemsHost="True"/>
+                </ItemsPanelTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 </ResourceDictionary>
