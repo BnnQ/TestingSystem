@@ -53,14 +53,6 @@ namespace TestingSystem.Models
         {
             Tests = tests;
         }
-        public Category(int id, string name) : this(name)
-        {
-            Id = id;
-        }
-        public Category(int id, string name, ICollection<Test> tests) : this(name, tests)
-        {
-            Id = id;
-        }
 
     }
 }

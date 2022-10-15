@@ -93,19 +93,7 @@ namespace TestingSystem.Models
             }
         }
 
-        private int testId;
-        public int TestId
-        {
-            get => testId;
-            set
-            {
-                testId = value;
-
-                if (Test is not null && Test.Id != testId)
-                    Test.Id = testId;
-            }
-        }
-
+        public int TestId { get; set; }
         private Test test = null!;
         public virtual Test Test
         {
@@ -144,6 +132,9 @@ namespace TestingSystem.Models
         {
             Test = test;
             SerialNumberInTest = serialNumberInTest;
+            Content = $"{serialNumberInTest} вопрос";
+            PointsCost = 1;
+            NumberOfAnswerOptions = 1;
         }
         public Question(string content, double pointsCost, ICollection<AnswerOption> answerOptions,
             Test test, ushort serialNumberInTest)

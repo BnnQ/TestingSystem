@@ -99,8 +99,11 @@ namespace TestingSystem.Models
             get => numberOfSecondsToComplete;
             set
             {
-                numberOfSecondsToComplete = value;
-                OnPropertyChanged(nameof(NumberOfSecondsToComplete));
+                if (numberOfSecondsToComplete != value)
+                {
+                    numberOfSecondsToComplete = value;
+                    OnPropertyChanged(nameof(NumberOfSecondsToComplete));
+                }
             }
         }
 
@@ -118,22 +121,7 @@ namespace TestingSystem.Models
             }
         }
 
-        private int categoryId;
-        public int CategoryId
-        {
-            get => categoryId;
-            set
-            {
-                if (categoryId != value)
-                {
-                    categoryId = value;
-
-                    if (Category is not null && Category.Id != categoryId)
-                        Category.Id = categoryId;
-                }
-            }
-        }
-
+        public int CategoryId { get; set; }
         private Category category = null!;
         public virtual Category Category
         {
@@ -143,9 +131,6 @@ namespace TestingSystem.Models
                 if (category != value)
                 {
                     category = value;
-                    if (categoryId != category.Id)
-                        categoryId = category.Id;
-
                     OnPropertyChanged(nameof(Category));
                 }
             }
@@ -219,34 +204,6 @@ namespace TestingSystem.Models
                 NumberOfSecondsToAnswerEachQuestion = numberOfSecondsToAnswerEachQuestion;
             else
                 NumberOfSecondsToComplete = numberOfSecondsToComplete;
-        }
-        public Test(int id, string name, ICollection<Question> questions, ushort maximumPoints, bool isAccountingForIncompleteAnswersEnabled,
-           Category category, ICollection<Teacher> ownerTeachers) 
-            : this(name, questions, maximumPoints, isAccountingForIncompleteAnswersEnabled, category, ownerTeachers)
-        {
-            Id = id;
-        }
-        public Test(int id, string name, ushort numberOfQuestions, ushort maximumPoints, bool isAccountingForIncompleteAnswersEnabled,
-           Category category, ICollection<Teacher> ownerTeachers) 
-            : this(name, numberOfQuestions, maximumPoints, isAccountingForIncompleteAnswersEnabled, category, ownerTeachers)
-        {
-            Id = id;
-        }
-        public Test(int id, string name, ICollection<Question> questions, ushort maximumPoints, bool isAccountingForIncompleteAnswersEnabled,
-            Category category, ICollection<Teacher> ownerTeachers,
-            ushort? numberOfSecondsToAnswerEachQuestion, ushort? numberOfSecondsToComplete)
-            : this(name, questions, maximumPoints, isAccountingForIncompleteAnswersEnabled, category, ownerTeachers,
-                  numberOfSecondsToAnswerEachQuestion, numberOfSecondsToComplete)
-        {
-            Id = id;
-        }
-        public Test(int id, string name, ushort numberOfQuestions, ushort maximumPoints, bool isAccountingForIncompleteAnswersEnabled,
-            Category category, ICollection<Teacher> ownerTeachers,
-            ushort? numberOfSecondsToAnswerEachQuestion, ushort? numberOfSecondsToComplete)
-            : this(name, numberOfQuestions, maximumPoints, isAccountingForIncompleteAnswersEnabled, category, ownerTeachers,
-                  numberOfSecondsToAnswerEachQuestion, numberOfSecondsToComplete)
-        {
-            Id = id;
         }
 
     }
