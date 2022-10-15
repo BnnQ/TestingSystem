@@ -7,6 +7,7 @@
         xmlns:ag="clr-namespace:WpfAutoGrid;assembly=WpfAutoGrid.Core"
         xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
         xmlns:ap="http://schemas.nishy-software.com/xaml/attached-properties"
+        xmlns:vwp="clr-namespace:WpfToolkit.Controls;assembly=VirtualizingWrapPanel"
         WindowStartupLocation="CenterScreen"
         TextElement.Foreground="{DynamicResource MaterialDesignBody}"
         TextElement.FontWeight="Regular"
@@ -38,22 +39,19 @@
                                        FontSize="23" FontWeight="Medium" TextAlignment="Left" Foreground="Black" Padding="5"
                                        MouseEnter="OnReferenceElementMouseEnter" MouseLeave="OnReferenceElementMouseLeave"/>
                         </Button>
-                        <ListView ItemsSource="{Binding Tests}" 
+                        <ListView ItemsSource="{Binding Tests}"
                                   ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Disabled"
                                   ap:ScrollViewerProperties.MouseWheelHandlingMode="OnlyScrollable">
                             <ListView.ItemTemplate>
                                 <DataTemplate>
                                     <md:Card Width="300">
-                                        <ag:AutoGrid Rows="1*, 1*, 1*" Columns="1*, 1*">
-                                            <TextBlock Grid.ColumnSpan="2" Text="{Binding Name}" FontSize="20" Margin="5"/>
+                                        <ag:AutoGrid Rows="1*, 1*" Columns="1*">
+                                            <TextBlock Text="{Binding Name}" FontSize="20" Margin="5"/>
 
-                                            <TextBlock Text="Количество вопросов:" Margin="5"/>
-                                            <TextBlock Text="{Binding NumberOfQuestions}" Margin="5"/>
-
-                                            <Button Grid.ColumnSpan="2" Style="{StaticResource ResourceKey=FlatButtonWithoutHighlightStyle}" 
+                                            <Button Style="{StaticResource ResourceKey=FlatButtonWithoutHighlightStyle}" 
                                                     Command="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.ManageTestAsyncCommand}"
                                                     CommandParameter="{Binding}" Margin="5">
-                                                <TextBlock Text="Детальнее" Style="{StaticResource ResourceKey=ReferenceTextBlockStyle}"
+                                                <TextBlock Text="Управление" Style="{StaticResource ResourceKey=ReferenceTextBlockStyle}"
                                                            MouseEnter="OnReferenceElementMouseEnter" MouseLeave="OnReferenceElementMouseLeave"/>
                                             </Button>
                                         </ag:AutoGrid>
@@ -62,7 +60,7 @@
                             </ListView.ItemTemplate>
                             <ListView.ItemsPanel>
                                 <ItemsPanelTemplate>
-                                    <WrapPanel Orientation="Horizontal" IsItemsHost="True"/>
+                                    <vwp:VirtualizingWrapPanel StretchItems="True" SpacingEnabled="False" Orientation="Vertical" IsItemsHost="True"/>
                                 </ItemsPanelTemplate>
                             </ListView.ItemsPanel>
                         </ListView>
@@ -71,7 +69,7 @@
             </ListView.ItemTemplate>
             <ListView.ItemsPanel>
                 <ItemsPanelTemplate>
-                    <WrapPanel Orientation="Horizontal" IsItemsHost="True"/>
+                    <VirtualizingStackPanel Orientation="Vertical" IsItemsHost="True"/>
                 </ItemsPanelTemplate>
             </ListView.ItemsPanel>
         </ListView>
