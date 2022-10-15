@@ -16,7 +16,7 @@ using System.Windows.Input;
 using TestingSystem.Constants.Authorization;
 using MvvmBaseViewModels.Navigation;
 using BackgroundWorkerLibrary;
-using NeoSmart.AsyncLock;
+using Z.Linq;
 
 namespace TestingSystem.ViewModels.Authorization
 {
@@ -24,8 +24,6 @@ namespace TestingSystem.ViewModels.Authorization
     {
         private readonly static ScryptEncoder encoder = new();
 
-        private readonly AsyncLock databaseContextLocker;
-        private readonly TestingSystemAuthorizationContext databaseContext;
         private IList<Models.Teacher> teachers = null!;
         private IList<Models.Student> students = null!;
 
@@ -82,18 +80,41 @@ namespace TestingSystem.ViewModels.Authorization
         private readonly BackgroundWorker initialDatabaseLoadBackgroundWorker = new();
 
 
-        public AuthenticationViewModel(INavigationManager navigationManager, TestingSystemAuthorizationContext databaseContext,
-            AsyncLock databaseContextLocker) 
+        public AuthenticationViewModel(INavigationManager navigationManager) 
             : base(navigationManager, true, ValidationState.Disabled)
         {
-            this.databaseContext = databaseContext;
-            this.databaseContextLocker = databaseContextLocker;
-
             SetupBackgroundWorkers();
             SetupValidator();
 
             _ = initialDatabaseLoadBackgroundWorker.RunWorkerAsync();
         }
+
+
+        #region Updating data from database
+        private async Task UpdateTeachersFromDatabaseAsync()
+        {
+            using (TestingSystemAuthorizationContext context = new())
+            {
+                await context.Teachers.LoadAsync();
+                teachers = await context.Teachers.Local.ToListAsync();
+            }
+        }
+
+        private async Task UpdateStudentsFromDatabaseAsync()
+        {
+            using (TestingSystemAuthorizationContext context = new())
+            {
+                await context.Students.LoadAsync();
+                students = await context.Students.Local.ToListAsync();
+            }
+        }
+
+        private async Task UpdateDataFromDatabaseAsync()
+        {
+            await UpdateTeachersFromDatabaseAsync();
+            await UpdateStudentsFromDatabaseAsync();
+        }
+        #endregion
 
         private void SetupBackgroundWorkers()
         {
@@ -109,11 +130,7 @@ namespace TestingSystem.ViewModels.Authorization
 
             initialDatabaseLoadBackgroundWorker.DoWork = async () =>
             {
-                using (await databaseContextLocker.LockAsync())
-                {
-                    await databaseContext.Teachers.LoadAsync();
-                    await databaseContext.Students.LoadAsync();
-                }
+                await UpdateDataFromDatabaseAsync();
             };
 
         }
@@ -241,21 +258,13 @@ namespace TestingSystem.ViewModels.Authorization
         {
             username = username.ToLower();
 
-            using (await databaseContextLocker.LockAsync())
-            {
-                await databaseContext.Teachers.LoadAsync();
-                teachers = await databaseContext.Teachers.ToListAsync();
-                if (teachers.AsParallel().Any(teacher => encoder.Compare(username, teacher.EncryptedName)))
-                    return true;
-            }
-            
-            using (await databaseContextLocker.LockAsync())
-            {
-                await databaseContext.Students.LoadAsync();
-                students = await databaseContext.Students.ToListAsync();
-                if (students.AsParallel().Any(student => encoder.Compare(username, student.EncryptedName)))
-                    return true;
-            }
+            await UpdateTeachersFromDatabaseAsync();
+            if (teachers.AsParallel().Any(teacher => encoder.Compare(username, teacher.EncryptedName)))
+                return true;
+
+            await UpdateStudentsFromDatabaseAsync();
+            if (students.AsParallel().Any(student => encoder.Compare(username, student.EncryptedName)))
+                return true;
 
             return false;
         }

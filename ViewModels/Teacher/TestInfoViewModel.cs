@@ -1,9 +1,10 @@
-﻿using HappyStudio.Mvvm.Input.Wpf;
-using Microsoft.EntityFrameworkCore;
+﻿using BackgroundWorkerLibrary;
+using HappyStudio.Mvvm.Input.Wpf;
 using MvvmBaseViewModels.Common;
-using NeoSmart.AsyncLock;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Input;
 using TestingSystem.Models;
 using TestingSystem.Models.Contexts;
 using TestingSystem.Views.Teacher;
@@ -12,13 +13,8 @@ namespace TestingSystem.ViewModels.Teacher
 {
     public class TestInfoViewModel : ViewModelBase
     {
-        private readonly TestingSystemTeacherContext databaseContext;
-        private readonly AsyncLock databaseContextLocker;
-
-        private Category[] categories = null!;
-
-        private Test test = null!;
-        public Test Test
+        private Test? test = null!;
+        public Test? Test
         {
             get => test;
             set
@@ -32,58 +28,85 @@ namespace TestingSystem.ViewModels.Teacher
         }
 
         private readonly Models.Teacher teacher;
+        private readonly BackgroundWorker testUpdaterFromDatabaseBackgroundWorker = new();
 
-        public TestInfoViewModel(TestingSystemTeacherContext databaseContext, AsyncLock databaseContextLocker,
-            Test test, Models.Teacher teacher)
+        public TestInfoViewModel(Test test, Models.Teacher teacher)
         {
-            this.databaseContext = databaseContext;
-            this.databaseContextLocker = databaseContextLocker;
-            Test = test;
+            using (TestingSystemTeacherContext context = new())
+            {
+                Test? testEntity = context.Find<Test>(test.Id);
+                if (testEntity is null)
+                    OccurCriticalErrorMessage("Test entity missing from the database (most likely, a problem on the DB side)");
+                else
+                    Test = testEntity;
+            }
+
             this.teacher = teacher;
+            SetupBackgroundWorkers();
+
+            _ = UpdateTestFromDatabaseAsyncCommand.ExecuteAsync(null);
+        }
+
+        private void SetupBackgroundWorkers()
+        {
+            testUpdaterFromDatabaseBackgroundWorker.DoWork = async () =>
+            {
+                Application.Current.Dispatcher.Invoke(() => Mouse.OverrideCursor = Cursors.Wait);
+                await UpdateTestFromDatabaseAsync();
+            };
+
+            testUpdaterFromDatabaseBackgroundWorker.OnWorkCompleted = () =>
+            {
+                Mouse.OverrideCursor = Cursors.Arrow;
+            };
+        }
+
+        private async Task UpdateTestFromDatabaseAsync()
+        {
+            if (Test is not null)
+            {
+                using (TestingSystemTeacherContext context = new())
+                {
+                    Test = await context.FindAsync<Test>(Test.Id);
+                    await context.Entry(Test!).Collection(test => test.Questions).LoadAsync();
+                }
+            }
         }
 
         #region Commands
-        private bool IsTeacherOwner() => Test.OwnerTeachers.Any(t => t.Id == teacher.Id);
+        private bool IsTeacherOwner()
+        {
+            if (Test is null)
+                return false;
+            else
+                return Test.OwnerTeachers.Any(t => t.Id == teacher.Id);
+        }
+
+        private AsyncRelayCommand updateTestFromDatabaseAsyncCommand = null!;
+        public AsyncRelayCommand UpdateTestFromDatabaseAsyncCommand
+        {
+            get => updateTestFromDatabaseAsyncCommand ??= new(async () =>
+            {
+                if (!testUpdaterFromDatabaseBackgroundWorker.IsBusy)
+                    await testUpdaterFromDatabaseBackgroundWorker.RunWorkerAsync();
+            });
+        }
 
         private AsyncRelayCommand editTestAsyncCommand = null!;
         public AsyncRelayCommand EditTestAsyncCommand
         {
             get => editTestAsyncCommand ??= new(async () =>
             {
-                Test? testInDatabase = default;
-                using (await databaseContextLocker.LockAsync())
+                bool? editViewDialogResult = default;
+                Application.Current.Dispatcher.Invoke(() =>
                 {
-                    await databaseContext.Categories.LoadAsync();
-                    await databaseContext.Categories
-                    .Include(category => category.Tests)
-                        .ThenInclude(test => test.Category)
-                    .Include(category => category.Tests)
-                        .ThenInclude(test => test.Questions)
-                    .Include(category => category.Tests)
-                        .ThenInclude(test => test.OwnerTeachers)
-                    .LoadAsync();
-                    
-                    categories = await databaseContext.Categories.ToArrayAsync();
-                    testInDatabase = await databaseContext.FindAsync<Test>(Test.Id);
-                }
+                    TestEditView testEditView = new(Test!);
+                    editViewDialogResult = testEditView.ShowDialog();
+                });
 
-                if (testInDatabase is not null)
-                {
-                    bool? editViewDialogResult = default;
-                    Application.Current.Dispatcher.Invoke(() =>
-                    {
-                        TestEditView testEditView = new(databaseContext, databaseContextLocker, categories, testInDatabase);
-                        editViewDialogResult = testEditView.ShowDialog();
-                    });
-
-                    if (editViewDialogResult == true)
-                    {
-                        using (await databaseContextLocker.LockAsync())
-                            await databaseContext.SaveChangesAsync();
-                    }
-                }
-               
-            }, IsTeacherOwner);
+                if (editViewDialogResult == true)
+                    await UpdateTestFromDatabaseAsyncCommand.ExecuteAsync(null);
+            }, () => Test is not null && IsTeacherOwner() && !testUpdaterFromDatabaseBackgroundWorker.IsBusy);
         }
 
         private AsyncRelayCommand removeTestAsyncCommand = null!;
@@ -91,16 +114,14 @@ namespace TestingSystem.ViewModels.Teacher
         {
             get => removeTestAsyncCommand ??= new(async () =>
             {
-                using (await databaseContextLocker.LockAsync())
+                using (TestingSystemTeacherContext context = new())
                 {
-                    Test? testToBeRemoved = await databaseContext.FindAsync<Test>(Test.Id);
-                    if (testToBeRemoved is not null)
-                    {
-                        databaseContext.Remove(testToBeRemoved);
-                        await databaseContext.SaveChangesAsync();
-                    }
+                    context.Tests.Remove(Test!);
+                    await context.SaveChangesAsync();
+
+                    Close(true);
                 }
-            }, IsTeacherOwner);
+            }, () => Test is not null && IsTeacherOwner() && !testUpdaterFromDatabaseBackgroundWorker.IsBusy);
         }
         #endregion
 

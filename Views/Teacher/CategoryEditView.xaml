@@ -14,8 +14,8 @@
         TextOptions.TextRenderingMode="Auto"
         FontFamily="{DynamicResource MaterialDesignFont}"
         Background="{DynamicResource MaterialDesignPaper}"
-        Title="Изменение категории" Height="350" Width="{StaticResource ResourceKey=EditViewWidth}"
-        MaxHeight="350" MaxWidth="{StaticResource ResourceKey=EditViewWidth}">
+        Title="Редактор категории" Height="350" Width="{StaticResource ResourceKey=MainEditViewWidth}"
+        MaxHeight="350" MaxWidth="{StaticResource ResourceKey=MainEditViewWidth}">
     <ag:AutoGrid Rows="1*, 1*" Columns="1*">
         <Grid.Resources>
             <Style TargetType="TextBox" BasedOn="{StaticResource OutlinedTextBoxStyle}">
@@ -26,7 +26,7 @@
         <TextBox md:HintAssist.Hint="Название" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"/>
 
         <ag:AutoGrid Rows="1*" Columns="1*, 1*">
-            <Button Style="{StaticResource ResourceKey=ConfirmButtonStyle}" Command="{Binding ConfirmCommand}"/>
+            <Button Style="{StaticResource ResourceKey=ConfirmButtonStyle}" Command="{Binding ConfirmAsyncCommand}"/>
             <Button Style="{StaticResource ResourceKey=CancelButtonStyle}" Command="{Binding CancelCommand}"/>
         </ag:AutoGrid>
     </ag:AutoGrid>

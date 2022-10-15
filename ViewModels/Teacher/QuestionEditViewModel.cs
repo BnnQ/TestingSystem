@@ -1,8 +1,12 @@
 ﻿using HappyStudio.Mvvm.Input.Wpf;
-using MvvmBaseViewModels.Common;
-using NeoSmart.AsyncLock;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
+using MvvmBaseViewModels.Common.Validatable;
+using MvvmBaseViewModelsLibrary.Enumerables;
+using ReactiveValidation;
+using ReactiveValidation.Extensions;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using TestingSystem.Models;
 using TestingSystem.Models.Contexts;
@@ -10,9 +14,9 @@ using TestingSystem.Views.Teacher;
 
 namespace TestingSystem.ViewModels.Teacher
 {
-    public class QuestionEditViewModel : ViewModelBase
+    public class QuestionEditViewModel : ValidatableViewModelBase
     {
-        private readonly Question question;
+        private Question question;
 
 
         private string content = null!;
@@ -109,39 +113,190 @@ namespace TestingSystem.ViewModels.Teacher
             }
         }
 
-        private readonly TestingSystemTeacherContext databaseContext;
-        private readonly AsyncLock databaseContextLocker;
+        private bool doesQuestionExistInDatabase;
 
-
-        public QuestionEditViewModel(TestingSystemTeacherContext databaseContext, AsyncLock databaseContextLocker, Question question)
+        public QuestionEditViewModel(Question question)
         {
-            this.databaseContext = databaseContext;
-            this.databaseContextLocker = databaseContextLocker;
-            this.question = question;
+            TestingSystemTeacherContext context = new();
+            Question? questionEntity = context.Find<Question>(question.Id);
+            if (questionEntity is not null)
+            {
+                doesQuestionExistInDatabase = true;
 
-            Content = question.Content;
-            PointsCost = question.PointsCost;
-            AnswerOptions = new ObservableCollection<AnswerOption>(question.AnswerOptions);
-            NumberOfAnswerOptions = question.NumberOfAnswerOptions;
-            NumberOfSecondsToAnswer = question.NumberOfSecondsToAnswer;
-            SerialNumberInTest = question.SerialNumberInTest;
+                EntityEntry<Question> questionEntry = context.Entry(questionEntity);
+                questionEntry.Collection(question => question.AnswerOptions).Load();
+
+                this.question = questionEntity;
+                context.Dispose();
+            }
+            else
+            {
+                context.Dispose();
+
+                doesQuestionExistInDatabase = false;
+                this.question = question;
+            }
+
+            Content = this.question!.Content;
+            PointsCost = this.question.PointsCost;
+            AnswerOptions = new ObservableCollection<AnswerOption>(this.question.AnswerOptions);
+            NumberOfAnswerOptions = this.question.NumberOfAnswerOptions;
+            NumberOfSecondsToAnswer = this.question.NumberOfSecondsToAnswer;
+            SerialNumberInTest = this.question.SerialNumberInTest;
+
+            SetupValidator();
         }
 
+        #region Validation setup
+        private ValidationState contentValidationState = ValidationState.Disabled;
+        private ValidationState pointsCostValidationState = ValidationState.Disabled;
+        private ValidationState numberOfAnswerOptionsValidationState = ValidationState.Disabled;
+        private ValidationState serialNumberInTestValidationState = ValidationState.Disabled;
+        protected override void SetupValidator()
+        {
+            ValidationBuilder<QuestionEditViewModel> builder = new();
+            builder.PropertyCascadeMode = CascadeMode.Stop;
+
+            builder.RuleFor(viewModel => viewModel.Content)
+                .Must(content => !string.IsNullOrWhiteSpace(content))
+                .When(viewModel => viewModel.contentValidationState == ValidationState.Enabled)
+                .WithMessage("Вопрос не может быть пустым");
+
+            builder.RuleFor(viewModel => viewModel.PointsCost)
+                .Must(pointsCost => pointsCost > 0)
+                .When(viewModel => viewModel.pointsCostValidationState == ValidationState.Enabled)
+                .WithMessage("Стоимость вопроса не моежт быть меньше или равна 0");
+
+            builder.RuleFor(viewModel => viewModel.NumberOfAnswerOptions)
+                .Must(numberOfAnswerOptions => numberOfAnswerOptions > 0)
+                .When(viewModel => viewModel.numberOfAnswerOptionsValidationState == ValidationState.Enabled)
+                .WithMessage("Должен быть как минимум один вариант ответа");
+
+            builder.RuleFor(viewModel => viewModel.SerialNumberInTest)
+                .Must(serialNumberInTest => serialNumberInTest > 0)
+                .When(viewModel => viewModel.serialNumberInTestValidationState == ValidationState.Enabled)
+                .WithMessage("Порядковый номер вопроса в тесте не может быть меньше 1");
+
+            Validator = builder.Build(this);
+        }
+
+        private async Task<bool> IsContentValidAsync()
+        {
+            contentValidationState = ValidationState.Enabled;
+            Validator!.Revalidate();
+            await Validator.WaitValidatingCompletedAsync();
+            contentValidationState = ValidationState.Disabled;
+
+            return Validator.IsValid;
+        }
+
+        private async Task<bool> IsPointsCostValidAsync()
+        {
+            pointsCostValidationState = ValidationState.Enabled;
+            Validator!.Revalidate();
+            await Validator.WaitValidatingCompletedAsync();
+            pointsCostValidationState = ValidationState.Disabled;
+
+            return Validator.IsValid;
+        }
+
+        private async Task<bool> IsNumberOfAnswerOptionsValidAsync()
+        {
+            numberOfAnswerOptionsValidationState = ValidationState.Enabled;
+            Validator!.Revalidate();
+            await Validator.WaitValidatingCompletedAsync();
+            numberOfAnswerOptionsValidationState = ValidationState.Disabled;
+
+            return Validator.IsValid;
+        }
+
+        private async Task<bool> IsSerialNumberInTestValidAsync()
+        {
+            serialNumberInTestValidationState = ValidationState.Enabled;
+            Validator!.Revalidate();
+            await Validator.WaitValidatingCompletedAsync();
+            serialNumberInTestValidationState = ValidationState.Disabled;
+
+            return Validator.IsValid;
+        }
+        #endregion
 
         #region Commands
-        private RelayCommand confirmCommand = null!;
-        public RelayCommand ConfirmCommand 
+        private RelayCommand addAnswerOptionCommand = null!;
+        public RelayCommand AddAnswerOptionCommand
         {
-            get => confirmCommand ??= new(() =>
+            get => addAnswerOptionCommand ??= new(() =>
             {
-                question.Content = Content;
-                question.PointsCost = PointsCost;
-                question.AnswerOptions = AnswerOptions;
-                question.NumberOfSecondsToAnswer = NumberOfSecondsToAnswer;
-                question.SerialNumberInTest = SerialNumberInTest;
+                AnswerOption answerOptionToBeAdded = new(question, ++answerOptionsSeed);
+                
+                bool? editViewDialogResult = default;
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    AnswerOptionEditView editView = new(answerOptionToBeAdded);
+                    editViewDialogResult = editView.ShowDialog();
+                });
+
+                if (editViewDialogResult == true)
+                    AnswerOptions.Add(answerOptionToBeAdded);
+            });
+        }
+
+        private RelayCommand<AnswerOption> editAnswerOptionCommand = null!;
+        public RelayCommand<AnswerOption> EditAnswerOptionCommand
+        {
+            get => editAnswerOptionCommand ??= new((answerOption) =>
+            {
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    AnswerOptionEditView editView = new(answerOption!);
+                    editView.ShowDialog();
+                });
+            }, (answerOption) => answerOption is not null);
+        }
+
+        private RelayCommand<AnswerOption> removeAnswerOptionCommand = null!;
+        public RelayCommand<AnswerOption> RemoveAnswerOptionCommand
+        {
+            get => removeAnswerOptionCommand ??= new(
+                (answerOption) => AnswerOptions.Remove(answerOption!),
+                (answerOption) => answerOption is not null);
+        }
+
+        private void SaveQuestionChangesLocally()
+        {
+            question.Content = Content;
+            question.PointsCost = PointsCost;
+            question.AnswerOptions = AnswerOptions;
+            question.NumberOfSecondsToAnswer = NumberOfSecondsToAnswer;
+            question.SerialNumberInTest = SerialNumberInTest;
+        }
+        private AsyncRelayCommand confirmAsyncCommand = null!;
+        public AsyncRelayCommand ConfirmAsyncCommand
+        {
+            get => confirmAsyncCommand ??= new(async () =>
+            {
+                if (!await IsContentValidAsync() || !await IsPointsCostValidAsync() ||
+                    !await IsNumberOfAnswerOptionsValidAsync() || !await IsSerialNumberInTestValidAsync())
+                {
+                    return;
+                }
+
+                if (doesQuestionExistInDatabase)
+                {
+                    using (TestingSystemTeacherContext context = new())
+                    {
+                        question = (await context.FindAsync<Question>(question.Id))!;
+                        SaveQuestionChangesLocally();
+                        await context.SaveChangesAsync();
+                    }
+                }
+                else
+                {
+                    SaveQuestionChangesLocally();
+                }
 
                 Close(true);
-            }, () => !string.IsNullOrWhiteSpace(Content) && PointsCost > 0 && NumberOfAnswerOptions > 0 && SerialNumberInTest > 0);
+            });
         }
 
         private RelayCommand cancelCommand = null!;
@@ -149,35 +304,6 @@ namespace TestingSystem.ViewModels.Teacher
         {
             get => cancelCommand ??= new(() => Close(false));
         }
-
-        private AsyncRelayCommand<AnswerOption> editAnswerOptionAsyncCommand = null!;
-        public AsyncRelayCommand<AnswerOption> EditAnswerOptionAsyncCommand
-        {
-            get => editAnswerOptionAsyncCommand ??= new(async (answerOption) =>
-            {
-                AnswerOption? answerOptionFromDatabase = default;
-                using (await databaseContextLocker.LockAsync())
-                    answerOptionFromDatabase = await databaseContext.FindAsync<AnswerOption>(answerOption!.Id);
-
-                if (answerOptionFromDatabase is not null)
-                {
-                    bool? editViewDialogResult = default;
-                    Application.Current.Dispatcher.Invoke(() =>
-                    {
-                        AnswerOptionEditView editView = new(answerOptionFromDatabase);
-                        editViewDialogResult = editView.ShowDialog();
-                    });
-
-                    if (editViewDialogResult == true)
-                    {
-                        using (await databaseContextLocker.LockAsync())
-                            await databaseContext.SaveChangesAsync();
-                    }
-                }
-
-            }, (answerOption) => answerOption is not null);
-        }
-        
         #endregion
 
     }

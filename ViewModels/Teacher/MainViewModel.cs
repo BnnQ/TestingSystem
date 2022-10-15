@@ -1,10 +1,7 @@
 ﻿using BackgroundWorkerLibrary;
 using HappyStudio.Mvvm.Input.Wpf;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
 using MvvmBaseViewModels.Common;
-using NeoSmart.AsyncLock;
-using System;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using System.Windows;
@@ -18,10 +15,8 @@ namespace TestingSystem.ViewModels.Teacher
 {
     public class MainViewModel : ViewModelBase
     {
-        private readonly Models.Teacher teacher;
+        private readonly Models.Teacher teacher = null!;
 
-        private readonly AsyncLock databaseContextLocker = new();
-        private readonly TestingSystemTeacherContext databaseContext;
         private Category[] categories = null!;
         public Category[] Categories
         {
@@ -32,6 +27,19 @@ namespace TestingSystem.ViewModels.Teacher
                 {
                     categories = value;
                     OnPropertyChanged(nameof(Categories));
+                }
+            }
+        }
+        private Models.Teacher[] teachers = null!;
+        public Models.Teacher[] Teachers
+        {
+            get => teachers;
+            set
+            {
+                if (teachers != value)
+                {
+                    teachers = value;
+                    OnPropertyChanged(nameof(Teachers));
                 }
             }
         }
@@ -55,8 +63,14 @@ namespace TestingSystem.ViewModels.Teacher
 
         public MainViewModel(Models.Teacher teacher)
         {
-            this.teacher = teacher;
-            databaseContext = new TestingSystemTeacherContext();
+            using (TestingSystemTeacherContext context = new())
+            {
+                Models.Teacher? teacherEntity = context.Find<Models.Teacher>(teacher.Id);
+                if (teacherEntity is null)
+                    OccurCriticalErrorMessage("Teacher entity missing from the database (most likely, a problem on the DB side)");
+                else
+                    this.teacher = teacherEntity;
+            }
 
             SetupBackgroundWorkers();
             UpdateCategoriesFromDatabaseAsyncCommand.Execute(null);
@@ -73,19 +87,18 @@ namespace TestingSystem.ViewModels.Teacher
             {
                 Mouse.OverrideCursor = Cursors.Arrow;
             };
-
         }
 
         private async Task UpdateCategoriesFromDatabaseAsync()
         {
-            using (await databaseContextLocker.LockAsync())
+            using (TestingSystemTeacherContext context = new())
             {
-                await databaseContext.Categories.LoadAsync();
-                await databaseContext.Categories
+                await context.Categories
                     .Include(category => category.Tests)
+                        .ThenInclude(test => test.Questions)
                     .LoadAsync();
 
-                Categories = await databaseContext.Categories.ToArrayAsync();
+                Categories = await context.Categories.Local.ToArrayAsync();
             }
         }
 
@@ -121,11 +134,11 @@ namespace TestingSystem.ViewModels.Teacher
 
                 if (editViewDialogResult == true)
                 {
-                    using (await databaseContextLocker.LockAsync())
+                    using (TestingSystemTeacherContext context = new())
                     {
-                        await databaseContext.Categories.AddAsync(categoryToBeAdded);
-                        await databaseContext.SaveChangesAsync();
-                        UpdateCategoriesFromDatabaseAsyncCommand.Execute(null);
+                        await context.Categories.AddAsync(categoryToBeAdded);
+                        await context.SaveChangesAsync();
+                        await UpdateCategoriesFromDatabaseAsyncCommand.ExecuteAsync(null);
                     }
                 }
 
@@ -141,24 +154,18 @@ namespace TestingSystem.ViewModels.Teacher
                 bool? editViewDialogResult = default;
                 Application.Current.Dispatcher.Invoke(() =>
                 {
-                    TestEditView testEditView = new(databaseContext, databaseContextLocker, Categories, testToBeAdded);
+                    TestEditView testEditView = new(testToBeAdded);
                     editViewDialogResult = testEditView.ShowDialog();
                 });
 
                 if (editViewDialogResult == true)
                 {
-                    using (await databaseContextLocker.LockAsync())
+                    using (TestingSystemTeacherContext context = new())
                     {
-                        Category? categoryToWhichTestBeAdded =
-                        await databaseContext.FindAsync<Category>(testToBeAdded.CategoryId);
-
-                        if (categoryToWhichTestBeAdded is not null)
-                        {
-                            categoryToWhichTestBeAdded.Tests.Add(testToBeAdded);
-                            await databaseContext.SaveChangesAsync();
-                            await UpdateCategoriesFromDatabaseAsyncCommand.ExecuteAsync(null);
-                        }
-                        
+                        Category categoryEntity = context.Find<Category>(testToBeAdded.Category.Id)!;
+                        categoryEntity.Tests.Add(testToBeAdded);
+                        await context.SaveChangesAsync();
+                        await UpdateCategoriesFromDatabaseAsyncCommand.ExecuteAsync(null);
                     }
                 }
             });
@@ -169,30 +176,14 @@ namespace TestingSystem.ViewModels.Teacher
         {
             get => manageCategoryAsyncCommand ??= new(async (category) =>
             {
-                Category? categoryEntityFromDatabase = default;
-                using (await databaseContextLocker.LockAsync())
-                {
-                    categoryEntityFromDatabase = await databaseContext.FindAsync<Category>(category!.Id);
-                    if (categoryEntityFromDatabase is not null)
-                    {
-                        await databaseContext.Entry(categoryEntityFromDatabase)
-                        .Collection(category => category.Tests)
-                        .LoadAsync();
-                    }
-                }
-
-                if (categoryEntityFromDatabase is not null)
-                {
                     Application.Current.Dispatcher.Invoke(() =>
                     {
-                        CategoryInfoView categoryInfoView = new(databaseContext, databaseContextLocker, categoryEntityFromDatabase, teacher);
+                        CategoryInfoView categoryInfoView = new(category!, teacher);
                         categoryInfoView.ShowDialog();
                     });
-
-                    using (await databaseContextLocker.LockAsync())
-                        Categories = await databaseContext.Categories.ToArrayAsync();
-                }
-            }, (category) => category is not null);
+                
+                await UpdateCategoriesFromDatabaseAsyncCommand.ExecuteAsync(null);
+            }, (category) => category is not null && !categoriesUpdaterFromDatabaseBackgroundWorker.IsBusy);
         }
 
         private AsyncRelayCommand<Test> manageTestAsyncCommand = null!;
@@ -200,70 +191,15 @@ namespace TestingSystem.ViewModels.Teacher
         {
             get => manageTestAsyncCommand ??= new(async (test) =>
             {
-                Test? testEntityFromDatabase = default;
-                using (await databaseContextLocker.LockAsync())
-                {
-                    testEntityFromDatabase = await databaseContext.FindAsync<Test>(test!.Id);
-                    if (testEntityFromDatabase is not null)
-                    {
-                        EntityEntry<Test> testEntry = databaseContext.Entry(testEntityFromDatabase);
-                        
-                        await testEntry
-                        .Collection(test => test.Questions)
-                        .LoadAsync();
-
-                        await testEntry
-                        .Collection(test => test.OwnerTeachers)
-                        .LoadAsync();
-                    }
-                }
-                
-                if (testEntityFromDatabase is not null)
-                {
                     Application.Current.Dispatcher.Invoke(() =>
                     {
-                        TestInfoView testInfoView = new(databaseContext, databaseContextLocker, testEntityFromDatabase, teacher);
+                        TestInfoView testInfoView = new(test!, teacher);
                         testInfoView.ShowDialog();
                     });
 
-
-                    using (await databaseContextLocker.LockAsync())
-                        Categories = await databaseContext.Categories.ToArrayAsync();
-                }
-
-            }, (test) => test is not null);
+                await UpdateCategoriesFromDatabaseAsyncCommand.ExecuteAsync(null);
+            }, (test) => test is not null && !categoriesUpdaterFromDatabaseBackgroundWorker.IsBusy);
         }
-        #endregion
-
-        #region Closing and disposing
-        public override void Close(bool? dialogResult = null)
-        {
-            Dispose();
-            base.Close(dialogResult);
-        }
-
-        public override void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        private bool isDisposed = false;
-        protected virtual void Dispose(bool needDisposing)
-        {
-            if (isDisposed)
-                return;
-
-            if (needDisposing)
-            {
-                using (databaseContextLocker.Lock())
-                    databaseContext?.Dispose();
-            }
-
-            isDisposed = true;
-        }
-
-        ~MainViewModel() => Dispose(false);
         #endregion
     }
 }

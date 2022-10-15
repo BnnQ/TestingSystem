@@ -5,7 +5,6 @@ using Microsoft.EntityFrameworkCore;
 using MvvmBaseViewModels.Navigation;
 using MvvmBaseViewModels.Navigation.Validatable;
 using MvvmBaseViewModelsLibrary.Enumerables;
-using NeoSmart.AsyncLock;
 using ReactiveValidation;
 using ReactiveValidation.Extensions;
 using Scrypt;
@@ -17,6 +16,7 @@ using System.Windows;
 using System.Windows.Input;
 using TestingSystem.Constants.Authorization;
 using TestingSystem.Models.Contexts;
+using Z.Linq;
 
 namespace TestingSystem.ViewModels.Authorization
 {
@@ -84,29 +84,58 @@ namespace TestingSystem.ViewModels.Authorization
         private IList<Models.Teacher> teachers = null!;
         private IList<Models.Student> students = null!;
 
-        private const string UsernameRegexPattern = @"^[a-z0-9]([._-](?![._-])|[a-z0-9]){3,18}[a-z0-9]$";
-        private const string PasswordRegexPattern = @"^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,20}$";
-        private readonly AsyncLock databaseContextLocker;
-        private readonly TestingSystemAuthorizationContext databaseContext;
-
-        private ValidationState usernameValidationState = ValidationState.Disabled;
-        private ValidationState passwordValidationState = ValidationState.Disabled;
-        private ValidationState fullNameValidationState = ValidationState.Disabled;
-
         //Performs registration of a user in the background,
         //including verification that the data matches the requirements and such a user is not yet registered
         public BackgroundWorker RegistrationBackgroundWorker { get; init; } = new();
+        //Performs initial loading of data from the database in the background when the application starts
+        private readonly BackgroundWorker initialDatabaseLoadBackgroundWorker = new();
 
-        public RegistrationViewModel(INavigationManager navigationManager, TestingSystemAuthorizationContext databaseContext,
-            AsyncLock databaseContextLocker) : base(navigationManager)
+        public RegistrationViewModel(INavigationManager navigationManager) : base(navigationManager)
         {
-            this.databaseContext = databaseContext;
-            this.databaseContextLocker = databaseContextLocker;
-
             SetupBackgroundWorkers();
             SetupValidator();
+
+            _ = initialDatabaseLoadBackgroundWorker.RunWorkerAsync();
         }
 
+        private void SetupBackgroundWorkers()
+        {
+            RegistrationBackgroundWorker.DoWork = async () =>
+            {
+                Application.Current.Dispatcher.Invoke(() => Mouse.OverrideCursor = Cursors.Wait);
+                await RegisterAsync();
+            };
+            RegistrationBackgroundWorker.OnWorkCompleted = () =>
+            {
+                Mouse.OverrideCursor = Cursors.Arrow;
+            };
+
+            initialDatabaseLoadBackgroundWorker.DoWork = async () =>
+            {
+                await UpdateStudentsFromDatabaseAsync();
+            };
+        }
+
+
+        #region Updating data from database
+        private async Task UpdateTeachersFromDatabaseAsync()
+        {
+            using (TestingSystemAuthorizationContext context = new())
+            {
+                await context.Teachers.LoadAsync();
+                teachers = await context.Teachers.Local.ToListAsync();
+            }
+        }
+
+        private async Task UpdateStudentsFromDatabaseAsync()
+        {
+            using (TestingSystemAuthorizationContext context = new())
+            {
+                await context.Students.LoadAsync();
+                students = await context.Students.Local.ToListAsync();
+            }
+        }
+        #endregion
 
         private async Task RegisterAsync()
         {
@@ -119,10 +148,10 @@ namespace TestingSystem.ViewModels.Authorization
             if (IsStudent)
             {
                 Models.Student registeredStudent = new(hashedUsername, hashedPassword, FullName);
-                using (await databaseContextLocker.LockAsync())
+                using (TestingSystemAuthorizationContext context = new())
                 {
-                    await databaseContext.Students.AddAsync(registeredStudent);
-                    await databaseContext.SaveChangesAsync();
+                    await context.Students.AddAsync(registeredStudent);
+                    await context.SaveChangesAsync();
                 }
 
                 Application.Current.Dispatcher.Invoke(() =>
@@ -137,10 +166,10 @@ namespace TestingSystem.ViewModels.Authorization
             else
             {
                 Models.Teacher registeredTeacher = new(hashedUsername, hashedPassword, FullName);
-                using (await databaseContextLocker.LockAsync())
+                using (TestingSystemAuthorizationContext context = new())
                 {
-                    await databaseContext.Teachers.AddAsync(registeredTeacher);
-                    await databaseContext.SaveChangesAsync();
+                    await context.Teachers.AddAsync(registeredTeacher);
+                    await context.SaveChangesAsync();
                 }
 
                 Application.Current.Dispatcher.Invoke(() =>
@@ -176,20 +205,14 @@ namespace TestingSystem.ViewModels.Authorization
         }
         #endregion
 
-        private void SetupBackgroundWorkers()
-        {
-            RegistrationBackgroundWorker.DoWork = async () =>
-            {
-                Application.Current.Dispatcher.Invoke(() => Mouse.OverrideCursor = Cursors.Wait);
-                await RegisterAsync();
-            };
-            RegistrationBackgroundWorker.OnWorkCompleted = () =>
-            {
-                Mouse.OverrideCursor = Cursors.Arrow;
-            };
-        }
-
         #region Validation setup
+        private const string UsernameRegexPattern = @"^[a-z0-9]([._-](?![._-])|[a-z0-9]){3,18}[a-z0-9]$";
+        private const string PasswordRegexPattern = @"^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,20}$";
+
+        private ValidationState usernameValidationState = ValidationState.Disabled;
+        private ValidationState passwordValidationState = ValidationState.Disabled;
+        private ValidationState fullNameValidationState = ValidationState.Disabled;
+
         protected override void SetupValidator()
         {
             ValidationBuilder<RegistrationViewModel> builder = new();
@@ -275,21 +298,13 @@ namespace TestingSystem.ViewModels.Authorization
 
         private async Task<bool> IsUsernameExistsAsync(string username)
         {
-            using (await databaseContextLocker.LockAsync())
-            {
-                await databaseContext.Teachers.LoadAsync();
-                teachers = await databaseContext.Teachers.ToListAsync();
-                if (teachers.AsParallel().Any(teacher => encoder.Compare(username, teacher.EncryptedName)))
-                    return true;
-            }
+            await UpdateTeachersFromDatabaseAsync();
+            if (teachers.AsParallel().Any(teacher => encoder.Compare(username, teacher.EncryptedName)))
+                return true;
 
-            using (await databaseContextLocker.LockAsync())
-            {
-                await databaseContext.Students.LoadAsync();
-                students = await databaseContext.Students.ToListAsync();
-                if (students.AsParallel().Any(student => encoder.Compare(username, student.EncryptedName)))
-                    return true;
-            }
+            await UpdateStudentsFromDatabaseAsync();
+            if (students.AsParallel().Any(student => encoder.Compare(username, student.EncryptedName)))
+                return true;
 
             return false;
         }

@@ -1,22 +1,21 @@
-﻿using CommunityToolkit.Mvvm.Input;
-using Microsoft.EntityFrameworkCore;
+﻿using BackgroundWorkerLibrary;
+using CommunityToolkit.Mvvm.Input;
 using MvvmBaseViewModels.Common;
-using NeoSmart.AsyncLock;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Input;
 using TestingSystem.Models;
 using TestingSystem.Models.Contexts;
 using TestingSystem.Views.Teacher;
+using Z.Linq;
 
 namespace TestingSystem.ViewModels.Teacher
 {
     public class CategoryInfoViewModel : ViewModelBase
     {
-        private readonly TestingSystemTeacherContext databaseContext;
-        private readonly AsyncLock databaseContextLocker;
-
-        private Category category = null!;
-        public Category Category
+        private Category? category = null!;
+        public Category? Category
         {
             get => category;
             set
@@ -24,65 +23,132 @@ namespace TestingSystem.ViewModels.Teacher
                 if (category != value)
                 {
                     category = value;
+                    NumberOfTests = category?.Tests.Count ?? 0;
                     OnPropertyChanged(nameof(Category));
+                }
+            }
+        }
+
+        private int numberOfTests;
+        public int NumberOfTests
+        {
+            get => numberOfTests;
+            set
+            {
+                if (numberOfTests != value)
+                {
+                    numberOfTests = value;
                     OnPropertyChanged(nameof(NumberOfTests));
                 }
             }
         }
 
-        public int NumberOfTests => Category.Tests.Count;
-
         private readonly Models.Teacher teacher;
+        private readonly BackgroundWorker categoryUpdaterFromDatabaseBackgroundWorker = new();
 
-
-        public CategoryInfoViewModel(TestingSystemTeacherContext databaseContext, AsyncLock databaseContextLocker, 
-            Category category, Models.Teacher teacher)
+        public CategoryInfoViewModel(Category category, Models.Teacher teacher)
         {
-            this.databaseContext = databaseContext;
-            this.databaseContextLocker = databaseContextLocker;
-            Category = category;
+            using (TestingSystemTeacherContext context = new())
+            {
+                Category? categoryEntity = context.Find<Category>(category.Id);
+                if (categoryEntity is null)
+                    OccurCriticalErrorMessage("Category entity missing from the database (most likely, a problem on the DB side)");
+                else
+                    Category = categoryEntity;
+            }
+
             this.teacher = teacher;
+            SetupBackgroundWorkers();
+
+            _ = UpdateCategoryFromDatabaseAsyncCommand.ExecuteAsync(null);
         }
 
+        private void SetupBackgroundWorkers()
+        {
+            categoryUpdaterFromDatabaseBackgroundWorker.DoWork = async () =>
+            {
+                Application.Current.Dispatcher.Invoke(() => Mouse.OverrideCursor = Cursors.Wait);
+                await UpdateCategoryFromDatabaseAsync();
+            };
+
+            categoryUpdaterFromDatabaseBackgroundWorker.OnWorkCompleted = () =>
+            {
+                Mouse.OverrideCursor = Cursors.Arrow;
+            };
+        }
+        
         #region Commands
+        private async Task UpdateCategoryFromDatabaseAsync()
+        {
+            if (Category is not null)
+            {
+                using (TestingSystemTeacherContext context = new())
+                {
+                    Category = (await context.FindAsync<Category>(Category.Id))!;
+                    
+                    await context.Entry(Category)
+                        .Collection(category => category.Tests)
+                        .LoadAsync();
+
+                    foreach (Test test in Category.Tests)
+                        await context.Entry(test).Collection(test => test.OwnerTeachers).LoadAsync();
+
+                    NumberOfTests = Category.Tests.Count;
+                }
+            }
+        }
+
+        private AsyncRelayCommand updateCategoryFromDatabaseAsyncCommand = null!;
+        public AsyncRelayCommand UpdateCategoryFromDatabaseAsyncCommand
+        {
+            get => updateCategoryFromDatabaseAsyncCommand ??= new(async () =>
+            {
+                if (!categoryUpdaterFromDatabaseBackgroundWorker.IsBusy)
+                    await categoryUpdaterFromDatabaseBackgroundWorker.RunWorkerAsync();
+            });
+        }
+
+        private bool AreTestsEmpty() => Category?.Tests.Count <= 0;
+        private bool DoesTeacherOwnAtLeastOneTest()
+        {
+            if (Category is null)
+            {
+                return false;
+            }
+            else
+            {
+                return Category.Tests
+                    .Any(test => test.OwnerTeachers.Any(teacher => teacher.Id == this.teacher.Id));
+            }
+        }
+        private bool DoesTeacherOwnAllTests()
+        {
+            if (Category is null)
+            {
+                return false;
+            }
+            else
+            {
+                return Category.Tests
+                    .All(test => test.OwnerTeachers.Any(teacher => teacher.Id == this.teacher.Id));
+            }
+        }
+
         private AsyncRelayCommand editCategoryAsyncCommand = null!;
         public AsyncRelayCommand EditCategoryAsyncCommand
         {
             get => editCategoryAsyncCommand ??= new(async () =>
             {
-                Category? categoryInDatabase = default;
-                using (await databaseContextLocker.LockAsync())
+                bool? editViewDialogResult = default;
+                Application.Current.Dispatcher.Invoke(() =>
                 {
-                    await databaseContext.Categories
-                    .Include(category => category.Tests)
-                    .LoadAsync();
+                    CategoryEditView categoryEditView = new(Category!);
+                    editViewDialogResult = categoryEditView.ShowDialog();
+                });
 
-                    categoryInDatabase = await databaseContext.FindAsync<Category>(Category.Id);
-                }
-
-                if (categoryInDatabase is not null)
-                {
-                    bool? editViewDialogResult = default;
-                    Application.Current.Dispatcher.Invoke(() =>
-                    {
-                        CategoryEditView categoryEditView = new(categoryInDatabase);
-                        editViewDialogResult = categoryEditView.ShowDialog();
-                    });
-
-                    if (editViewDialogResult == true)
-                    {
-                        using (await databaseContextLocker.LockAsync())
-                            await databaseContext.SaveChangesAsync();
-                    }
-                }
-
-            }, 
-            () =>
-            {
-                return Category is not null &&
-                       (Category.Tests.Count <= 0 ||
-                       Category.Tests.Any(test => test.OwnerTeachers.Any(teacher => teacher.Id == this.teacher.Id)));
-            });
+                if (editViewDialogResult == true)
+                    await UpdateCategoryFromDatabaseAsyncCommand.ExecuteAsync(null);
+            }, () => Category is not null && (AreTestsEmpty() || DoesTeacherOwnAtLeastOneTest()));
         }
 
         private AsyncRelayCommand removeCategoryAsyncCommand = null!;
@@ -90,24 +156,14 @@ namespace TestingSystem.ViewModels.Teacher
         {
             get => removeCategoryAsyncCommand ??= new(async () =>
             {
-                using (await databaseContextLocker.LockAsync())
+                using (TestingSystemTeacherContext context = new())
                 {
-                    Category? categoryToBeRemoved = await databaseContext.FindAsync<Category>(Category.Id);
-                    if (categoryToBeRemoved is not null)
-                    {
-                        databaseContext.Categories.Remove(categoryToBeRemoved);
-                        await databaseContext.SaveChangesAsync();
+                    context.Categories.Remove(Category!);
+                    await context.SaveChangesAsync();
 
-                        Close();
-                    }
+                    Close();
                 }
-            }, 
-            () =>
-            {
-                return Category is not null &&
-                       (Category.Tests.Count <= 0 ||
-                       Category.Tests.All(test => test.OwnerTeachers.Any(teacher => teacher.Id == this.teacher.Id)));
-            });
+            }, () => Category is not null && (AreTestsEmpty() || DoesTeacherOwnAllTests()));
         }
         #endregion
 
