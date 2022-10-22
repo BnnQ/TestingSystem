@@ -2,11 +2,94 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:TestingSystem.Views.Teacher"
         mc:Ignorable="d"
-        Title="TestInfoView" Height="450" Width="800">
-    <Grid>
-        
-    </Grid>
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:ag="clr-namespace:WpfAutoGrid;assembly=WpfAutoGrid.Core"
+        xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:converters="clr-namespace:TestingSystem.Views.Converters"
+
+        TextElement.Foreground="{DynamicResource MaterialDesignBody}"
+        TextElement.FontWeight="Regular"
+        TextElement.FontSize="{StaticResource MainFontSize}"
+        TextOptions.TextFormattingMode="Ideal"
+        TextOptions.TextRenderingMode="Auto"
+        WindowStartupLocation="CenterScreen"
+        FontFamily="{DynamicResource MaterialDesignFont}"
+        Background="{DynamicResource MaterialDesignPaper}"
+        Title="Просмотр и управление тестом" Height="700" Width="850">
+    <ag:AutoGrid Rows="1*, 1*, 1*, 1*, 1*, 1*, 1*, 4*, 1*" Columns="1*, 1*" ChildMargin="{StaticResource MarginOfEditControl}">
+        <Grid.Resources>
+            <converters:UshortNumberOfSecondsToTimeHoursMinutesStringConverter x:Key="ushortNumberOfSecondsToTimeHoursMinutesStringConverter"/>
+            <converters:UshortNumberOfSecondsToTimeMinutesSecondsStringConverter x:Key="ushortNumberOfSecondsToTimeMinutesSecondsStringConverter"/>
+            <converters:BoolToStateStringConverter x:Key="boolToStateStringConverter"/>
+
+            <Style TargetType="TextBlock" BasedOn="{StaticResource ResourceKey=MainTextBlockStyle}"/>
+            <Style TargetType="DataGrid" BasedOn="{StaticResource OnlyReadDataGridStyle}"/>
+            <Style TargetType="GroupBox" BasedOn="{StaticResource MainGroupBoxStyle}"/>
+            <Style TargetType="ComboBox" BasedOn="{StaticResource MainComboBoxStyle}"/>
+        </Grid.Resources>
+
+        <TextBlock Grid.ColumnSpan="2" FontSize="30" Text="{Binding Test.Name}"/>
+
+        <TextBlock Text="Максимальное количество баллов:"/>
+        <TextBlock Text="{Binding Test.MaximumPoints}"/>
+
+        <TextBlock Text="Время на ответ для каждого вопроса (по умолчанию):"/>
+        <TextBlock Text="{Binding Test.NumberOfSecondsToAnswerEachQuestion,
+                          Converter={StaticResource ushortNumberOfSecondsToTimeMinutesSecondsStringConverter},
+                          TargetNullValue='Неограничено'}"/>
+
+        <TextBlock Text="Время на прохождение теста:"/>
+        <TextBlock Text="{Binding Test.NumberOfSecondsToComplete,
+                          Converter={StaticResource ushortNumberOfSecondsToTimeHoursMinutesStringConverter},
+                          TargetNullValue='Неограничено'}"/>
+
+        <TextBlock Text="Подсчёт баллов при неполном ответе:"/>
+        <TextBlock Text="{Binding Test.IsAccountingForIncompleteAnswersEnabled, Converter={StaticResource boolToStateStringConverter}}"/>
+
+        <TextBlock Text="Владельцы теста:"/>
+        <ComboBox ItemsSource="{Binding Test.OwnerTeachers.AsObservable}" SelectedIndex="{StaticResource DefaultSelectedIndex}">
+            <ComboBox.ItemTemplate>
+                <DataTemplate>
+                    <TextBlock Text="{Binding FullName}"/>
+                </DataTemplate>
+            </ComboBox.ItemTemplate>
+        </ComboBox>
+
+        <TextBlock Text="Количество вопросов:"/>
+        <TextBlock Text="{Binding Test.NumberOfQuestions}"/>
+
+        <GroupBox Grid.ColumnSpan="2" Header="Вопросы" Margin="0">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="7*"/>
+                    <RowDefinition Height="3*"/>
+                </Grid.RowDefinitions>
+
+                <DataGrid x:Name="questionsDataGrid" ItemsSource="{Binding Test.Questions.AsObservable}" IsReadOnly="False">
+                    <DataGrid.Columns>
+                        <md:DataGridTextColumn Header="№" Binding="{Binding SerialNumberInTest}" IsReadOnly="True"/>
+                        <md:DataGridTextColumn Header="Стоимость в баллах" Binding="{Binding PointsCost, Converter={StaticResource doubleOneDecimalToStringConverter}}" IsReadOnly="True"/>
+                        <md:DataGridTextColumn Header="Время на ответ" 
+                                               Binding="{Binding NumberOfSecondsToAnswer,
+                                               Converter={StaticResource ushortNumberOfSecondsToTimeMinutesSecondsStringConverter},
+                                               TargetNullValue='Неограничено'}" IsReadOnly="True"/>
+                        <md:DataGridTextColumn Header="Количество вариантов ответа" Binding="{Binding NumberOfAnswerOptions}" IsReadOnly="True"/>
+                        <md:DataGridComboBoxColumn Header="Варианты ответа" ItemsSourceBinding="{Binding AnswerOptions.AsObservable}"
+                                                   IsEditable="False" md:ComboBoxAssist.ShowSelectedItem="True"
+                                                   IsReadOnly="False" DisplayMemberPath="Content"/>
+                        <DataGridTextColumn Header="Содержимое вопроса" Binding="{Binding Content}" Width="SizeToCells" IsReadOnly="True"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Grid>
+        </GroupBox>
+
+        <Button Style="{StaticResource ResourceKey=EditButtonStyle}" Command="{Binding EditTestAsyncCommand}" Margin="50 0">
+            <TextBlock Text="Редактировать тест"/>
+        </Button>
+        <Button Style="{StaticResource ResourceKey=RemoveButtonStyle}" Command="{Binding RemoveTestAsyncCommand}" Margin="50 0">
+            <TextBlock Text="Удалить тест"/>
+        </Button>
+
+    </ag:AutoGrid>
 </Window>
