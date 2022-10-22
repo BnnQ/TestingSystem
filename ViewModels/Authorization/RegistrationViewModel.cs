@@ -4,7 +4,7 @@ using HappyStudio.Mvvm.Input.Wpf;
 using Microsoft.EntityFrameworkCore;
 using MvvmBaseViewModels.Navigation;
 using MvvmBaseViewModels.Navigation.Validatable;
-using MvvmBaseViewModelsLibrary.Enumerables;
+using MvvmBaseViewModels.Enums;
 using ReactiveValidation;
 using ReactiveValidation.Extensions;
 using Scrypt;
@@ -100,20 +100,11 @@ namespace TestingSystem.ViewModels.Authorization
 
         private void SetupBackgroundWorkers()
         {
-            RegistrationBackgroundWorker.DoWork = async () =>
-            {
-                Application.Current.Dispatcher.Invoke(() => Mouse.OverrideCursor = Cursors.Wait);
-                await RegisterAsync();
-            };
-            RegistrationBackgroundWorker.OnWorkCompleted = () =>
-            {
-                Mouse.OverrideCursor = Cursors.Arrow;
-            };
+            RegistrationBackgroundWorker.OnWorkStarting = () => Mouse.OverrideCursor = Cursors.Wait;
+            RegistrationBackgroundWorker.DoWork = async () => await RegisterAsync();
+            RegistrationBackgroundWorker.OnWorkCompleted = () => Mouse.OverrideCursor = Cursors.Arrow;
 
-            initialDatabaseLoadBackgroundWorker.DoWork = async () =>
-            {
-                await UpdateStudentsFromDatabaseAsync();
-            };
+            initialDatabaseLoadBackgroundWorker.DoWork = async () => await UpdateStudentsFromDatabaseAsync();
         }
 
 

@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using TestingSystem.Models;
 using TestingSystem.Models.Contexts;
 using Scrypt;
-using MvvmBaseViewModelsLibrary.Enumerables;
+using MvvmBaseViewModels.Enums;
 using HappyStudio.Mvvm.Input.Wpf;
 using System.Windows;
 using System.Windows.Input;
@@ -118,21 +118,11 @@ namespace TestingSystem.ViewModels.Authorization
 
         private void SetupBackgroundWorkers()
         {
-            AuthenticationBackgroundWorker.DoWork = async () =>
-            {
-                Application.Current.Dispatcher.Invoke(() => Mouse.OverrideCursor = Cursors.Wait);
-                await AuthenticateAsync();
-            };
-            AuthenticationBackgroundWorker.OnWorkCompleted = () =>
-            {
-                Mouse.OverrideCursor = Cursors.Arrow;
-            };
+            AuthenticationBackgroundWorker.OnWorkStarting = () => Mouse.OverrideCursor = Cursors.Wait;
+            AuthenticationBackgroundWorker.DoWork = async () => await AuthenticateAsync();
+            AuthenticationBackgroundWorker.OnWorkCompleted = () => Mouse.OverrideCursor = Cursors.Arrow;
 
-            initialDatabaseLoadBackgroundWorker.DoWork = async () =>
-            {
-                await UpdateDataFromDatabaseAsync();
-            };
-
+            initialDatabaseLoadBackgroundWorker.DoWork = async () => await UpdateDataFromDatabaseAsync();
         }
 
         private async Task AuthenticateAsync()
