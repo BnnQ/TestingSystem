@@ -23,7 +23,11 @@ namespace TestingSystem.Views.Teacher
             viewModel.CriticalErrorMessageOccured += (_) => Close();
 
             DataContext = viewModel;
-            Dispatcher.ShutdownStarted += (_, _) => viewModel?.Close();
+            Dispatcher.ShutdownStarted += (_, _) =>
+            {
+                if (viewModel?.IsClosed == false)
+                    viewModel.Close();
+            };
         }
     }
 }

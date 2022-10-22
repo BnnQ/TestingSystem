@@ -23,7 +23,11 @@ namespace TestingSystem.Views.Teacher
               
 
             DataContext = viewModel;
-            Dispatcher.ShutdownStarted += (_, _) => viewModel.Dispose();
+            Dispatcher.ShutdownStarted += (_, _) =>
+            {
+                if (viewModel?.IsClosed == false)
+                    viewModel.Close();
+            };
         }
     }
 }
