@@ -8,7 +8,11 @@
     <system:Double x:Key="MainFontSize">17</system:Double>
     <system:Double x:Key="ValidationMessageFontSize">11</system:Double>
     <system:Double x:Key="MainEditViewWidth">450</system:Double>
-    <Thickness x:Key="MarginOfEditControl">10</Thickness>
+    <Thickness x:Key="MarginOfEditControl">5 10</Thickness>
+    <system:Int32 x:Key="DefaultSelectedIndex">0</system:Int32>
+
+    <system:String x:Key="ConfirmButtonText">Подтвердить</system:String>
+    <system:String x:Key="CancelButtonText">Отмена</system:String>
 
     <Style x:Key="MainTextBlockStyle" TargetType="TextBlock" BasedOn="{StaticResource MaterialDesignTextBlock}">
         <Setter Property="VerticalAlignment" Value="Center"/>
@@ -31,7 +35,7 @@
     <Style x:Key="OutlinedTextBoxStyle" TargetType="TextBox" BasedOn="{StaticResource MaterialDesignOutlinedTextBox}">
         <Setter Property="VerticalAlignment" Value="Center"/>
         <Setter Property="FontSize" Value="{StaticResource MainFontSize}"/>
-        <Setter Property="Margin" Value="5"/>
+        <Setter Property="Margin" Value="10"/>
         <Setter Property="BorderThickness" Value="2"/>
         <Setter Property="BorderBrush" Value="{DynamicResource MaterialDesignDivider}"/>
         <Setter Property="md:ValidationAssist.OnlyShowOnFocus" Value="False"/>
@@ -44,11 +48,18 @@
         <Setter Property="MinWidth" Value="50"/>
     </Style>
 
-    <Style x:Key="ShortTimeTextBoxStyle" TargetType="TextBox" BasedOn="{StaticResource OutlinedTextBoxStyle}">
+    <Style x:Key="TimeHoursMinutesTextBoxStyle" TargetType="TextBox" BasedOn="{StaticResource OutlinedTextBoxStyle}">
         <Setter Property="HorizontalAlignment" Value="Left"/>
         <Setter Property="Margin" Value="10 5"/>
         <Setter Property="MinWidth" Value="80"/>
-        <Setter Property="md:HintAssist.Hint" Value="00:00"/>
+        <Setter Property="md:HintAssist.Hint" Value="(чч:мм)"/>
+        <Setter Property="md:HintAssist.IsFloating" Value="False"/>
+    </Style>
+    <Style x:Key="TimeMinutesSecondsTextBoxStyle" TargetType="TextBox" BasedOn="{StaticResource OutlinedTextBoxStyle}">
+        <Setter Property="HorizontalAlignment" Value="Left"/>
+        <Setter Property="Margin" Value="10 5"/>
+        <Setter Property="MinWidth" Value="80"/>
+        <Setter Property="md:HintAssist.Hint" Value="(мм:сс)"/>
         <Setter Property="md:HintAssist.IsFloating" Value="False"/>
     </Style>
 
@@ -143,28 +154,18 @@
             </Setter.Value>
         </Setter>
     </Style>
-    
+
     <Style x:Key="ConfirmButtonStyle" TargetType="Button" BasedOn="{StaticResource RectangularButtonStyle}">
         <Setter Property="VerticalAlignment" Value="Bottom"/>
-        <Setter Property="Margin" Value="10 35"/>
+        <Setter Property="Margin" Value="10 10"/>
         <Setter Property="Background" Value="Green"/>
         <Setter Property="BorderBrush" Value="LightSeaGreen"/>
-        <Setter Property="Content">
-            <Setter.Value>
-                <TextBlock Text="Подтвердить" Style="{StaticResource MainTextBlockStyle}"/>
-            </Setter.Value>
-        </Setter>
     </Style>
     <Style x:Key="CancelButtonStyle" TargetType="Button" BasedOn="{StaticResource RectangularButtonStyle}">
         <Setter Property="VerticalAlignment" Value="Bottom"/>
-        <Setter Property="Margin" Value="10 35"/>
+        <Setter Property="Margin" Value="10 10"/>
         <Setter Property="Background" Value="DarkRed"/>
         <Setter Property="BorderBrush" Value="IndianRed"/>
-        <Setter Property="Content">
-            <Setter.Value>
-                <TextBlock Text="Отмена" Style="{StaticResource MainTextBlockStyle}"/>
-            </Setter.Value>
-        </Setter>
     </Style>
     <Style x:Key="AddButtonStyle" TargetType="Button" BasedOn="{StaticResource MaterialDesignRaisedAccentButton}">
         <Setter Property="VerticalAlignment" Value="Center"/>
@@ -244,8 +245,8 @@
         <Setter Property="md:ScrollViewerAssist.IsAutoHideEnabled" Value="True"/>
     </Style>
 
-    <Style x:Key="MainAutoCompleteComboBoxStyle" TargetType="accb:AutoCompleteComboBox" BasedOn="{StaticResource MaterialDesignOutlinedComboBox}">
-        <Setter Property="Margin" Value="5"/>
+    <Style x:Key="MainComboBoxStyle" TargetType="ComboBox" BasedOn="{StaticResource MaterialDesignOutlinedComboBox}">
+        <Setter Property="Margin" Value="10"/>
         <Setter Property="Padding" Value="5"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
         <Setter Property="md:ValidationAssist.OnlyShowOnFocus" Value="False"/>
@@ -258,4 +259,12 @@
             </Setter.Value>
         </Setter>
     </Style>
+
+    <Style x:Key="MainCheckBoxStyle" TargetType="CheckBox" BasedOn="{StaticResource MaterialDesignCheckBox}">
+        <Setter Property="Margin" Value="10"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="IsThreeState" Value="False"/>
+    </Style>
+
+    <Style x:Key="MainAutoCompleteComboBoxStyle" TargetType="accb:AutoCompleteComboBox" BasedOn="{StaticResource MainComboBoxStyle}"/>
 </ResourceDictionary>
