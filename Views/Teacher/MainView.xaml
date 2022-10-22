@@ -26,54 +26,56 @@
             <Style TargetType="ScrollViewer" BasedOn="{StaticResource ResourceKey=MainScrollViewerStyle}"/>
         </Grid.Resources>
 
-        <ListView ItemsSource="{Binding Categories}" 
+        <ScrollViewer>
+            <ListView ItemsSource="{Binding Categories}" 
                   ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto"
-                  ap:ScrollViewerProperties.MouseWheelHandlingMode="Normal">
-            <ListView.ItemTemplate>
-                <DataTemplate>
-                    <StackPanel Orientation="Vertical">
-                        <Button Style="{StaticResource ResourceKey=FlatButtonWithoutHighlightStyle}" HorizontalAlignment="Left" VerticalAlignment="Center"
+                  ap:ScrollViewerProperties.MouseWheelHandlingMode="OnlyScrollable">
+                <ListView.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Vertical">
+                            <Button Style="{StaticResource ResourceKey=FlatButtonWithoutHighlightStyle}" HorizontalAlignment="Left" VerticalAlignment="Center"
                                 Command="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.ManageCategoryAsyncCommand}"
                                 CommandParameter="{Binding}">
-                            <TextBlock Text="{Binding Name}" Style="{StaticResource ReferenceTextBlockStyle}"
+                                <TextBlock Text="{Binding Name}" Style="{StaticResource ReferenceTextBlockStyle}"
                                        FontSize="23" FontWeight="Medium" TextAlignment="Left" Foreground="Black" Padding="5"
                                        MouseEnter="OnReferenceElementMouseEnter" MouseLeave="OnReferenceElementMouseLeave"/>
-                        </Button>
-                        <ListView ItemsSource="{Binding Tests}"
-                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                            </Button>
+                            <ListView ItemsSource="{Binding Tests}"
+                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto"
                                   ap:ScrollViewerProperties.MouseWheelHandlingMode="OnlyScrollable">
-                            <ListView.ItemTemplate>
-                                <DataTemplate>
-                                    <md:Card Width="300">
-                                        <ag:AutoGrid Rows="1*, 1*" Columns="1*">
-                                            <TextBlock Text="{Binding Name}" FontSize="20" Margin="5"/>
+                                <ListView.ItemTemplate>
+                                    <DataTemplate>
+                                        <md:Card Width="300">
+                                            <ag:AutoGrid Rows="1*, 1*" Columns="1*">
+                                                <TextBlock Text="{Binding Name}" FontSize="20" Margin="5"/>
 
-                                            <Button Style="{StaticResource ResourceKey=FlatButtonWithoutHighlightStyle}" 
+                                                <Button Style="{StaticResource ResourceKey=FlatButtonWithoutHighlightStyle}" 
                                                     Command="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.ManageTestAsyncCommand}"
                                                     CommandParameter="{Binding}" Margin="5">
-                                                <TextBlock Text="Управление" Style="{StaticResource ResourceKey=ReferenceTextBlockStyle}"
+                                                    <TextBlock Text="Управление" Style="{StaticResource ResourceKey=ReferenceTextBlockStyle}"
                                                            MouseEnter="OnReferenceElementMouseEnter" MouseLeave="OnReferenceElementMouseLeave"/>
-                                            </Button>
-                                        </ag:AutoGrid>
-                                    </md:Card>
-                                </DataTemplate>
-                            </ListView.ItemTemplate>
-                            <ListView.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <vwp:VirtualizingWrapPanel StretchItems="True" SpacingEnabled="False" Orientation="Vertical" IsItemsHost="True"/>
-                                </ItemsPanelTemplate>
-                            </ListView.ItemsPanel>
-                        </ListView>
-                    </StackPanel>
-                </DataTemplate>
-            </ListView.ItemTemplate>
-            <ListView.ItemsPanel>
-                <ItemsPanelTemplate>
-                    <VirtualizingStackPanel Orientation="Vertical" IsItemsHost="True"/>
-                </ItemsPanelTemplate>
-            </ListView.ItemsPanel>
-        </ListView>
-        
+                                                </Button>
+                                            </ag:AutoGrid>
+                                        </md:Card>
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                                <ListView.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <vwp:VirtualizingWrapPanel StretchItems="True" SpacingEnabled="False" Orientation="Vertical" IsItemsHost="True"/>
+                                    </ItemsPanelTemplate>
+                                </ListView.ItemsPanel>
+                            </ListView>
+                        </StackPanel>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+                <ListView.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <VirtualizingStackPanel Orientation="Vertical" IsItemsHost="True"/>
+                    </ItemsPanelTemplate>
+                </ListView.ItemsPanel>
+            </ListView>
+        </ScrollViewer>
+
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="8*"/>

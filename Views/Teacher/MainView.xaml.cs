@@ -1,4 +1,4 @@
-﻿using MvvmBaseViewModelsLibrary.Helpers;
+﻿using MvvmBaseViewModels.Helpers;
 using System.Windows;
 using System.Windows.Input;
 using TestingSystem.ViewModels.Teacher;
