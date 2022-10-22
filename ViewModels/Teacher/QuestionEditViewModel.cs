@@ -1,13 +1,16 @@
-﻿using HappyStudio.Mvvm.Input.Wpf;
+﻿using BackgroundWorkerLibrary;
+using HappyStudio.Mvvm.Input.Wpf;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using MvvmBaseViewModels.Common.Validatable;
-using MvvmBaseViewModelsLibrary.Enumerables;
+using MvvmBaseViewModels.Enums;
 using ReactiveValidation;
 using ReactiveValidation.Extensions;
-using System.Collections.ObjectModel;
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Input;
 using TestingSystem.Models;
 using TestingSystem.Models.Contexts;
 using TestingSystem.Views.Teacher;
@@ -16,142 +19,141 @@ namespace TestingSystem.ViewModels.Teacher
 {
     public class QuestionEditViewModel : ValidatableViewModelBase
     {
-        private Question question;
+        private void OnQuestionChanged(object? _, System.ComponentModel.PropertyChangedEventArgs args) => OnPropertyChanged(args.PropertyName);
+        private Question question = null!;
+        public Question Question
+        {
+            get => question;
+            set
+            {
+                if (question != value)
+                {
+                    if (question is not null)
+                        question.PropertyChanged -= OnQuestionChanged;
 
+                    question = value;
+                    OnPropertyChanged(nameof(Question));
 
-        private string content = null!;
+                    if (question is not null)
+                        question.PropertyChanged += OnQuestionChanged;
+                }
+            }
+        }
+
         public string Content
         {
-            get => content;
-            set
-            {
-                if (content != value)
-                {
-                    content = value;
-                    OnPropertyChanged(nameof(Content));
-                }
-            }
+            get => Question.Content;
+            set => Question.Content = value;
         }
 
-        private double pointsCost;
         public double PointsCost
         {
-            get => pointsCost;
-            set
-            {
-                if (pointsCost != value)
-                {
-                    pointsCost = value;
-                    OnPropertyChanged(nameof(PointsCost));
-                }
-            }
+            get => Question.PointsCost;
+            set => Question.PointsCost = value;
         }
 
-        private ObservableCollection<AnswerOption> answerOptions = null!;
-        public ObservableCollection<AnswerOption> AnswerOptions
+        public ICollection<AnswerOption> AnswerOptions
         {
-            get => answerOptions;
-            set
-            {
-                if (answerOptions != value)
-                {
-                    answerOptions = value;
-                    OnPropertyChanged(nameof(AnswerOptions));
-                    OnPropertyChanged(nameof(NumberOfAnswerOptions));
-                }
-            }
+            get => Question.AnswerOptions;
+            set => Question.AnswerOptions = value;
         }
 
-        private ushort answerOptionsSeed = 0;
+        public bool IsAutoAnswerOptionNumberingEnabled
+        {
+            get => Question.IsAutoAnswerOptionNumberingEnabled;
+            set => Question.IsAutoAnswerOptionNumberingEnabled = value;
+        }
+
         public ushort NumberOfAnswerOptions
         {
-            get => (ushort) AnswerOptions.Count;
-            set
-            {
-                if (AnswerOptions.Count == value)
-                    return;
-
-                if (AnswerOptions.Count > value)
-                {
-                    AnswerOptions = new ObservableCollection<AnswerOption>(AnswerOptions.Take(value));
-                }
-                else if (AnswerOptions.Count < value)
-                {
-                    while (AnswerOptions.Count < value)
-                        AnswerOptions.Add(new AnswerOption(question, ++answerOptionsSeed));
-                }
-
-                OnPropertyChanged(nameof(AnswerOptions));
-            }
+            get => Question.NumberOfAnswerOptions;
+            set => Question.NumberOfAnswerOptions = value;
         }
 
-        private ushort? numberOfSecondsToAnswer;
         public ushort? NumberOfSecondsToAnswer
         {
-            get => numberOfSecondsToAnswer;
-            set
-            {
-                if (numberOfSecondsToAnswer != value)
-                {
-                    numberOfSecondsToAnswer = value;
-                    OnPropertyChanged(nameof(NumberOfSecondsToAnswer));
-                }
-            }
+            get => Question.NumberOfSecondsToAnswer;
+            set => Question.NumberOfSecondsToAnswer = value;
         }
 
-        private ushort serialNumberInTest;
         public ushort SerialNumberInTest
         {
-            get => serialNumberInTest;
-            set
-            {
-                if (serialNumberInTest != value)
-                {
-                    serialNumberInTest = value;
-                    OnPropertyChanged(nameof(SerialNumberInTest));
-                }
-            }
+            get => Question.SerialNumberInTest;
+            set => Question.SerialNumberInTest = value;
         }
 
+
+        private readonly TestingSystemTeacherContext context;
         private bool doesQuestionExistInDatabase;
+        private readonly bool doesTestExistInDatabase;
+
+        private readonly BackgroundWorker<AnswerOption> answerOptionUpdaterFromDatabaseBackgroundWorker = new();
 
         public QuestionEditViewModel(Question question)
         {
-            TestingSystemTeacherContext context = new();
+            context = new TestingSystemTeacherContext();
+
             Question? questionEntity = context.Find<Question>(question.Id);
             if (questionEntity is not null)
             {
                 doesQuestionExistInDatabase = true;
+                doesTestExistInDatabase = true;
 
                 EntityEntry<Question> questionEntry = context.Entry(questionEntity);
                 questionEntry.Collection(question => question.AnswerOptions).Load();
 
-                this.question = questionEntity;
-                context.Dispose();
+                Question = questionEntity;
+            }
+            else if (question.Test.Id == 0)
+            {
+                doesTestExistInDatabase = false;
+                doesQuestionExistInDatabase = false;
+                Question = question;
             }
             else
             {
-                context.Dispose();
-
                 doesQuestionExistInDatabase = false;
-                this.question = question;
+                Question = new(question.Test, question.SerialNumberInTest, question.PointsCost);
             }
 
-            Content = this.question!.Content;
-            PointsCost = this.question.PointsCost;
-            AnswerOptions = new ObservableCollection<AnswerOption>(this.question.AnswerOptions);
-            NumberOfAnswerOptions = this.question.NumberOfAnswerOptions;
-            NumberOfSecondsToAnswer = this.question.NumberOfSecondsToAnswer;
-            SerialNumberInTest = this.question.SerialNumberInTest;
-
+            SetupBackgroundWorkers();
             SetupValidator();
+        }
+
+        private void SetupBackgroundWorkers()
+        {
+            answerOptionUpdaterFromDatabaseBackgroundWorker.OnWorkStarting = () => Mouse.OverrideCursor = Cursors.Wait;
+            answerOptionUpdaterFromDatabaseBackgroundWorker.DoWork = async (answerOptions) =>
+            {
+                if (answerOptions is not null && answerOptions.Any())
+                    await UpdateAnswerOptionsFromDatabaseAsync(answerOptions.First());
+            };
+            answerOptionUpdaterFromDatabaseBackgroundWorker.OnWorkCompleted = () => Mouse.OverrideCursor = Cursors.Arrow;
+        }
+
+        private async Task UpdateAnswerOptionsFromDatabaseAsync(AnswerOption answerOptionToBeUpdated)
+        {
+            using (TestingSystemTeacherContext answerOptionLoaderContext = new())
+            {
+                AnswerOption? updatedAnswerOptionEntity = await answerOptionLoaderContext.FindAsync<AnswerOption>(answerOptionToBeUpdated.Id);
+                if (updatedAnswerOptionEntity is not null)
+                {
+                    answerOptionToBeUpdated.SerialNumberInQuestion = updatedAnswerOptionEntity.SerialNumberInQuestion;
+                    answerOptionToBeUpdated.Content = updatedAnswerOptionEntity.Content;
+                    answerOptionToBeUpdated.IsCorrect = updatedAnswerOptionEntity.IsCorrect;
+                }
+                else
+                {
+                    OccurErrorMessage("Во время редактирования варианта ответа он был параллельно удалён другим пользователем или системой.");
+                    Close(false);
+                }
+            }
         }
 
         #region Validation setup
         private ValidationState contentValidationState = ValidationState.Disabled;
         private ValidationState pointsCostValidationState = ValidationState.Disabled;
         private ValidationState numberOfAnswerOptionsValidationState = ValidationState.Disabled;
-        private ValidationState serialNumberInTestValidationState = ValidationState.Disabled;
         protected override void SetupValidator()
         {
             ValidationBuilder<QuestionEditViewModel> builder = new();
@@ -171,11 +173,6 @@ namespace TestingSystem.ViewModels.Teacher
                 .Must(numberOfAnswerOptions => numberOfAnswerOptions > 0)
                 .When(viewModel => viewModel.numberOfAnswerOptionsValidationState == ValidationState.Enabled)
                 .WithMessage("Должен быть как минимум один вариант ответа");
-
-            builder.RuleFor(viewModel => viewModel.SerialNumberInTest)
-                .Must(serialNumberInTest => serialNumberInTest > 0)
-                .When(viewModel => viewModel.serialNumberInTestValidationState == ValidationState.Enabled)
-                .WithMessage("Порядковый номер вопроса в тесте не может быть меньше 1");
 
             Validator = builder.Build(this);
         }
@@ -209,16 +206,6 @@ namespace TestingSystem.ViewModels.Teacher
 
             return Validator.IsValid;
         }
-
-        private async Task<bool> IsSerialNumberInTestValidAsync()
-        {
-            serialNumberInTestValidationState = ValidationState.Enabled;
-            Validator!.Revalidate();
-            await Validator.WaitValidatingCompletedAsync();
-            serialNumberInTestValidationState = ValidationState.Disabled;
-
-            return Validator.IsValid;
-        }
         #endregion
 
         #region Commands
@@ -227,7 +214,7 @@ namespace TestingSystem.ViewModels.Teacher
         {
             get => addAnswerOptionCommand ??= new(() =>
             {
-                AnswerOption answerOptionToBeAdded = new(question, ++answerOptionsSeed);
+                AnswerOption answerOptionToBeAdded = new(question, question.GetSerialNumberForNewAnswerOption());
                 
                 bool? editViewDialogResult = default;
                 Application.Current.Dispatcher.Invoke(() =>
@@ -246,11 +233,15 @@ namespace TestingSystem.ViewModels.Teacher
         {
             get => editAnswerOptionCommand ??= new((answerOption) =>
             {
+                bool? editViewDialogResult = default;
                 Application.Current.Dispatcher.Invoke(() =>
                 {
                     AnswerOptionEditView editView = new(answerOption!);
-                    editView.ShowDialog();
+                    editViewDialogResult = editView.ShowDialog();
                 });
+
+                if (doesQuestionExistInDatabase && editViewDialogResult == true && !answerOptionUpdaterFromDatabaseBackgroundWorker.IsBusy)
+                    _ = answerOptionUpdaterFromDatabaseBackgroundWorker.RunWorkerAsync();
             }, (answerOption) => answerOption is not null);
         }
 
@@ -262,39 +253,32 @@ namespace TestingSystem.ViewModels.Teacher
                 (answerOption) => answerOption is not null);
         }
 
-        private void SaveQuestionChangesLocally()
-        {
-            question.Content = Content;
-            question.PointsCost = PointsCost;
-            question.AnswerOptions = AnswerOptions;
-            question.NumberOfSecondsToAnswer = NumberOfSecondsToAnswer;
-            question.SerialNumberInTest = SerialNumberInTest;
-        }
         private AsyncRelayCommand confirmAsyncCommand = null!;
         public AsyncRelayCommand ConfirmAsyncCommand
         {
             get => confirmAsyncCommand ??= new(async () =>
             {
-                if (!await IsContentValidAsync() || !await IsPointsCostValidAsync() ||
-                    !await IsNumberOfAnswerOptionsValidAsync() || !await IsSerialNumberInTestValidAsync())
+                if (!await IsContentValidAsync() || !await IsPointsCostValidAsync() || !await IsNumberOfAnswerOptionsValidAsync())
                 {
                     return;
                 }
 
-                if (doesQuestionExistInDatabase)
+                if (!doesTestExistInDatabase)
                 {
-                    using (TestingSystemTeacherContext context = new())
-                    {
-                        question = (await context.FindAsync<Question>(question.Id))!;
-                        SaveQuestionChangesLocally();
-                        await context.SaveChangesAsync();
-                    }
-                }
-                else
-                {
-                    SaveQuestionChangesLocally();
+                    Close(true);
+                    return;
                 }
 
+                if (!doesQuestionExistInDatabase)
+                {
+                    Test? testEntity = await context.FindAsync<Test>(Question.Test.Id);
+                    if (testEntity is not null)
+                        testEntity.Questions.Add(Question);
+                    else
+                        OccurErrorMessage("Не удалось сохранить вопрос, так как во время его редактирования, содержащий вопрос тест был параллельно удалён другим пользователем или системой.");
+                }
+
+                await context.SaveChangesAsync();
                 Close(true);
             });
         }
@@ -306,5 +290,35 @@ namespace TestingSystem.ViewModels.Teacher
         }
         #endregion
 
+        #region Disposing
+        public override void Close(bool? dialogResult = null)
+        {
+            Dispose(true);
+            base.Close(dialogResult);
+        }
+
+        public override void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+            base.Dispose();
+        }
+
+        private bool isDisposed = false;
+        protected override void Dispose(bool needDisposing)
+        {
+            if (isDisposed)
+                return;
+
+            if (needDisposing)
+            {
+                context.Dispose();
+            }
+
+            isDisposed = true;
+        }
+
+        ~QuestionEditViewModel() => Dispose(false);
+        #endregion
     }
 }

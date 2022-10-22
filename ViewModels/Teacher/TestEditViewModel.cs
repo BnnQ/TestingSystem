@@ -1,15 +1,21 @@
 ﻿using BackgroundWorkerLibrary;
 using HappyStudio.Mvvm.Input.Wpf;
+using Meziantou.Framework.WPF.Builders;
+using Meziantou.Framework.WPF.Collections;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using MvvmBaseViewModels.Common;
 using MvvmBaseViewModels.Common.Validatable;
-using MvvmBaseViewModelsLibrary.Enumerables;
+using MvvmBaseViewModels.Enums;
 using ReactiveValidation;
 using ReactiveValidation.Extensions;
-using System.Collections.ObjectModel;
+using System;
+using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Input;
 using TestingSystem.Models;
 using TestingSystem.Models.Contexts;
 using TestingSystem.Views.Teacher;
@@ -19,222 +25,184 @@ namespace TestingSystem.ViewModels.Teacher
 {
     public class TestEditViewModel : ValidatableViewModelBase
     {
+        public void OnTestChanged(object? _, System.ComponentModel.PropertyChangedEventArgs args) => OnPropertyChanged(args.PropertyName);
         private Test test = null!;
+        public Test Test
+        {
+            get => test;
+            set
+            {
+                if (test != value)
+                {
+                    if (test is not null)
+                        test.PropertyChanged -= OnTestChanged;
+
+                    test = value;
+                    if (test is not null)
+                        test.PropertyChanged += OnTestChanged;
+
+                    OnPropertyChanged(nameof(Test));
+                }
+            }
+        }
+
+        public string Name
+        {
+            get => Test.Name;
+            set => Test.Name = value;
+        }
+
+        public ICollection<Question> Questions
+        {
+            get => Test.Questions;
+            set => Test.Questions = value;
+        }
+
+        public bool IsAutoCalculationOfQuestionsCostEnabled
+        {
+            get => Test.IsAutoCalculationOfQuestionsCostEnabled;
+            set => Test.IsAutoCalculationOfQuestionsCostEnabled = value;
+        }
+
+        public bool IsAutoQuestionNumberingEnabled
+        {
+            get => Test.IsAutoQuestionNumberingEnabled;
+            set => Test.IsAutoQuestionNumberingEnabled = value;
+        }
+
+        public ushort NumberOfQuestions
+        {
+            get => Test.NumberOfQuestions;
+            set => Test.NumberOfQuestions = value;
+        }
+
+        public ushort MaximumPoints
+        {
+            get => Test.MaximumPoints;
+            set => Test.MaximumPoints = value;
+        }
+
+        public ushort? NumberOfSecondsToAnswerEachQuestion
+        {
+            get => Test.NumberOfSecondsToAnswerEachQuestion;
+            set => Test.NumberOfSecondsToAnswerEachQuestion = value;
+        }
+
+        public ushort? NumberOfSecondsToComplete
+        {
+            get => Test.NumberOfSecondsToComplete;
+            set => Test.NumberOfSecondsToComplete = value;
+        }
+
+        public bool IsAccountingForIncompleteAnswersEnabled
+        {
+            get => Test.IsAccountingForIncompleteAnswersEnabled;
+            set => Test.IsAccountingForIncompleteAnswersEnabled = value;
+        }
+        public Category Category
+        {
+            get => Test.Category;
+            set => Test.Category = value;
+        }
+
+        private void OnOwnerTeachersChanged(object? _, NotifyCollectionChangedEventArgs args)
+        {
+            if (args.Action == NotifyCollectionChangedAction.Add || args.Action == NotifyCollectionChangedAction.Remove)
+                OnPropertyChanged(nameof(NumberOfOwnerTeachers));
+        }
+        public ICollection<Models.Teacher> OwnerTeachers
+        {
+            get => Test.OwnerTeachers;
+            set
+            {
+                Test.OwnerTeachers = new ConcurrentObservableCollectionBuilder<Models.Teacher>(value)
+                                     .WhichToHandleCollectionChangesUses(OnOwnerTeachersChanged)
+                                     .Build();
+            }
+        }
+        public int NumberOfOwnerTeachers => OwnerTeachers.Count;
+
+
+
         public Category[] Categories { get; private set; } = null!;
         public Models.Teacher[] Teachers { get; private set; } = null!;
 
-        private string name = null!;
-        public string Name
-        {
-            get => name;
-            set
-            {
-                if (name != value)
-                {
-                    name = value;
-                    OnPropertyChanged(nameof(Name));
-                }
-            }
-        }
-
-        private ObservableCollection<Question> questions = null!;
-        public ObservableCollection<Question> Questions
-        {
-            get => questions;
-            set
-            {
-                if (questions != value)
-                {
-                    questions = value;
-                    OnPropertyChanged(nameof(Questions));
-                    OnPropertyChanged(nameof(NumberOfQuestions));
-                }
-            }
-        }
-
-        private ushort questionsSeed = 0;
-        public ushort NumberOfQuestions
-        {
-            get => (ushort) Questions.Count;
-            set
-            {
-                if (Questions.Count == value)
-                    return;
-
-                if (Questions.Count < value)
-                {
-                    while (Questions.Count < value)
-                        Questions.Add(new Question(test, ++questionsSeed));
-                }
-                else if (Questions.Count > value)
-                {
-                    Questions = new ObservableCollection<Question>(Questions.Take(value));
-                }
-
-                OnPropertyChanged(nameof(Questions));
-            }
-        }
-
-        private Category category = null!;
-        public virtual Category Category
-        {
-            get => category;
-            set
-            {
-                if (category != value)
-                {
-                    category = value;
-                    OnPropertyChanged(nameof(Category));
-                }
-            }
-        }
-
-        private ushort maximumPoints;
-        public ushort MaximumPoints
-        {
-            get => maximumPoints;
-            set
-            {
-                if (maximumPoints != value)
-                {
-                    maximumPoints = value;
-                    OnPropertyChanged(nameof(MaximumPoints));
-                }
-            }
-        }
-
-        private ushort? numberOfSecondsToAnswerEachQuestion;
-        public ushort? NumberOfSecondsToAnswerEachQuestion
-        {
-            get => numberOfSecondsToAnswerEachQuestion;
-            set
-            {
-                if (numberOfSecondsToAnswerEachQuestion != value)
-                {
-                    numberOfSecondsToAnswerEachQuestion = value;
-                    
-                    if (value.HasValue)
-                        NumberOfSecondsToComplete = null;
-
-                    OnPropertyChanged(nameof(NumberOfSecondsToAnswerEachQuestion));
-                }
-            }
-        }
-
-        private ushort? numberOfSecondsToComplete;
-        public ushort? NumberOfSecondsToComplete
-        {
-            get => numberOfSecondsToComplete;
-            set
-            {
-                if (numberOfSecondsToComplete != value)
-                {
-                    numberOfSecondsToComplete = value;
-
-                    if (value.HasValue)
-                        NumberOfSecondsToAnswerEachQuestion = null;
-
-                    OnPropertyChanged(nameof(NumberOfSecondsToComplete));
-                }
-            }
-        }
-
-        private bool isAccountingForIncompleteAnswersEnabled;
-        public bool IsAccountingForIncompleteAnswersEnabled
-        {
-            get => isAccountingForIncompleteAnswersEnabled;
-            set
-            {
-                if (isAccountingForIncompleteAnswersEnabled != value)
-                {
-                    isAccountingForIncompleteAnswersEnabled = value;
-                    OnPropertyChanged(nameof(IsAccountingForIncompleteAnswersEnabled));
-                }
-            }
-        }
-
-        private ObservableCollection<Models.Teacher> ownerTeachers = null!;
-        public virtual ObservableCollection<Models.Teacher> OwnerTeachers
-        {
-            get => ownerTeachers;
-            set
-            {
-                if (ownerTeachers != value)
-                {
-                    ownerTeachers = value;
-                    OnPropertyChanged(nameof(OwnerTeachers));
-                }
-            }
-        }
-
-        private ushort NumberOfOwnerTeachers => (ushort) ownerTeachers.Count;
-
+        
+        private readonly TestingSystemTeacherContext context;
         private readonly bool doesTestExistInDatabase;
-        private readonly BackgroundWorker initialDatabaseLoaderBackgroundWorker = new();
 
+        private readonly BackgroundWorker<Question> questionUpdaterFromDatabaseBackgroundWorker = new();
+        
         public TestEditViewModel(Test test)
         {
-            SetupBackgroundWorkers();
-            _ = initialDatabaseLoaderBackgroundWorker.RunWorkerAsync();
+            context = new TestingSystemTeacherContext();
 
-            TestingSystemTeacherContext context = new();
+            context.Categories.Include(category => category.Tests).Load();
+            Categories = context.Categories.ToArray();
+
+            context.Teachers.Include(teacher => teacher.OwnedTests).Load();
+            Teachers = context.Teachers.ToArray();
+
             Test? testEntity = context.Tests.Find(test.Id);
             if (testEntity is not null)
             {
                 doesTestExistInDatabase = true;
-
                 EntityEntry<Test> testEntry = context.Entry(testEntity);
+                testEntry.Reference(test => test.Category).Load();
+
                 testEntry.Collection(test => test.Questions).Load();
+                foreach (Question question in testEntity.Questions)
+                    context.Entry(question).Collection(question => question.AnswerOptions).Load();
+
                 testEntry.Collection(test => test.OwnerTeachers).Load();
 
-                this.test = testEntity;
-                context.Dispose();
+                Test = testEntity;
             }
             else
             {
-                context.Dispose();
-
                 doesTestExistInDatabase = false;
-                this.test = test;
+                Test = new(new ConcurrentObservableCollectionBuilder<Models.Teacher>(Teachers.Where(teacher => test.OwnerTeachers.Any(t => t.Id == teacher.Id))).Build());
             }
 
-            Name = this.test.Name;
-            Questions = new ObservableCollection<Question>(this.test.Questions.OrderBy(question => question.SerialNumberInTest));
-            Questions.CollectionChanged += (_, eventArgs) =>
-            {
-                if (eventArgs.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Add)
-                {
-                    Questions = new(Questions.OrderBy(question => question.SerialNumberInTest));
-                    if (NumberOfSecondsToAnswerEachQuestion.HasValue)
-                        ApplyNumberOfSecondsToAnswerEachQuestion();
-                }
-            };
-
-            NumberOfQuestions = this.test.NumberOfQuestions;
-            Category = this.test.Category;
-            MaximumPoints = this.test.MaximumPoints;
-            NumberOfSecondsToAnswerEachQuestion = this.test.NumberOfSecondsToAnswerEachQuestion;
-            NumberOfSecondsToComplete = this.test.NumberOfSecondsToComplete;
-            IsAccountingForIncompleteAnswersEnabled = this.test.IsAccountingForIncompleteAnswersEnabled;
-            OwnerTeachers = new ObservableCollection<Models.Teacher>(this.test.OwnerTeachers);
-
+            SetupBackgroundWorkers();
             SetupValidator();
         }
 
-
         private void SetupBackgroundWorkers()
         {
-            initialDatabaseLoaderBackgroundWorker.DoWork = async () =>
+            questionUpdaterFromDatabaseBackgroundWorker.OnWorkStarting = () => Mouse.OverrideCursor = Cursors.Wait;
+            questionUpdaterFromDatabaseBackgroundWorker.DoWork = async (questions) =>
             {
-                using (TestingSystemTeacherContext context = new())
-                {
-                    await context.Categories.LoadAsync();
-                    Categories = await context.Categories.Local.ToArrayAsync();
-
-                    await context.Teachers.Include(teacher => teacher.OwnedTests).LoadAsync();
-                    Teachers = await context.Teachers.Local.ToArrayAsync();
-                }
+                if (questions is not null && questions.Any())
+                    await UpdateQuestionFromDatabaseAsync(questions.First());
             };
+            questionUpdaterFromDatabaseBackgroundWorker.OnWorkCompleted = () => Mouse.OverrideCursor = Cursors.Arrow;
+        }
+
+        private async Task UpdateQuestionFromDatabaseAsync(Question questionToBeUpdated)
+        {
+            using (TestingSystemTeacherContext questionLoaderContext = new())
+            {
+                Question? updatedQuestionEntity = await questionLoaderContext.FindAsync<Question>(questionToBeUpdated.Id);
+                if (updatedQuestionEntity is not null)
+                {
+                    await questionLoaderContext
+                        .Entry(updatedQuestionEntity)
+                        .Collection(question => question.AnswerOptions)
+                        .LoadAsync();
+
+                    questionToBeUpdated.AnswerOptions = updatedQuestionEntity.AnswerOptions;
+                    questionToBeUpdated.SerialNumberInTest = updatedQuestionEntity.SerialNumberInTest;
+                    questionToBeUpdated.Content = updatedQuestionEntity.Content;
+                    questionToBeUpdated.PointsCost = updatedQuestionEntity.PointsCost;
+                    questionToBeUpdated.NumberOfSecondsToAnswer = updatedQuestionEntity.NumberOfSecondsToAnswer;
+                }
+                else
+                {
+                    OccurErrorMessage("Во время редактирования вопроса он был параллельно удалён другим пользователем или системой.");
+                    Close(false);
+                }
+            }
         }
 
         #region Validation setup
@@ -262,6 +230,10 @@ namespace TestingSystem.ViewModels.Teacher
                 .Must(maximumPoints => maximumPoints > 0)
                 .When(viewModel => viewModel.maximumPointsValidationState == ValidationState.Enabled)
                 .WithMessage("Максимальное количество баллов не может быть меньше 1");
+            builder.RuleFor(viewModel => viewModel.MaximumPoints)
+                .Must(maximumPoints => maximumPoints == Questions.Sum(question => question.PointsCost))
+                .When(viewModel => viewModel.maximumPointsValidationState == ValidationState.Enabled)
+                .WithMessage("Сумма стоимости вопросов должна быть равна максимальному количеству баллов за тест");
 
             builder.RuleFor(viewModel => viewModel.NumberOfQuestions)
                 .Must(numberOfQuestions => numberOfQuestions > 0)
@@ -332,22 +304,16 @@ namespace TestingSystem.ViewModels.Teacher
         }
         #endregion
 
-        private void ApplyNumberOfSecondsToAnswerEachQuestion()
-        {
-            foreach (Question question in Questions)
-                question.NumberOfSecondsToAnswer = NumberOfSecondsToAnswerEachQuestion;
-        }
-
         #region Commands
-        private bool AreOwnerTeachersMoreThanOne() => OwnerTeachers.Count > 1;
-        private bool IsTeacherOwnerOfTest(Models.Teacher teacher) => OwnerTeachers.Contains(teacher);
+        private bool AreOwnerTeachersMoreThanOne() => Test.OwnerTeachers.Count > 1;
+        private bool IsTeacherOwnerOfTest(Models.Teacher teacher) => Test.OwnerTeachers.FirstOrDefault(t => t.Id == teacher.Id) is not null;
 
         private RelayCommand addQuestionCommand = null!;
         public RelayCommand AddQuestionCommand
         {
             get => addQuestionCommand ??= new(() =>
             {
-                Question questionToBeAdded = new(test, ++questionsSeed);
+                Question questionToBeAdded = new(Test, Test.GetSerialNumberForNewQuestion());
 
                 bool? editViewDialogResult = default;
                 Application.Current.Dispatcher.Invoke(() =>
@@ -357,20 +323,24 @@ namespace TestingSystem.ViewModels.Teacher
                 });
 
                 if (editViewDialogResult == true)
-                    Questions.Add(questionToBeAdded);
+                    Test.Questions.Add(questionToBeAdded);
             });
         }
 
-        private RelayCommand<Question> editQuestionCommand = null!;
-        public RelayCommand<Question> EditQuestionCommand
+        private AsyncRelayCommand<Question> editQuestionCommand = null!;
+        public AsyncRelayCommand<Question> EditQuestionCommand
         {
-            get => editQuestionCommand ??= new((question) =>
+            get => editQuestionCommand ??= new(async (question) =>
             {
+                bool? editViewDialogResult = default;
                 Application.Current.Dispatcher.Invoke(() =>
                 {
                     QuestionEditView editView = new(question!);
-                    editView.ShowDialog();
+                    editViewDialogResult = editView.ShowDialog();
                 });
+
+                if (doesTestExistInDatabase && editViewDialogResult == true && !questionUpdaterFromDatabaseBackgroundWorker.IsBusy)
+                    await questionUpdaterFromDatabaseBackgroundWorker.RunWorkerAsync(question!);
             }, (question) => question is not null);
         }
 
@@ -378,7 +348,7 @@ namespace TestingSystem.ViewModels.Teacher
         public RelayCommand<Question> RemoveQuestionCommand
         {
             get => removeQuestionCommand ??= new(
-                (question) => Questions.Remove(question!),
+                (question) => Test.Questions.Remove(question!),
                 (question) => question is not null);
         }
 
@@ -387,8 +357,8 @@ namespace TestingSystem.ViewModels.Teacher
         {
             get => addTestOwnerCommand ??= new((teacherToBeAdded) =>
             {
-                if (!teacherToBeAdded!.OwnedTests.Contains(test))
-                    OwnerTeachers.Add(teacherToBeAdded);
+                if (!teacherToBeAdded!.OwnedTests.Contains(Test))
+                    Test.OwnerTeachers.Add(teacherToBeAdded);
             }, 
             (teacherToBeAdded) => teacherToBeAdded is not null && !IsTeacherOwnerOfTest(teacherToBeAdded));
         }
@@ -397,22 +367,10 @@ namespace TestingSystem.ViewModels.Teacher
         public RelayCommand<Models.Teacher> RemoveTestOwnerCommand
         {
             get => removeTestOwnerCommand ??= new(
-                (testOwner) => OwnerTeachers.Remove(testOwner!),
+                (testOwner) => Test.OwnerTeachers.Remove(testOwner!),
                 (testOwner) => testOwner is not null && AreOwnerTeachersMoreThanOne());
         }
 
-        private void SaveTestChangesLocally()
-        {
-            test.Name = Name;
-            test.Questions = Questions;
-            test.NumberOfQuestions = NumberOfQuestions;
-            test.Category = Category;
-            test.MaximumPoints = MaximumPoints;
-            test.NumberOfSecondsToAnswerEachQuestion = NumberOfSecondsToAnswerEachQuestion;
-            test.NumberOfSecondsToComplete = NumberOfSecondsToComplete;
-            test.IsAccountingForIncompleteAnswersEnabled = IsAccountingForIncompleteAnswersEnabled;
-            test.OwnerTeachers = OwnerTeachers;
-        }
         private AsyncRelayCommand confirmCommand = null!;
         public AsyncRelayCommand ConfirmCommand
         {
@@ -424,24 +382,18 @@ namespace TestingSystem.ViewModels.Teacher
                     return;
                 }
 
-
-                if (doesTestExistInDatabase)
+                if (!doesTestExistInDatabase)
                 {
-                    using (TestingSystemTeacherContext context = new())
-                    {
-                        test = (await context.FindAsync<Test>(test.Id))!;
-                        SaveTestChangesLocally();
-                        await context.SaveChangesAsync();
-                    }
+                    Category? categoryEntity = await context.FindAsync<Category>(Test.Category?.Id);
+                    if (categoryEntity is not null)
+                        categoryEntity.Tests.Add(Test);
+                    else
+                        OccurErrorMessage("Не удалось сохранить тест, так как во время его редактирования, содержащий тест категория была параллельно удалена другим пользователем или системой.");
                 }
-                else
-                {
-                    SaveTestChangesLocally();
-                }
-                
 
+                await context.SaveChangesAsync();
                 Close(true);
-            }, () => !initialDatabaseLoaderBackgroundWorker.IsBusy);
+            });
         }
 
         private RelayCommand cancelCommand = null!;
@@ -449,6 +401,37 @@ namespace TestingSystem.ViewModels.Teacher
         {
             get => cancelCommand ??= new(() => Close(false));
         }
+        #endregion
+
+        #region Disposing
+        public override void Close(bool? dialogResult = null)
+        {
+            Dispose(true);
+            base.Close(dialogResult);
+        }
+
+        public override void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+            base.Dispose();
+        }
+
+        private bool isDisposed = false;
+        protected override void Dispose(bool needDisposing)
+        {
+            if (isDisposed)
+                return;
+
+            if (needDisposing)
+            {
+                context.Dispose();
+            }
+
+            isDisposed = true;
+        }
+
+        ~TestEditViewModel() => Dispose(false);
         #endregion
     }
 }

@@ -1,8 +1,10 @@
 ﻿using HappyStudio.Mvvm.Input.Wpf;
 using MvvmBaseViewModels.Common.Validatable;
-using MvvmBaseViewModelsLibrary.Enumerables;
+using MvvmBaseViewModels.Enums;
 using ReactiveValidation;
 using ReactiveValidation.Extensions;
+using System;
+using System.ComponentModel;
 using System.Threading.Tasks;
 using TestingSystem.Models;
 using TestingSystem.Models.Contexts;
@@ -11,43 +13,53 @@ namespace TestingSystem.ViewModels.Teacher
 {
     public class CategoryEditViewModel : ValidatableViewModelBase
     {
+        private void OnCategoryChanged(object? _, PropertyChangedEventArgs args) => OnPropertyChanged(args.PropertyName);
         private Category category = null!;
-
-        private string name = null!;
-        public string Name
+        public Category Category
         {
-            get => name;
+            get => category;
             set
             {
-                if (name != value)
+                if (category != value)
                 {
-                    name = value;
-                    OnPropertyChanged(nameof(Name));
+                    if (category is not null)
+                        category.PropertyChanged += OnCategoryChanged;
+
+                    category = value;
+                    OnPropertyChanged(nameof(Category));
+
+                    if (category is not null)
+                        category.PropertyChanged += OnCategoryChanged;
                 }
             }
         }
 
-        private readonly bool doesCategoryExistInDatabase;
+        public string Name
+        {
+            get => Category.Name;
+            set => Category.Name = value;
+        }
 
+
+        private readonly bool doesCategoryExistInDatabase;
+        private readonly TestingSystemTeacherContext context;
 
         public CategoryEditViewModel(Category category)
         {
-            Category? categoryEntity = default;
-            using (TestingSystemTeacherContext context = new())
-                categoryEntity = context.Find<Category>(category.Id);
+            context = new TestingSystemTeacherContext();
+            Category? categoryEntity = context.Find<Category>(category.Id);
 
             if (categoryEntity is not null)
             {
                 doesCategoryExistInDatabase = true;
-                this.category = categoryEntity;
+                Category = categoryEntity;
             }
             else
             {
                 doesCategoryExistInDatabase = false;
-                this.category = category;
+                Category = new(category.Name);
             }
 
-            Name = this.category.Name;
             SetupValidator();
         }
 
@@ -82,10 +94,6 @@ namespace TestingSystem.ViewModels.Teacher
         #endregion
 
         #region Commands
-        private void SaveCategoryChangesLocally()
-        {
-            category.Name = Name;
-        }
         private AsyncRelayCommand confirmAsyncCommand = null!;
         public AsyncRelayCommand ConfirmAsyncCommand
         {
@@ -94,20 +102,10 @@ namespace TestingSystem.ViewModels.Teacher
                 if (!await IsNameValidAsync())
                     return;
 
-                if (doesCategoryExistInDatabase)
-                {
-                    using (TestingSystemTeacherContext context = new())
-                    {
-                        category = (await context.FindAsync<Category>(category.Id))!;
-                        SaveCategoryChangesLocally();
-                        await context.SaveChangesAsync();
-                    }
-                }
-                else
-                {
-                    SaveCategoryChangesLocally();
-                }
+                if (!doesCategoryExistInDatabase)
+                    await context.Categories.AddAsync(Category);
 
+                await context.SaveChangesAsync();
                 Close(true);
             });
         }
@@ -116,6 +114,35 @@ namespace TestingSystem.ViewModels.Teacher
         public RelayCommand CancelCommand
         {
             get => cancelCommand ??= new(() => Close(false));
+        }
+        #endregion
+
+        #region Disposing
+        public override void Close(bool? dialogResult = null)
+        {
+            Dispose(true);
+            base.Close(dialogResult);
+        }
+
+        public override void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+            base.Dispose();
+        }
+
+        private bool isDisposed = false;
+        protected override void Dispose(bool needDisposing)
+        {
+            if (isDisposed)
+                return;
+
+            if (needDisposing)
+            {
+                context.Dispose();
+            }
+
+            isDisposed = true;
         }
         #endregion
 
