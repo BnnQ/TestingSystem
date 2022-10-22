@@ -1,5 +1,5 @@
-﻿using BackgroundWorkerLibrary;
-using HappyStudio.Mvvm.Input.Wpf;
+﻿using HappyStudio.Mvvm.Input.Wpf;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using MvvmBaseViewModels.Common;
 using System.Linq;
 using System.Threading.Tasks;
@@ -26,9 +26,9 @@ namespace TestingSystem.ViewModels.Teacher
                 }
             }
         }
-
+        
         private readonly Models.Teacher teacher;
-        private readonly BackgroundWorker testUpdaterFromDatabaseBackgroundWorker = new();
+        private readonly BackgroundWorkerLibrary.BackgroundWorker testUpdaterFromDatabaseBackgroundWorker = new();
 
         public TestInfoViewModel(Test test, Models.Teacher teacher)
         {
@@ -36,9 +36,14 @@ namespace TestingSystem.ViewModels.Teacher
             {
                 Test? testEntity = context.Find<Test>(test.Id);
                 if (testEntity is null)
+                {
                     OccurCriticalErrorMessage("Test entity missing from the database (most likely, a problem on the DB side)");
+                    Close();
+                }
                 else
+                {
                     Test = testEntity;
+                }
             }
 
             this.teacher = teacher;
@@ -49,15 +54,12 @@ namespace TestingSystem.ViewModels.Teacher
 
         private void SetupBackgroundWorkers()
         {
-            testUpdaterFromDatabaseBackgroundWorker.DoWork = async () =>
-            {
-                Application.Current.Dispatcher.Invoke(() => Mouse.OverrideCursor = Cursors.Wait);
-                await UpdateTestFromDatabaseAsync();
-            };
-
+            testUpdaterFromDatabaseBackgroundWorker.OnWorkStarting = () => Mouse.OverrideCursor = Cursors.Wait;
+            testUpdaterFromDatabaseBackgroundWorker.DoWork = async () => await UpdateTestFromDatabaseAsync();
             testUpdaterFromDatabaseBackgroundWorker.OnWorkCompleted = () =>
             {
                 Mouse.OverrideCursor = Cursors.Arrow;
+                CommandManager.InvalidateRequerySuggested();
             };
         }
 
@@ -68,7 +70,19 @@ namespace TestingSystem.ViewModels.Teacher
                 using (TestingSystemTeacherContext context = new())
                 {
                     Test = await context.FindAsync<Test>(Test.Id);
-                    await context.Entry(Test!).Collection(test => test.Questions).LoadAsync();
+                    if (Test is null)
+                    {
+                        OccurErrorMessage("Во время редактирования теста он был параллельно удалён другим пользователем или системой.");
+                        Close();
+                    }
+
+                    EntityEntry<Test> testEntry = context.Entry(Test!);
+
+                    await testEntry.Collection(test => test.Questions).LoadAsync();
+                    foreach (Question question in Test!.Questions)
+                        await context.Entry(question).Collection(question => question.AnswerOptions).LoadAsync();
+
+                    await testEntry.Collection(test => test.OwnerTeachers).LoadAsync();
                 }
             }
         }

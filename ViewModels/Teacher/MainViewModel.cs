@@ -1,8 +1,8 @@
 ﻿using BackgroundWorkerLibrary;
 using HappyStudio.Mvvm.Input.Wpf;
+using Meziantou.Framework.WPF.Collections;
 using Microsoft.EntityFrameworkCore;
 using MvvmBaseViewModels.Common;
-using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
@@ -78,15 +78,9 @@ namespace TestingSystem.ViewModels.Teacher
 
         private void SetupBackgroundWorkers()
         {
-            categoriesUpdaterFromDatabaseBackgroundWorker.DoWork = async () =>
-            {
-                Application.Current.Dispatcher.Invoke(() => Mouse.OverrideCursor = Cursors.Wait);
-                await UpdateCategoriesFromDatabaseAsync();
-            };
-            categoriesUpdaterFromDatabaseBackgroundWorker.OnWorkCompleted = () =>
-            {
-                Mouse.OverrideCursor = Cursors.Arrow;
-            };
+            categoriesUpdaterFromDatabaseBackgroundWorker.OnWorkStarting = () => Mouse.OverrideCursor = Cursors.Wait;
+            categoriesUpdaterFromDatabaseBackgroundWorker.DoWork = async () => await UpdateCategoriesFromDatabaseAsync();
+            categoriesUpdaterFromDatabaseBackgroundWorker.OnWorkCompleted = () => Mouse.OverrideCursor = Cursors.Arrow;
         }
 
         private async Task UpdateCategoriesFromDatabaseAsync()
@@ -133,15 +127,7 @@ namespace TestingSystem.ViewModels.Teacher
                 });
 
                 if (editViewDialogResult == true)
-                {
-                    using (TestingSystemTeacherContext context = new())
-                    {
-                        await context.Categories.AddAsync(categoryToBeAdded);
-                        await context.SaveChangesAsync();
-                        await UpdateCategoriesFromDatabaseAsyncCommand.ExecuteAsync(null);
-                    }
-                }
-
+                    await UpdateCategoriesFromDatabaseAsyncCommand.ExecuteAsync(null);
             });
         }
 
@@ -150,7 +136,7 @@ namespace TestingSystem.ViewModels.Teacher
         {
             get => addTestAsyncCommand ??= new(async () =>
             {
-                Test testToBeAdded = new(new ObservableCollection<Models.Teacher>() { teacher });
+                Test testToBeAdded = new(new ConcurrentObservableCollection<Models.Teacher>() { teacher });
                 bool? editViewDialogResult = default;
                 Application.Current.Dispatcher.Invoke(() =>
                 {
@@ -159,15 +145,7 @@ namespace TestingSystem.ViewModels.Teacher
                 });
 
                 if (editViewDialogResult == true)
-                {
-                    using (TestingSystemTeacherContext context = new())
-                    {
-                        Category categoryEntity = context.Find<Category>(testToBeAdded.Category.Id)!;
-                        categoryEntity.Tests.Add(testToBeAdded);
-                        await context.SaveChangesAsync();
-                        await UpdateCategoriesFromDatabaseAsyncCommand.ExecuteAsync(null);
-                    }
-                }
+                    await UpdateCategoriesFromDatabaseAsyncCommand.ExecuteAsync(null);
             });
         }
 

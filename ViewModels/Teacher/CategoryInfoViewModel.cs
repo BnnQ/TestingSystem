@@ -1,6 +1,8 @@
 ﻿using BackgroundWorkerLibrary;
 using CommunityToolkit.Mvvm.Input;
+using Meziantou.Framework.WPF.Extensions;
 using MvvmBaseViewModels.Common;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
@@ -14,6 +16,11 @@ namespace TestingSystem.ViewModels.Teacher
 {
     public class CategoryInfoViewModel : ViewModelBase
     {
+        private void OnCategoryTestsChanged(object? _, NotifyCollectionChangedEventArgs args)
+        {
+            if (args.Action == NotifyCollectionChangedAction.Add || args.Action == NotifyCollectionChangedAction.Remove)
+                OnPropertyChanged(nameof(NumberOfTests));
+        }
         private Category? category = null!;
         public Category? Category
         {
@@ -22,26 +29,19 @@ namespace TestingSystem.ViewModels.Teacher
             {
                 if (category != value)
                 {
-                    category = value;
-                    NumberOfTests = category?.Tests.Count ?? 0;
-                    OnPropertyChanged(nameof(Category));
-                }
-            }
-        }
+                    if (category?.Tests is not null)
+                        category.Tests.AsConcurrentObservableCollection().AsObservable.CollectionChanged -= OnCategoryTestsChanged;
 
-        private int numberOfTests;
-        public int NumberOfTests
-        {
-            get => numberOfTests;
-            set
-            {
-                if (numberOfTests != value)
-                {
-                    numberOfTests = value;
+                    category = value;
+                    if (category?.Tests is not null)
+                        category.Tests.AsConcurrentObservableCollection().AsObservable.CollectionChanged += OnCategoryTestsChanged;
+
+                    OnPropertyChanged(nameof(Category));
                     OnPropertyChanged(nameof(NumberOfTests));
                 }
             }
         }
+        public int NumberOfTests => Category?.Tests.Count ?? 0;
 
         private readonly Models.Teacher teacher;
         private readonly BackgroundWorker categoryUpdaterFromDatabaseBackgroundWorker = new();
@@ -65,16 +65,9 @@ namespace TestingSystem.ViewModels.Teacher
 
         private void SetupBackgroundWorkers()
         {
-            categoryUpdaterFromDatabaseBackgroundWorker.DoWork = async () =>
-            {
-                Application.Current.Dispatcher.Invoke(() => Mouse.OverrideCursor = Cursors.Wait);
-                await UpdateCategoryFromDatabaseAsync();
-            };
-
-            categoryUpdaterFromDatabaseBackgroundWorker.OnWorkCompleted = () =>
-            {
-                Mouse.OverrideCursor = Cursors.Arrow;
-            };
+            categoryUpdaterFromDatabaseBackgroundWorker.OnWorkStarting = () => Mouse.OverrideCursor = Cursors.Wait;
+            categoryUpdaterFromDatabaseBackgroundWorker.DoWork = async () => await UpdateCategoryFromDatabaseAsync();
+            categoryUpdaterFromDatabaseBackgroundWorker.OnWorkCompleted = () => Mouse.OverrideCursor = Cursors.Arrow;
         }
         
         #region Commands
@@ -92,8 +85,6 @@ namespace TestingSystem.ViewModels.Teacher
 
                     foreach (Test test in Category.Tests)
                         await context.Entry(test).Collection(test => test.OwnerTeachers).LoadAsync();
-
-                    NumberOfTests = Category.Tests.Count;
                 }
             }
         }
