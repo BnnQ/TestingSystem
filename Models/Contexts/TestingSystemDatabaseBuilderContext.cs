@@ -108,6 +108,7 @@ namespace TestingSystem.Models.Contexts
                 .HasCheckConstraint("CK_Questions_Content", "[Content] != ''")
                 .HasCheckConstraint("CK_Questions_PointsCost", "[PointsCost] > 0")
                 .Ignore(question => question.NumberOfAnswerOptions)
+                .Ignore(question => question.IsAutoAnswerOptionNumberingEnabled)
                 .HasKey(question => question.Id);
 
                 questionModel.Property(question => question.Id)
@@ -154,6 +155,8 @@ namespace TestingSystem.Models.Contexts
                 .HasCheckConstraint("CK_Tests_Name", "[Name] != ''")
                 .HasCheckConstraint("CK_Tests_MaximumPoints", "[MaximumPoints] > 0")
                 .Ignore(test => test.NumberOfQuestions)
+                .Ignore(test => test.IsAutoCalculationOfQuestionsCostEnabled)
+                .Ignore(test => test.IsAutoQuestionNumberingEnabled)
                 .HasKey(test => test.Id);
 
                 testModel.Property(test => test.Id)
