@@ -26,8 +26,12 @@
         <TextBox md:HintAssist.Hint="Название" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"/>
 
         <ag:AutoGrid Rows="1*" Columns="1*, 1*">
-            <Button Style="{StaticResource ResourceKey=ConfirmButtonStyle}" Command="{Binding ConfirmAsyncCommand}"/>
-            <Button Style="{StaticResource ResourceKey=CancelButtonStyle}" Command="{Binding CancelCommand}"/>
+            <Button Style="{StaticResource ResourceKey=ConfirmButtonStyle}" Command="{Binding ConfirmAsyncCommand}">
+                <TextBlock Text="{StaticResource ConfirmButtonText}"/>
+            </Button>
+            <Button Style="{StaticResource ResourceKey=CancelButtonStyle}" Command="{Binding CancelCommand}">
+                <TextBlock Text="{StaticResource CancelButtonText}"/>
+            </Button>
         </ag:AutoGrid>
     </ag:AutoGrid>
 </Window>
