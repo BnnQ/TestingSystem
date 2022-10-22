@@ -1,6 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using Meziantou.Framework.WPF.Builders;
+using Meziantou.Framework.WPF.Collections;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 
 namespace TestingSystem.Models
 {
@@ -30,11 +31,7 @@ namespace TestingSystem.Models
             {
                 if (tests != value)
                 {
-                    if (value is ObservableCollection<Test>)
-                        tests = value;
-                    else
-                        tests = new ObservableCollection<Test>(value);
-
+                    tests = new ConcurrentObservableCollectionBuilder<Test>(value).Build();
                     OnPropertyChanged(nameof(Tests));
                 }
             }
@@ -43,7 +40,7 @@ namespace TestingSystem.Models
         
         public Category()
         {
-            Tests = new ObservableCollection<Test>();
+            Tests = new ConcurrentObservableCollection<Test>();
         }
         public Category(string name) : this()
         {
