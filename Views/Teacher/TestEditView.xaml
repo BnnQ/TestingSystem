@@ -16,16 +16,18 @@
         TextOptions.TextRenderingMode="Auto"
         FontFamily="{DynamicResource MaterialDesignFont}"
         Background="{DynamicResource MaterialDesignPaper}"
-        Title="Редактор теста" Width="850" Height="800" MinWidth="800" MinHeight="750">
-    <ag:AutoGrid Rows="1*, 1*, 1*, 1*, 1*, 1*, 1*, 4*, 3*, 1*" Columns="1*, 1*">
+        Title="Редактор теста" Width="850" Height="950" MinWidth="800" MinHeight="800">
+    <ag:AutoGrid Rows="1*, 1*, 1*, 1*, 1*, 1*, 1*, 1*, 4*, 3*, 1*" Columns="1*, 1*">
         <Grid.Resources>
-            <converters:UshortNumberOfSecondsToShortTimeStringConverter x:Key="ushortNumberOfSecondsToShortTimeStringConverter"/>
+            <converters:UshortNumberOfSecondsToTimeHoursMinutesStringConverter x:Key="ushortNumberOfSecondsToTimeHoursMinutesStringConverter"/>
+            <converters:UshortNumberOfSecondsToTimeMinutesSecondsStringConverter x:Key="ushortNumberOfSecondsToTimeMinutesSecondsStringConverter"/>
 
             <Style TargetType="TextBlock" BasedOn="{StaticResource MainTextBlockStyle}"/>
             <Style TargetType="TextBox" BasedOn="{StaticResource OutlinedTextBoxStyle}"/>
             <Style TargetType="DataGrid" BasedOn="{StaticResource OnlyEditDataGridStyle}"/>
             <Style TargetType="accb:AutoCompleteComboBox" BasedOn="{StaticResource MainAutoCompleteComboBoxStyle}"/>
             <Style TargetType="GroupBox" BasedOn="{StaticResource MainGroupBoxStyle}"/>
+            <Style TargetType="CheckBox" BasedOn="{StaticResource MainCheckBoxStyle}"/>
         </Grid.Resources>
 
         <TextBlock Text="*Название:"/>
@@ -42,25 +44,36 @@
         </accb:AutoCompleteComboBox>
 
         <TextBlock Text="Количество вопросов:"/>
-        <TextBox Text="{Binding NumberOfQuestions}" Style="{StaticResource ResourceKey=NumericTextBoxStyle}"
+        <TextBox Text="{Binding NumberOfQuestions, Converter={StaticResource ushortToStringConverter}}" 
+                 Style="{StaticResource ResourceKey=NumericTextBoxStyle}"
                  Padding="5"/>
 
         <TextBlock Text="*Максимальное количество баллов:"/>
-        <TextBox Text="{Binding MaximumPoints}" Style="{StaticResource ResourceKey=NumericTextBoxStyle}"
+        <StackPanel Orientation="Horizontal">
+            <TextBox Text="{Binding MaximumPoints, Converter={StaticResource ushortToStringConverter}}" 
+                 Style="{StaticResource ResourceKey=NumericTextBoxStyle}"
                  Padding="5"/>
+            <CheckBox IsChecked="{Binding IsAutoCalculationOfQuestionsCostEnabled}">
+                <TextBlock Text="Авторасчёт стоимости вопросов" Padding="0" Margin="0"/>
+            </CheckBox>
 
-        <TextBlock Text="/Максимальное время на ответ для каждого вопроса:"/>
+        </StackPanel>
+
+        <TextBlock Text="/Максимальное время на ответ для каждого вопроса (по умолчанию):"/>
         <TextBox Text="{Binding NumberOfSecondsToAnswerEachQuestion, 
-                 Converter={StaticResource ushortNumberOfSecondsToShortTimeStringConverter}}"
-                 Style="{StaticResource ShortTimeTextBoxStyle}" Padding="5"/>
+                 Converter={StaticResource ushortNumberOfSecondsToTimeMinutesSecondsStringConverter}}"
+                 Style="{StaticResource TimeMinutesSecondsTextBoxStyle}" Padding="5"/>
 
         <TextBlock Text="/Максимальное время на прохождение теста:"/>
         <TextBox Text="{Binding NumberOfSecondsToComplete,
-            Converter={StaticResource ushortNumberOfSecondsToShortTimeStringConverter}}"
-                 Style="{StaticResource ShortTimeTextBoxStyle}" Padding="5"/>
+            Converter={StaticResource ushortNumberOfSecondsToTimeHoursMinutesStringConverter}}"
+                 Style="{StaticResource TimeHoursMinutesTextBoxStyle}" Padding="5"/>
 
         <TextBlock Text="Частично засчитывать баллы за неполный ответ:"/>
-        <CheckBox IsThreeState="False" IsChecked="{Binding IsAccountingForIncompleteAnswersEnabled}" Margin="10"/>
+        <CheckBox IsChecked="{Binding IsAccountingForIncompleteAnswersEnabled}"/>
+
+        <TextBlock Text="Автоматическая нумерация вопросов:"/>
+        <CheckBox IsChecked="{Binding IsAutoQuestionNumberingEnabled}"/>
 
         <GroupBox Grid.ColumnSpan="2" Header="Вопросы">
             <Grid>
@@ -69,30 +82,30 @@
                     <RowDefinition Height="3*"/>
                 </Grid.RowDefinitions>
 
-                <DataGrid x:Name="questionsDataGrid" Grid.ColumnSpan="2" ItemsSource="{Binding Questions}">
+                <DataGrid x:Name="questionsDataGrid" ItemsSource="{Binding Questions.AsObservable}">
                     <DataGrid.Columns>
                         <md:DataGridTextColumn Header="№" Binding="{Binding SerialNumberInTest, Mode=TwoWay}">
                             <md:DataGridTextColumn.EditingElementStyle>
                                 <Style TargetType="TextBox" BasedOn="{StaticResource DataGridEditingCellStyle}"/>
                             </md:DataGridTextColumn.EditingElementStyle>
                         </md:DataGridTextColumn>
-                        <md:DataGridTextColumn Header="Стоит баллов" Binding="{Binding PointsCost, Mode=TwoWay}">
+                        <md:DataGridTextColumn Header="Стоимость в баллах" Binding="{Binding PointsCost, Converter={StaticResource doubleOneDecimalToStringConverter}, Mode=TwoWay}">
                             <md:DataGridTextColumn.EditingElementStyle>
                                 <Style TargetType="TextBox" BasedOn="{StaticResource DataGridEditingCellStyle}"/>
                             </md:DataGridTextColumn.EditingElementStyle>
                         </md:DataGridTextColumn>
-                        <md:DataGridTextColumn Header="Количество вариантов ответа" Binding="{Binding NumberOfAnswerOptions, Mode=TwoWay}">
+                        <md:DataGridTextColumn Header="Количество вариантов ответа" Binding="{Binding NumberOfAnswerOptions, Mode=TwoWay}" IsReadOnly="True">
                             <md:DataGridTextColumn.EditingElementStyle>
                                 <Style TargetType="TextBox" BasedOn="{StaticResource DataGridEditingCellStyle}"/>
                             </md:DataGridTextColumn.EditingElementStyle>
                         </md:DataGridTextColumn>
                         <md:DataGridTextColumn Header="Время на ответ" 
-                                           Binding="{Binding NumberOfSecondsToAnswer, Converter={StaticResource ushortNumberOfSecondsToShortTimeStringConverter}, Mode=TwoWay}">
+                                           Binding="{Binding NumberOfSecondsToAnswer, Converter={StaticResource ushortNumberOfSecondsToTimeMinutesSecondsStringConverter}, Mode=TwoWay}">
                             <md:DataGridTextColumn.EditingElementStyle>
                                 <Style TargetType="TextBox" BasedOn="{StaticResource DataGridEditingCellStyle}"/>
                             </md:DataGridTextColumn.EditingElementStyle>
                         </md:DataGridTextColumn>
-                        <md:DataGridTextColumn Header="Содержимое вопроса" Binding="{Binding Content}" Width="SizeToCells">
+                        <md:DataGridTextColumn Header="Содержимое вопроса" Binding="{Binding Content}" IsReadOnly="True">
                             <md:DataGridTextColumn.EditingElementStyle>
                                 <Style TargetType="TextBox" BasedOn="{StaticResource DataGridEditingCellStyle}"/>
                             </md:DataGridTextColumn.EditingElementStyle>
@@ -138,8 +151,8 @@
                     <TextBlock Text="Добавить владельца теста"/>
                 </Button>
 
-                <accb:AutoCompleteComboBox Grid.Row="1" x:Name="ownerTeachersComboBox" ItemsSource="{Binding OwnerTeachers}" 
-                                           TextSearch.TextPath="FullName">
+                <accb:AutoCompleteComboBox Grid.Row="1" x:Name="ownerTeachersComboBox" ItemsSource="{Binding OwnerTeachers.AsObservable}" 
+                                           TextSearch.TextPath="FullName" SelectedIndex="{StaticResource DefaultSelectedIndex}">
                     <accb:AutoCompleteComboBox.ItemTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding FullName}"/>
@@ -155,8 +168,12 @@
             </Grid>
         </GroupBox>
 
-        <Button Command="{Binding ConfirmCommand}" Style="{StaticResource ResourceKey=ConfirmButtonStyle}" Margin="50 0 50 10"/>
-        <Button Command="{Binding CancelCommand}" Style="{StaticResource ResourceKey=CancelButtonStyle}" Margin="50 0 50 10"/>
-
+        <Button Command="{Binding ConfirmCommand}" Style="{StaticResource ResourceKey=ConfirmButtonStyle}">
+            <TextBlock Text="{StaticResource ResourceKey=ConfirmButtonText}"/>
+        </Button>
+        <Button Command="{Binding CancelCommand}" Style="{StaticResource ResourceKey=CancelButtonStyle}">
+            <TextBlock Text="{StaticResource ResourceKey=CancelButtonText}"/>
+        </Button>
+        
     </ag:AutoGrid>
 </Window>
