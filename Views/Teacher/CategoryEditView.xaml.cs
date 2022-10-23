@@ -17,7 +17,9 @@ namespace TestingSystem.Views.Teacher
             viewModel = new CategoryEditViewModel(category);
             viewModel.Closed += (dialogResult) =>
             {
-                DialogResult = dialogResult;
+                if (dialogResult is not null)
+                    DialogResult = dialogResult;
+
                 Close();
             };
 

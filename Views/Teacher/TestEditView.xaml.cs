@@ -20,7 +20,9 @@ namespace TestingSystem.Views.Teacher
             viewModel = new TestEditViewModel(test);
             viewModel.Closed += (dialogResult) =>
             {
-                DialogResult = dialogResult;
+                if (dialogResult is not null)
+                    DialogResult = dialogResult;
+
                 Close();
             };
             viewModel.ErrorMessageOccurred += DefaultMessageHandlers.HandleError;

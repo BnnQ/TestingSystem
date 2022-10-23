@@ -18,7 +18,9 @@ namespace TestingSystem.Views.Teacher
             viewModel = new QuestionEditViewModel(question);
             viewModel.Closed += (dialogResult) =>
             {
-                DialogResult = dialogResult;
+                if (dialogResult is not null)
+                    DialogResult = dialogResult;
+
                 Close();
             };
             viewModel.ErrorMessageOccurred += DefaultMessageHandlers.HandleError;
