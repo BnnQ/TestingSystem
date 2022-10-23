@@ -82,7 +82,7 @@
                     <RowDefinition Height="3*"/>
                 </Grid.RowDefinitions>
 
-                <DataGrid x:Name="questionsDataGrid" ItemsSource="{Binding Questions.AsObservable}">
+                <DataGrid x:Name="questionsDataGrid" ItemsSource="{Binding Questions.AsObservable, IsAsync=True}">
                     <DataGrid.Columns>
                         <md:DataGridTextColumn Header="№" Binding="{Binding SerialNumberInTest, Mode=TwoWay}">
                             <md:DataGridTextColumn.EditingElementStyle>
