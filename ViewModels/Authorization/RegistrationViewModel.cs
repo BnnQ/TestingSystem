@@ -100,9 +100,7 @@ namespace TestingSystem.ViewModels.Authorization
 
         private void SetupBackgroundWorkers()
         {
-            RegistrationBackgroundWorker.OnWorkStarting = () => Mouse.OverrideCursor = Cursors.Wait;
             RegistrationBackgroundWorker.DoWork = async () => await RegisterAsync();
-            RegistrationBackgroundWorker.OnWorkCompleted = () => Mouse.OverrideCursor = Cursors.Arrow;
 
             initialDatabaseLoadBackgroundWorker.DoWork = async () => await UpdateStudentsFromDatabaseAsync();
         }
@@ -148,7 +146,6 @@ namespace TestingSystem.ViewModels.Authorization
                 Application.Current.Dispatcher.Invoke(() =>
                 {
                     Views.Student.MainView studentMainView = new(registeredStudent);
-                    Mouse.OverrideCursor = Cursors.Arrow;
                     studentMainView.Show();
 
                     Close();
@@ -166,7 +163,6 @@ namespace TestingSystem.ViewModels.Authorization
                 Application.Current.Dispatcher.Invoke(() =>
                 {
                     Views.Teacher.MainView teacherMainView = new(registeredTeacher);
-                    Mouse.OverrideCursor = Cursors.Arrow;
                     teacherMainView.Show();
 
                     Close();

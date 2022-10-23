@@ -58,7 +58,7 @@ namespace TestingSystem.ViewModels.Teacher
             }
         }
 
-        private readonly BackgroundWorker categoriesUpdaterFromDatabaseBackgroundWorker = new();
+        public BackgroundWorker CategoriesUpdaterFromDatabaseBackgroundWorker { get; init; } = new();
 
 
         public MainViewModel(Models.Teacher teacher)
@@ -78,9 +78,8 @@ namespace TestingSystem.ViewModels.Teacher
 
         private void SetupBackgroundWorkers()
         {
-            categoriesUpdaterFromDatabaseBackgroundWorker.OnWorkStarting = () => Mouse.OverrideCursor = Cursors.Wait;
-            categoriesUpdaterFromDatabaseBackgroundWorker.DoWork = async () => await UpdateCategoriesFromDatabaseAsync();
-            categoriesUpdaterFromDatabaseBackgroundWorker.OnWorkCompleted = () => Mouse.OverrideCursor = Cursors.Arrow;
+            CategoriesUpdaterFromDatabaseBackgroundWorker.DelayBeforeWork = 500;
+            CategoriesUpdaterFromDatabaseBackgroundWorker.DoWork = async () => await UpdateCategoriesFromDatabaseAsync();
         }
 
         private async Task UpdateCategoriesFromDatabaseAsync()
@@ -102,8 +101,8 @@ namespace TestingSystem.ViewModels.Teacher
         {
             get => updateCategoriesFromDatabaseAsyncCommand ??= new(async () =>
             {
-                if (!categoriesUpdaterFromDatabaseBackgroundWorker.IsBusy)
-                    await categoriesUpdaterFromDatabaseBackgroundWorker.RunWorkerAsync();
+                if (!CategoriesUpdaterFromDatabaseBackgroundWorker.IsBusy)
+                    await CategoriesUpdaterFromDatabaseBackgroundWorker.RunWorkerAsync();
             });
         }
 
@@ -161,7 +160,7 @@ namespace TestingSystem.ViewModels.Teacher
                     });
                 
                 await UpdateCategoriesFromDatabaseAsyncCommand.ExecuteAsync(null);
-            }, (category) => category is not null && !categoriesUpdaterFromDatabaseBackgroundWorker.IsBusy);
+            }, (category) => category is not null && !CategoriesUpdaterFromDatabaseBackgroundWorker.IsBusy);
         }
 
         private AsyncRelayCommand<Test> manageTestAsyncCommand = null!;
@@ -176,7 +175,7 @@ namespace TestingSystem.ViewModels.Teacher
                     });
 
                 await UpdateCategoriesFromDatabaseAsyncCommand.ExecuteAsync(null);
-            }, (test) => test is not null && !categoriesUpdaterFromDatabaseBackgroundWorker.IsBusy);
+            }, (test) => test is not null && !CategoriesUpdaterFromDatabaseBackgroundWorker.IsBusy);
         }
         #endregion
     }

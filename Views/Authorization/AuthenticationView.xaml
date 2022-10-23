@@ -6,7 +6,7 @@
              mc:Ignorable="d" 
              xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:ag="clr-namespace:WpfAutoGrid;assembly=WpfAutoGrid.Core"
-             xmlns:converters="clr-namespace:TestingSystem.Views.Converters"
+             xmlns:busyIndicator="https://github.com/Peoky/BusyIndicator"
              TextElement.Foreground="{DynamicResource MaterialDesignBody}"
              TextElement.FontWeight="Regular"
              TextElement.FontSize="{StaticResource ResourceKey=MainFontSize}"
@@ -29,14 +29,17 @@
             <TextBlock Text="Зарегистрироваться"/>
         </Button>
 
-        <ag:AutoGrid Rows="1*, 1*, 1*" Columns="1*" IsEnabled="{Binding AuthenticationBackgroundWorker.IsBusy, Converter={StaticResource InvertBooleanConverter}}">
-            <TextBox Text="{Binding Username}" md:HintAssist.Hint="Имя пользователя"/>
-            <TextBox Text="{Binding Password}" md:HintAssist.Hint="Пароль"/>
+        <busyIndicator:BusyMask IsBusy="{Binding AuthenticationBackgroundWorker.IsBusy}" IndicatorType="ThreeDots"
+                                BusyContent="Аутентификация...">
+            <ag:AutoGrid Rows="1*, 1*, 1*" Columns="1*" IsEnabled="{Binding AuthenticationBackgroundWorker.IsBusy, Converter={StaticResource InvertBooleanConverter}}">
+                <TextBox Text="{Binding Username}" md:HintAssist.Hint="Имя пользователя"/>
+                <TextBox Text="{Binding Password}" md:HintAssist.Hint="Пароль"/>
 
-            <Button Command="{Binding AuthenticateAsyncCommand}" Height="53" Width="300">
-                <TextBlock Text="Войти"/>
-            </Button>
-        </ag:AutoGrid>
-        
+                <Button Command="{Binding AuthenticateAsyncCommand}" Height="53" Width="300">
+                    <TextBlock Text="Войти"/>
+                </Button>
+            </ag:AutoGrid>
+        </busyIndicator:BusyMask>
+
     </ag:AutoGrid>
 </UserControl>
