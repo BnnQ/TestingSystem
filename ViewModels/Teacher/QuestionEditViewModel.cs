@@ -1,25 +1,20 @@
-﻿using BackgroundWorkerLibrary;
-using HappyStudio.Mvvm.Input.Wpf;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
+﻿using HappyStudio.Mvvm.Input.Wpf;
 using MvvmBaseViewModels.Common.Validatable;
 using MvvmBaseViewModels.Enums;
 using ReactiveValidation;
 using ReactiveValidation.Extensions;
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Input;
 using TestingSystem.Models;
-using TestingSystem.Models.Contexts;
 using TestingSystem.Views.Teacher;
 
 namespace TestingSystem.ViewModels.Teacher
 {
     public class QuestionEditViewModel : ValidatableViewModelBase
     {
-        private void OnQuestionChanged(object? _, System.ComponentModel.PropertyChangedEventArgs args) => OnPropertyChanged(args.PropertyName);
+        private readonly Question questionBackup;
+
         private Question question = null!;
         public Question Question
         {
@@ -28,14 +23,8 @@ namespace TestingSystem.ViewModels.Teacher
             {
                 if (question != value)
                 {
-                    if (question is not null)
-                        question.PropertyChanged -= OnQuestionChanged;
-
                     question = value;
                     OnPropertyChanged(nameof(Question));
-
-                    if (question is not null)
-                        question.PropertyChanged += OnQuestionChanged;
                 }
             }
         }
@@ -82,72 +71,13 @@ namespace TestingSystem.ViewModels.Teacher
             set => Question.SerialNumberInTest = value;
         }
 
-
-        private readonly TestingSystemTeacherContext context;
-        private bool doesQuestionExistInDatabase;
-        private readonly bool doesTestExistInDatabase;
-
-        private readonly BackgroundWorker<AnswerOption> answerOptionUpdaterFromDatabaseBackgroundWorker = new();
-
         public QuestionEditViewModel(Question question)
         {
-            context = new TestingSystemTeacherContext();
+            Question = question;
+            questionBackup = new(question.Content, question.PointsCost, question.AnswerOptions,
+                question.NumberOfSecondsToAnswer, question.Test, question.SerialNumberInTest);
 
-            Question? questionEntity = context.Find<Question>(question.Id);
-            if (questionEntity is not null)
-            {
-                doesQuestionExistInDatabase = true;
-                doesTestExistInDatabase = true;
-
-                EntityEntry<Question> questionEntry = context.Entry(questionEntity);
-                questionEntry.Collection(question => question.AnswerOptions).Load();
-
-                Question = questionEntity;
-            }
-            else if (question.Test.Id == 0)
-            {
-                doesTestExistInDatabase = false;
-                doesQuestionExistInDatabase = false;
-                Question = question;
-            }
-            else
-            {
-                doesQuestionExistInDatabase = false;
-                Question = new(question.Test, question.SerialNumberInTest, question.PointsCost);
-            }
-
-            SetupBackgroundWorkers();
             SetupValidator();
-        }
-
-        private void SetupBackgroundWorkers()
-        {
-            answerOptionUpdaterFromDatabaseBackgroundWorker.OnWorkStarting = () => Mouse.OverrideCursor = Cursors.Wait;
-            answerOptionUpdaterFromDatabaseBackgroundWorker.DoWork = async (answerOptions) =>
-            {
-                if (answerOptions is not null && answerOptions.Any())
-                    await UpdateAnswerOptionsFromDatabaseAsync(answerOptions.First());
-            };
-            answerOptionUpdaterFromDatabaseBackgroundWorker.OnWorkCompleted = () => Mouse.OverrideCursor = Cursors.Arrow;
-        }
-
-        private async Task UpdateAnswerOptionsFromDatabaseAsync(AnswerOption answerOptionToBeUpdated)
-        {
-            using (TestingSystemTeacherContext answerOptionLoaderContext = new())
-            {
-                AnswerOption? updatedAnswerOptionEntity = await answerOptionLoaderContext.FindAsync<AnswerOption>(answerOptionToBeUpdated.Id);
-                if (updatedAnswerOptionEntity is not null)
-                {
-                    answerOptionToBeUpdated.SerialNumberInQuestion = updatedAnswerOptionEntity.SerialNumberInQuestion;
-                    answerOptionToBeUpdated.Content = updatedAnswerOptionEntity.Content;
-                    answerOptionToBeUpdated.IsCorrect = updatedAnswerOptionEntity.IsCorrect;
-                }
-                else
-                {
-                    OccurErrorMessage("Во время редактирования варианта ответа он был параллельно удалён другим пользователем или системой.");
-                    Close(false);
-                }
-            }
         }
 
         #region Validation setup
@@ -233,15 +163,11 @@ namespace TestingSystem.ViewModels.Teacher
         {
             get => editAnswerOptionCommand ??= new((answerOption) =>
             {
-                bool? editViewDialogResult = default;
                 Application.Current.Dispatcher.Invoke(() =>
                 {
                     AnswerOptionEditView editView = new(answerOption!);
-                    editViewDialogResult = editView.ShowDialog();
+                    editView.ShowDialog();
                 });
-
-                if (doesQuestionExistInDatabase && editViewDialogResult == true && !answerOptionUpdaterFromDatabaseBackgroundWorker.IsBusy)
-                    _ = answerOptionUpdaterFromDatabaseBackgroundWorker.RunWorkerAsync();
             }, (answerOption) => answerOption is not null);
         }
 
@@ -259,26 +185,8 @@ namespace TestingSystem.ViewModels.Teacher
             get => confirmAsyncCommand ??= new(async () =>
             {
                 if (!await IsContentValidAsync() || !await IsPointsCostValidAsync() || !await IsNumberOfAnswerOptionsValidAsync())
-                {
                     return;
-                }
 
-                if (!doesTestExistInDatabase)
-                {
-                    Close(true);
-                    return;
-                }
-
-                if (!doesQuestionExistInDatabase)
-                {
-                    Test? testEntity = await context.FindAsync<Test>(Question.Test.Id);
-                    if (testEntity is not null)
-                        testEntity.Questions.Add(Question);
-                    else
-                        OccurErrorMessage("Не удалось сохранить вопрос, так как во время его редактирования, содержащий вопрос тест был параллельно удалён другим пользователем или системой.");
-                }
-
-                await context.SaveChangesAsync();
                 Close(true);
             });
         }
@@ -286,39 +194,17 @@ namespace TestingSystem.ViewModels.Teacher
         private RelayCommand cancelCommand = null!;
         public RelayCommand CancelCommand
         {
-            get => cancelCommand ??= new(() => Close(false));
-        }
-        #endregion
-
-        #region Disposing
-        public override void Close(bool? dialogResult = null)
-        {
-            Dispose(true);
-            base.Close(dialogResult);
-        }
-
-        public override void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-            base.Dispose();
-        }
-
-        private bool isDisposed = false;
-        protected override void Dispose(bool needDisposing)
-        {
-            if (isDisposed)
-                return;
-
-            if (needDisposing)
+            get => cancelCommand ??= new(() =>
             {
-                context.Dispose();
-            }
+                Question.Content = questionBackup.Content;
+                Question.PointsCost = questionBackup.PointsCost;
+                Question.AnswerOptions = questionBackup.AnswerOptions;
+                Question.NumberOfSecondsToAnswer = questionBackup.NumberOfSecondsToAnswer;
+                Question.SerialNumberInTest = questionBackup.SerialNumberInTest;
 
-            isDisposed = true;
+                Close(false);
+            });
         }
-
-        ~QuestionEditViewModel() => Dispose(false);
         #endregion
     }
 }

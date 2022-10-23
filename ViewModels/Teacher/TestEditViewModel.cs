@@ -1,10 +1,6 @@
-﻿using BackgroundWorkerLibrary;
-using HappyStudio.Mvvm.Input.Wpf;
+﻿using HappyStudio.Mvvm.Input.Wpf;
 using Meziantou.Framework.WPF.Builders;
-using Meziantou.Framework.WPF.Collections;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
-using MvvmBaseViewModels.Common;
 using MvvmBaseViewModels.Common.Validatable;
 using MvvmBaseViewModels.Enums;
 using ReactiveValidation;
@@ -15,7 +11,6 @@ using System.Collections.Specialized;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Input;
 using TestingSystem.Models;
 using TestingSystem.Models.Contexts;
 using TestingSystem.Views.Teacher;
@@ -130,8 +125,6 @@ namespace TestingSystem.ViewModels.Teacher
         
         private readonly TestingSystemTeacherContext context;
         private readonly bool doesTestExistInDatabase;
-
-        private readonly BackgroundWorker<Question> questionUpdaterFromDatabaseBackgroundWorker = new();
         
         public TestEditViewModel(Test test)
         {
@@ -143,19 +136,18 @@ namespace TestingSystem.ViewModels.Teacher
             context.Teachers.Include(teacher => teacher.OwnedTests).Load();
             Teachers = context.Teachers.ToArray();
 
+            context.Tests
+                   .Include(t => t.Category)
+                   .Include(t => t.Questions)
+                        .ThenInclude(q => q.AnswerOptions)
+                   .Include(t => t.OwnerTeachers)
+                   .Where(t => t.Id == test.Id)
+                   .Load();
+
             Test? testEntity = context.Tests.Find(test.Id);
             if (testEntity is not null)
             {
                 doesTestExistInDatabase = true;
-                EntityEntry<Test> testEntry = context.Entry(testEntity);
-                testEntry.Reference(test => test.Category).Load();
-
-                testEntry.Collection(test => test.Questions).Load();
-                foreach (Question question in testEntity.Questions)
-                    context.Entry(question).Collection(question => question.AnswerOptions).Load();
-
-                testEntry.Collection(test => test.OwnerTeachers).Load();
-
                 Test = testEntity;
             }
             else
@@ -164,45 +156,7 @@ namespace TestingSystem.ViewModels.Teacher
                 Test = new(new ConcurrentObservableCollectionBuilder<Models.Teacher>(Teachers.Where(teacher => test.OwnerTeachers.Any(t => t.Id == teacher.Id))).Build());
             }
 
-            SetupBackgroundWorkers();
             SetupValidator();
-        }
-
-        private void SetupBackgroundWorkers()
-        {
-            questionUpdaterFromDatabaseBackgroundWorker.OnWorkStarting = () => Mouse.OverrideCursor = Cursors.Wait;
-            questionUpdaterFromDatabaseBackgroundWorker.DoWork = async (questions) =>
-            {
-                if (questions is not null && questions.Any())
-                    await UpdateQuestionFromDatabaseAsync(questions.First());
-            };
-            questionUpdaterFromDatabaseBackgroundWorker.OnWorkCompleted = () => Mouse.OverrideCursor = Cursors.Arrow;
-        }
-
-        private async Task UpdateQuestionFromDatabaseAsync(Question questionToBeUpdated)
-        {
-            using (TestingSystemTeacherContext questionLoaderContext = new())
-            {
-                Question? updatedQuestionEntity = await questionLoaderContext.FindAsync<Question>(questionToBeUpdated.Id);
-                if (updatedQuestionEntity is not null)
-                {
-                    await questionLoaderContext
-                        .Entry(updatedQuestionEntity)
-                        .Collection(question => question.AnswerOptions)
-                        .LoadAsync();
-
-                    questionToBeUpdated.AnswerOptions = updatedQuestionEntity.AnswerOptions;
-                    questionToBeUpdated.SerialNumberInTest = updatedQuestionEntity.SerialNumberInTest;
-                    questionToBeUpdated.Content = updatedQuestionEntity.Content;
-                    questionToBeUpdated.PointsCost = updatedQuestionEntity.PointsCost;
-                    questionToBeUpdated.NumberOfSecondsToAnswer = updatedQuestionEntity.NumberOfSecondsToAnswer;
-                }
-                else
-                {
-                    OccurErrorMessage("Во время редактирования вопроса он был параллельно удалён другим пользователем или системой.");
-                    Close(false);
-                }
-            }
         }
 
         #region Validation setup
@@ -327,20 +281,16 @@ namespace TestingSystem.ViewModels.Teacher
             });
         }
 
-        private AsyncRelayCommand<Question> editQuestionCommand = null!;
-        public AsyncRelayCommand<Question> EditQuestionCommand
+        private RelayCommand<Question> editQuestionCommand = null!;
+        public RelayCommand<Question> EditQuestionCommand
         {
-            get => editQuestionCommand ??= new(async (question) =>
+            get => editQuestionCommand ??= new((question) =>
             {
-                bool? editViewDialogResult = default;
                 Application.Current.Dispatcher.Invoke(() =>
                 {
                     QuestionEditView editView = new(question!);
-                    editViewDialogResult = editView.ShowDialog();
+                    editView.ShowDialog();
                 });
-
-                if (doesTestExistInDatabase && editViewDialogResult == true && !questionUpdaterFromDatabaseBackgroundWorker.IsBusy)
-                    await questionUpdaterFromDatabaseBackgroundWorker.RunWorkerAsync(question!);
             }, (question) => question is not null);
         }
 
@@ -386,9 +336,14 @@ namespace TestingSystem.ViewModels.Teacher
                 {
                     Category? categoryEntity = await context.FindAsync<Category>(Test.Category?.Id);
                     if (categoryEntity is not null)
+                    {
                         categoryEntity.Tests.Add(Test);
+                    }
                     else
+                    {
                         OccurErrorMessage("Не удалось сохранить тест, так как во время его редактирования, содержащий тест категория была параллельно удалена другим пользователем или системой.");
+                        return;
+                    }
                 }
 
                 await context.SaveChangesAsync();
