@@ -1,6 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using Meziantou.Framework.WPF.Builders;
 using Meziantou.Framework.WPF.Collections;
+using Meziantou.Framework.WPF.Extensions;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
@@ -52,7 +53,7 @@ namespace TestingSystem.Models
                 {
                     isAutoQuestionNumberingEnabled = value;
                     OnPropertyChanged(nameof(IsAutoQuestionNumberingEnabled));
-                    
+
                     if (IsAutoQuestionNumberingEnabled)
                         RenumberQuestions();
                 }
@@ -104,7 +105,6 @@ namespace TestingSystem.Models
             {
                 OnPropertyChanged(nameof(NumberOfQuestions));
 
-
                 if (IsAutoQuestionNumberingEnabled)
                     RenumberQuestions();
                 else
@@ -134,7 +134,6 @@ namespace TestingSystem.Models
                 {
                     questions = new ConcurrentObservableCollectionBuilder<Question>(value)
                                 .WhichToHandleCollectionChangesUses(OnQuestionsChanged)
-                                .WhichToHandleItemsPropertyChangedUses(OnQuestionsItemPropertyChanged)
                                 .Build();
 
                     OnPropertyChanged(nameof(Questions));
@@ -148,7 +147,7 @@ namespace TestingSystem.Models
             get => (ushort) Questions.Count;
             set
             {
-                if (Questions.Count == value)
+                if (Questions.Count == value || value > 1000)
                     return;
 
                 if (Questions.Count < value)

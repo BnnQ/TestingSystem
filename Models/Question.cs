@@ -121,7 +121,7 @@ namespace TestingSystem.Models
             get => (ushort) AnswerOptions.Count;
             set
             {
-                if (AnswerOptions.Count == value)
+                if (AnswerOptions.Count == value || value > 1000)
                     return;
 
                 if (AnswerOptions.Count < value)
@@ -218,12 +218,12 @@ namespace TestingSystem.Models
             SerialNumberInTest = serialNumberInTest;
         }
         public Question(string content, double pointsCost, ICollection<AnswerOption> answerOptions,
-            ushort numberOfSecondsToAnswer, Test test, ushort serialNumberInTest) 
+            ushort? numberOfSecondsToAnswer, Test test, ushort serialNumberInTest) 
             : this(content, pointsCost, answerOptions, test, serialNumberInTest)
         {
             NumberOfSecondsToAnswer = numberOfSecondsToAnswer;
         }
-        public Question(string content, double pointsCost, ushort numberOfAnswerOptions, ushort numberOfSecondsToAnswer, Test test,
+        public Question(string content, double pointsCost, ushort numberOfAnswerOptions, ushort? numberOfSecondsToAnswer, Test test,
             ushort serialNumberInTest) : this(content, pointsCost, numberOfAnswerOptions, test, serialNumberInTest)
         {
             NumberOfSecondsToAnswer = numberOfSecondsToAnswer;
