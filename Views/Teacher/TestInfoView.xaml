@@ -16,7 +16,7 @@
         WindowStartupLocation="CenterScreen"
         FontFamily="{DynamicResource MaterialDesignFont}"
         Background="{DynamicResource MaterialDesignPaper}"
-        Title="Просмотр и управление тестом" Height="700" Width="850">
+        Title="Просмотр и управление тестом" Width="1000" Height="700" MinWidth="550" MinHeight="600">
     <ag:AutoGrid Rows="1*, 1*, 1*, 1*, 1*, 1*, 1*, 4*, 1*" Columns="1*, 1*" ChildMargin="{StaticResource MarginOfEditControl}">
         <Grid.Resources>
             <converters:UshortNumberOfSecondsToTimeHoursMinutesStringConverter x:Key="ushortNumberOfSecondsToTimeHoursMinutesStringConverter"/>
@@ -86,10 +86,10 @@
             </Grid>
         </GroupBox>
 
-        <Button Style="{StaticResource ResourceKey=EditButtonStyle}" Command="{Binding EditTestAsyncCommand}" Margin="50 0">
+        <Button Style="{StaticResource EditButtonStyle}" Command="{Binding EditTestAsyncCommand}" Margin="50 0">
             <TextBlock Text="Редактировать тест"/>
         </Button>
-        <Button Style="{StaticResource ResourceKey=RemoveButtonStyle}" Command="{Binding RemoveTestAsyncCommand}" Margin="50 0">
+        <Button Style="{StaticResource RemoveButtonStyle}" Command="{Binding RemoveTestAsyncCommand}" Margin="50 0">
             <TextBlock Text="Удалить тест"/>
         </Button>
 

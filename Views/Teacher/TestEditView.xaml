@@ -11,13 +11,13 @@
         WindowStartupLocation="CenterScreen"
         TextElement.Foreground="{DynamicResource MaterialDesignBody}"
         TextElement.FontWeight="Regular"
-        TextElement.FontSize="{StaticResource ResourceKey=MainFontSize}"
+        TextElement.FontSize="{StaticResource MainFontSize}"
         TextOptions.TextFormattingMode="Ideal"
         TextOptions.TextRenderingMode="Auto"
         FontFamily="{DynamicResource MaterialDesignFont}"
         Background="{DynamicResource MaterialDesignPaper}"
-        Title="Редактор теста" Width="850" Height="950" MinWidth="800" MinHeight="800">
-    <ag:AutoGrid Rows="1*, 1*, 1*, 1*, 1*, 1*, 1*, 1*, 4*, 3*, 1*" Columns="1*, 1*">
+        Title="Редактор теста" Width="1000" Height="950" MinWidth="750" MinHeight="850">
+    <ag:AutoGrid Rows="1*, 1*, 1*, 1*, 1*, 1*, 1*, 1*, 4*, 3*, 1*" Columns="1*, 1*" ChildMargin="{StaticResource MarginOfEditControl}">
         <Grid.Resources>
             <converters:UshortNumberOfSecondsToTimeHoursMinutesStringConverter x:Key="ushortNumberOfSecondsToTimeHoursMinutesStringConverter"/>
             <converters:UshortNumberOfSecondsToTimeMinutesSecondsStringConverter x:Key="ushortNumberOfSecondsToTimeMinutesSecondsStringConverter"/>
@@ -45,13 +45,13 @@
 
         <TextBlock Text="Количество вопросов:"/>
         <TextBox Text="{Binding NumberOfQuestions, Converter={StaticResource ushortToStringConverter}}" 
-                 Style="{StaticResource ResourceKey=NumericTextBoxStyle}"
+                 Style="{StaticResource NumericTextBoxStyle}"
                  Padding="5"/>
 
         <TextBlock Text="*Максимальное количество баллов:"/>
-        <StackPanel Orientation="Horizontal">
+        <StackPanel Orientation="Horizontal" Margin="0">
             <TextBox Text="{Binding MaximumPoints, Converter={StaticResource ushortToStringConverter}}" 
-                 Style="{StaticResource ResourceKey=NumericTextBoxStyle}"
+                 Style="{StaticResource NumericTextBoxStyle}"
                  Padding="5"/>
             <CheckBox IsChecked="{Binding IsAutoCalculationOfQuestionsCostEnabled}">
                 <TextBlock Text="Авторасчёт стоимости вопросов" Padding="0" Margin="0"/>
@@ -75,7 +75,7 @@
         <TextBlock Text="Автоматическая нумерация вопросов:"/>
         <CheckBox IsChecked="{Binding IsAutoQuestionNumberingEnabled}"/>
 
-        <GroupBox Grid.ColumnSpan="2" Header="Вопросы">
+        <GroupBox Grid.ColumnSpan="2" Header="Вопросы" Margin="0">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="7*"/>
@@ -113,14 +113,14 @@
                     </DataGrid.Columns>
                 </DataGrid>
                 <ag:AutoGrid Grid.Row="1" Rows="1*" Columns="1*, 1*, 1*">
-                    <Button Command="{Binding AddQuestionCommand}" Style="{StaticResource ResourceKey=AddButtonStyle}">
+                    <Button Command="{Binding AddQuestionCommand}" Style="{StaticResource AddButtonStyle}">
                         <TextBlock Text="Добавить вопрос"/>
                     </Button>
-                    <Button Command="{Binding EditQuestionCommand}" Style="{StaticResource ResourceKey=EditButtonStyle}"
+                    <Button Command="{Binding EditQuestionCommand}" Style="{StaticResource EditButtonStyle}"
                         CommandParameter="{Binding ElementName=questionsDataGrid, Path=SelectedItem}">
                         <TextBlock Text="Изменить вопрос"/>
                     </Button>
-                    <Button Command="{Binding RemoveQuestionCommand}" Style="{StaticResource ResourceKey=RemoveButtonStyle}"
+                    <Button Command="{Binding RemoveQuestionCommand}" Style="{StaticResource RemoveButtonStyle}"
                         CommandParameter="{Binding ElementName=questionsDataGrid, Path=SelectedItem}">
                         <TextBlock Text="Удалить вопрос"/>
                     </Button>
@@ -128,7 +128,7 @@
             </Grid>
         </GroupBox>
 
-        <GroupBox Grid.ColumnSpan="2" Header="Владельцы теста">
+        <GroupBox Grid.ColumnSpan="2" Header="Владельцы теста" Margin="0">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition/>
@@ -148,7 +148,7 @@
                         </DataTemplate>
                     </accb:AutoCompleteComboBox.ItemTemplate>
                 </accb:AutoCompleteComboBox>
-                <Button Grid.Column="1" Command="{Binding AddTestOwnerCommand}" Style="{StaticResource ResourceKey=AddButtonStyle}" 
+                <Button Grid.Column="1" Command="{Binding AddTestOwnerCommand}" Style="{StaticResource AddButtonStyle}" 
                         Margin="70 0" CommandParameter="{Binding ElementName=teachersComboBox,Path=SelectedItem}">
                     <TextBlock Text="Добавить владельца теста"/>
                 </Button>
@@ -164,7 +164,7 @@
                     </accb:AutoCompleteComboBox.ItemTemplate>
                 </accb:AutoCompleteComboBox>
                 <Button Grid.Row="1" Grid.Column="1" Command="{Binding RemoveTestOwnerCommand}" 
-                        Style="{StaticResource ResourceKey=RemoveButtonStyle}" Margin="70 0"
+                        Style="{StaticResource RemoveButtonStyle}" Margin="70 0"
                         CommandParameter="{Binding ElementName=ownerTeachersComboBox, Path=SelectedItem}">
                     <TextBlock Text="Удалить владельца теста"/>
                 </Button>
@@ -172,11 +172,11 @@
             </Grid>
         </GroupBox>
 
-        <Button Command="{Binding ConfirmCommand}" Style="{StaticResource ResourceKey=ConfirmButtonStyle}">
-            <TextBlock Text="{StaticResource ResourceKey=ConfirmButtonText}"/>
+        <Button Command="{Binding ConfirmCommand}" Style="{StaticResource ConfirmButtonStyle}">
+            <TextBlock Text="{StaticResource ConfirmButtonText}"/>
         </Button>
-        <Button Command="{Binding CancelCommand}" Style="{StaticResource ResourceKey=CancelButtonStyle}">
-            <TextBlock Text="{StaticResource ResourceKey=CancelButtonText}"/>
+        <Button Command="{Binding CancelCommand}" Style="{StaticResource CancelButtonStyle}">
+            <TextBlock Text="{StaticResource CancelButtonText}"/>
         </Button>
         
     </ag:AutoGrid>

@@ -13,10 +13,10 @@
         WindowStartupLocation="CenterScreen"
         FontFamily="{DynamicResource MaterialDesignFont}"
         Background="{DynamicResource MaterialDesignPaper}"
-        Title="Просмотр и управление категорией" Width="800" Height="450" MinWidth="500" MinHeight="200">
+        Title="Просмотр и управление категорией" Width="800" Height="450" MinWidth="580" MinHeight="200">
     <ag:AutoGrid Rows="1*, 1*, 1*" Columns="1*, 1*">
         <Grid.Resources>
-            <Style TargetType="TextBlock" BasedOn="{StaticResource ResourceKey=MainTextBlockStyle}"/>
+            <Style TargetType="TextBlock" BasedOn="{StaticResource MainTextBlockStyle}"/>
         </Grid.Resources>
         
         <TextBlock Grid.ColumnSpan="2" FontSize="30" Text="{Binding Category.Name}"/>

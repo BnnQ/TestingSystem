@@ -9,27 +9,26 @@
         WindowStartupLocation="CenterScreen"
         TextElement.Foreground="{DynamicResource MaterialDesignBody}"
         TextElement.FontWeight="Regular"
-        TextElement.FontSize="{StaticResource ResourceKey=MainFontSize}"
+        TextElement.FontSize="{StaticResource MainFontSize}"
         TextOptions.TextFormattingMode="Ideal"
         TextOptions.TextRenderingMode="Auto"
         FontFamily="{DynamicResource MaterialDesignFont}"
         Background="{DynamicResource MaterialDesignPaper}"
-        Title="Редактор категории" Height="350" Width="{StaticResource ResourceKey=MainEditViewWidth}"
-        MaxHeight="350" MaxWidth="{StaticResource ResourceKey=MainEditViewWidth}">
+        Title="Редактор категории" Width="450" Height="350" MinWidth="300" MinHeight="200">
     <ag:AutoGrid Rows="1*, 1*" Columns="1*">
         <Grid.Resources>
             <Style TargetType="TextBox" BasedOn="{StaticResource OutlinedTextBoxStyle}">
-                <Setter Property="Margin" Value="{StaticResource ResourceKey=MarginOfEditControl}"/>
+                <Setter Property="Margin" Value="{StaticResource MarginOfEditControl}"/>
             </Style>
         </Grid.Resources>
         
-        <TextBox md:HintAssist.Hint="Название" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"/>
+        <TextBox md:HintAssist.Hint="Название" Text="{Binding Name}"/>
 
         <ag:AutoGrid Rows="1*" Columns="1*, 1*">
-            <Button Style="{StaticResource ResourceKey=ConfirmButtonStyle}" Command="{Binding ConfirmAsyncCommand}">
+            <Button Style="{StaticResource ConfirmButtonStyle}" Command="{Binding ConfirmAsyncCommand}">
                 <TextBlock Text="{StaticResource ConfirmButtonText}"/>
             </Button>
-            <Button Style="{StaticResource ResourceKey=CancelButtonStyle}" Command="{Binding CancelCommand}">
+            <Button Style="{StaticResource CancelButtonStyle}" Command="{Binding CancelCommand}">
                 <TextBlock Text="{StaticResource CancelButtonText}"/>
             </Button>
         </ag:AutoGrid>

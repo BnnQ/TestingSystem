@@ -10,12 +10,12 @@
         WindowStartupLocation="CenterScreen"
         TextElement.Foreground="{DynamicResource MaterialDesignBody}"
         TextElement.FontWeight="Regular"
-        TextElement.FontSize="{StaticResource ResourceKey=MainFontSize}"
+        TextElement.FontSize="{StaticResource MainFontSize}"
         TextOptions.TextFormattingMode="Ideal"
         TextOptions.TextRenderingMode="Auto"
         FontFamily="{DynamicResource MaterialDesignFont}"
         Background="{DynamicResource MaterialDesignPaper}"
-        Title="Редактор вопроса" Width="650" Height="700" MinWidth="600" MinHeight="650">
+        Title="Редактор вопроса" Width="650" Height="700" MinWidth="550" MinHeight="650">
     <ag:AutoGrid Rows="1*, 1*, 1*, 1*, 1*, 1*, 4*, 1*" Columns="1*, 1*" ChildMargin="{StaticResource MarginOfEditControl}">
         <Grid.Resources>
             <converters:UshortNumberOfSecondsToTimeMinutesSecondsStringConverter x:Key="ushortNumberOfSecondsToTimeMinutesSecondsStringConverter"/>
@@ -32,19 +32,19 @@
 
         <TextBlock Text="*Стоимость в баллах:"/>
         <TextBox Text="{Binding PointsCost, Converter={StaticResource doubleOneDecimalToStringConverter}}" 
-                 Style="{StaticResource ResourceKey=NumericTextBoxStyle}" Padding="5"/>
+                 Style="{StaticResource NumericTextBoxStyle}" Padding="5"/>
 
         <TextBlock Text="Количество вариантов ответа:"/>
         <TextBox Text="{Binding NumberOfAnswerOptions, Converter={StaticResource ushortToStringConverter}}"
-                 Style="{StaticResource ResourceKey=NumericTextBoxStyle}" Padding="5"/>
+                 Style="{StaticResource NumericTextBoxStyle}" Padding="5"/>
 
         <TextBlock Text="Порядковый номер вопроса в тесте:"/>
         <TextBox Text="{Binding SerialNumberInTest, Converter={StaticResource ushortToStringConverter}}" 
-                 Style="{StaticResource ResourceKey=NumericTextBoxStyle}" Padding="5"/>
+                 Style="{StaticResource NumericTextBoxStyle}" Padding="5"/>
 
         <TextBlock Text="Время на ответ:"/>
         <TextBox Text="{Binding NumberOfSecondsToAnswer, Converter={StaticResource ushortNumberOfSecondsToTimeMinutesSecondsStringConverter}}" 
-                 Style="{StaticResource ResourceKey=TimeMinutesSecondsTextBoxStyle}" Padding="5"/>
+                 Style="{StaticResource TimeMinutesSecondsTextBoxStyle}" Padding="5"/>
 
         <TextBlock Text="Автоматическая нумерация вариантов ответа:"/>
         <CheckBox IsChecked="{Binding IsAutoAnswerOptionNumberingEnabled}"/>
@@ -73,14 +73,14 @@
                 </DataGrid>
 
                 <ag:AutoGrid Grid.Row="1" Rows="1*" Columns="1*, 1*, 1*">
-                    <Button Command="{Binding AddAnswerOptionCommand}" Style="{StaticResource ResourceKey=AddButtonStyle}">
+                    <Button Command="{Binding AddAnswerOptionCommand}" Style="{StaticResource AddButtonStyle}">
                         <TextBlock Text="Добавить вариант"/>
                     </Button>
-                    <Button Command="{Binding EditAnswerOptionCommand}" Style="{StaticResource ResourceKey=EditButtonStyle}"
+                    <Button Command="{Binding EditAnswerOptionCommand}" Style="{StaticResource EditButtonStyle}"
                         CommandParameter="{Binding ElementName=answerOptionsDataGrid, Path=SelectedItem}">
                         <TextBlock Text="Изменить вариант"/>
                     </Button>
-                    <Button Command="{Binding RemoveAnswerOptionCommand}" Style="{StaticResource ResourceKey=RemoveButtonStyle}"
+                    <Button Command="{Binding RemoveAnswerOptionCommand}" Style="{StaticResource RemoveButtonStyle}"
                         CommandParameter="{Binding ElementName=answerOptionsDataGrid, Path=SelectedItem}">
                         <TextBlock Text="Удалить вариант"/>
                     </Button>

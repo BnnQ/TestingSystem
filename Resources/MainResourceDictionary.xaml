@@ -6,8 +6,8 @@
                     xmlns:system="clr-namespace:System;assembly=mscorlib">
 
     <system:Double x:Key="MainFontSize">17</system:Double>
+    <system:Double x:Key="DataGridFontSize">16</system:Double>
     <system:Double x:Key="ValidationMessageFontSize">11</system:Double>
-    <system:Double x:Key="MainEditViewWidth">450</system:Double>
     <Thickness x:Key="MarginOfAuthorizationControl">75 0</Thickness>
     <Thickness x:Key="MarginOfEditControl">5 10</Thickness>
     <system:Int32 x:Key="DefaultSelectedIndex">0</system:Int32>
@@ -232,6 +232,7 @@
         <Setter Property="SelectionMode" Value="Single"/>
         <Setter Property="SelectionUnit" Value="FullRow"/>
         <Setter Property="md:DataGridAssist.CornerRadius" Value="10"/>
+        <Setter Property="FontSize" Value="{StaticResource DataGridFontSize}"/>   
     </Style>
 
     <Style x:Key="DataGridEditingCellStyle" TargetType="TextBox" BasedOn="{StaticResource MaterialDesignTextBox}">
@@ -250,6 +251,7 @@
         <Setter Property="SelectionUnit" Value="FullRow"/>
         <Setter Property="md:DataGridAssist.CornerRadius" Value="10"/>
         <Setter Property="md:DataGridAssist.EnableEditBoxAssist" Value="True"/>
+        <Setter Property="FontSize" Value="{StaticResource DataGridFontSize}"/>
     </Style>
 
     <Style x:Key="MainScrollViewerStyle" TargetType="ScrollViewer" BasedOn="{StaticResource MaterialDesignScrollViewer}">

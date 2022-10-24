@@ -9,7 +9,7 @@
              xmlns:busyIndicator="https://github.com/Peoky/BusyIndicator"
              TextElement.Foreground="{DynamicResource MaterialDesignBody}"
              TextElement.FontWeight="Regular"
-             TextElement.FontSize="{StaticResource ResourceKey=MainFontSize}"
+             TextElement.FontSize="{StaticResource MainFontSize}"
              TextOptions.TextFormattingMode="Ideal"
              TextOptions.TextRenderingMode="Auto"
              FontFamily="{DynamicResource MaterialDesignFont}"
@@ -17,20 +17,20 @@
              d:DesignHeight="600" d:DesignWidth="450">
     <ag:AutoGrid Rows="1*, 9*" Columns="1*">
         <Grid.Resources>
-            <Style TargetType="TextBox" BasedOn="{StaticResource ResourceKey=OutlinedTextBoxStyle}">
-                <Setter Property="Margin" Value="{StaticResource ResourceKey=MarginOfAuthorizationControl}"/>
+            <Style TargetType="TextBox" BasedOn="{StaticResource OutlinedTextBoxStyle}">
+                <Setter Property="Margin" Value="{StaticResource MarginOfAuthorizationControl}"/>
             </Style>
-            <Style TargetType="Button" BasedOn="{StaticResource ResourceKey=RoundedRectangularButtonStyle}">
+            <Style TargetType="Button" BasedOn="{StaticResource RoundedRectangularButtonStyle}">
                 <Setter Property="Margin" Value="{StaticResource MarginOfAuthorizationControl}"/>
                 <Setter Property="MinHeight" Value="50"/>
             </Style>
-            <Style TargetType="TextBlock" BasedOn="{StaticResource ResourceKey=MainTextBlockStyle}"/>
-            <Style TargetType="PasswordBox" BasedOn="{StaticResource ResourceKey=MainPasswordBoxStyle}">
+            <Style TargetType="TextBlock" BasedOn="{StaticResource MainTextBlockStyle}"/>
+            <Style TargetType="PasswordBox" BasedOn="{StaticResource MainPasswordBoxStyle}">
                 <Setter Property="Margin" Value="{StaticResource MarginOfAuthorizationControl}"/>
             </Style>
         </Grid.Resources>
 
-        <Button Grid.ColumnSpan="2" Style="{StaticResource ResourceKey=FlatButtonWithoutHighlightStyle}"
+        <Button Grid.ColumnSpan="2" Style="{StaticResource FlatButtonWithoutHighlightStyle}"
                 Command="{Binding SwitchToRegistrationNavigationCommand}">
             <TextBlock Text="Зарегистрироваться"/>
         </Button>
