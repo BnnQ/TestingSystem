@@ -102,6 +102,10 @@ namespace TestingSystem.ViewModels.Teacher
                 .Must(content => !string.IsNullOrWhiteSpace(content))
                 .When(viewModel => viewModel.contentValidationState == ValidationState.Enabled)
                 .WithMessage("Вопрос не может быть пустым");
+            builder.RuleFor(viewModel => viewModel.Content)
+                .MaxLength(512)
+                .When(viewModel => viewModel.contentValidationState == ValidationState.Enabled)
+                .WithMessage("Вопрос не может быть длиннее 512 символов");
 
             builder.RuleFor(viewModel => viewModel.PointsCost)
                 .Must(pointsCost => pointsCost > 0)
@@ -117,6 +121,7 @@ namespace TestingSystem.ViewModels.Teacher
                 .Must(_ => (_ || !_) && AnswerOptions.DistinctBy(answerOption => answerOption.SerialNumberInQuestion).Count() == AnswerOptions.Count)
                 .When(viewModel => viewModel.isAutoAnswerOptionNumberingEnabledValidationState == ValidationState.Enabled)
                 .WithMessage("Порядковые номера вариантов ответа не могут повторяться");
+            
             Validator = builder.Build(this);
         }
 

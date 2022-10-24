@@ -46,17 +46,18 @@ namespace TestingSystem.ViewModels.Teacher
 
         public CategoryEditViewModel(Category category)
         {
+            context = new TestingSystemTeacherContext();
+
+            Category? categoryEntity;
             try
             {
-                context = new TestingSystemTeacherContext();
+                categoryEntity = context.Find<Category>(category.Id);
             }
             catch (Exception exception)
             {
                 OccurCriticalErrorMessage(exception);
                 return;
             }
-
-            Category? categoryEntity = context.Find<Category>(category.Id);
 
             if (categoryEntity is not null)
             {
