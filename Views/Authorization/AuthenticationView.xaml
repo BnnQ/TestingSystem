@@ -18,10 +18,16 @@
     <ag:AutoGrid Rows="1*, 9*" Columns="1*">
         <Grid.Resources>
             <Style TargetType="TextBox" BasedOn="{StaticResource ResourceKey=OutlinedTextBoxStyle}">
-                <Setter Property="Width" Value="300"/>
+                <Setter Property="Margin" Value="{StaticResource ResourceKey=MarginOfAuthorizationControl}"/>
             </Style>
-            <Style TargetType="Button" BasedOn="{StaticResource ResourceKey=RoundedRectangularButtonStyle}"/>
+            <Style TargetType="Button" BasedOn="{StaticResource ResourceKey=RoundedRectangularButtonStyle}">
+                <Setter Property="Margin" Value="{StaticResource MarginOfAuthorizationControl}"/>
+                <Setter Property="MinHeight" Value="50"/>
+            </Style>
             <Style TargetType="TextBlock" BasedOn="{StaticResource ResourceKey=MainTextBlockStyle}"/>
+            <Style TargetType="PasswordBox" BasedOn="{StaticResource ResourceKey=MainPasswordBoxStyle}">
+                <Setter Property="Margin" Value="{StaticResource MarginOfAuthorizationControl}"/>
+            </Style>
         </Grid.Resources>
 
         <Button Grid.ColumnSpan="2" Style="{StaticResource ResourceKey=FlatButtonWithoutHighlightStyle}"
@@ -31,11 +37,12 @@
 
         <busyIndicator:BusyMask IsBusy="{Binding AuthenticationBackgroundWorker.IsBusy}" IndicatorType="ThreeDots"
                                 BusyContent="Аутентификация...">
-            <ag:AutoGrid Rows="1*, 1*, 1*" Columns="1*" IsEnabled="{Binding AuthenticationBackgroundWorker.IsBusy, Converter={StaticResource InvertBooleanConverter}}">
+            <ag:AutoGrid Rows="1*, 1*, 1*" Columns="1*"
+                         IsEnabled="{Binding AuthenticationBackgroundWorker.IsBusy, Converter={StaticResource InvertBooleanConverter}}">
                 <TextBox Text="{Binding Username}" md:HintAssist.Hint="Имя пользователя"/>
-                <TextBox Text="{Binding Password}" md:HintAssist.Hint="Пароль"/>
+                <PasswordBox md:PasswordBoxAssist.Password="{Binding Password, TargetNullValue=''}"/>
 
-                <Button Command="{Binding AuthenticateAsyncCommand}" Height="53" Width="300">
+                <Button Command="{Binding AuthenticateAsyncCommand}">
                     <TextBlock Text="Войти"/>
                 </Button>
             </ag:AutoGrid>
