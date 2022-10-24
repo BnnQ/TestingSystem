@@ -19,9 +19,18 @@
         <Grid.Resources>
             <Style TargetType="TextBlock" BasedOn="{StaticResource ResourceKey=MainTextBlockStyle}"/>
             <Style TargetType="TextBox" BasedOn="{StaticResource ResourceKey=OutlinedTextBoxStyle}">
-                <Setter Property="Width" Value="300"/>
+                <Setter Property="Margin" Value="{StaticResource MarginOfAuthorizationControl}"/>
             </Style>
-            <Style TargetType="Button" BasedOn="{StaticResource ResourceKey=RoundedRectangularButtonStyle}"/>
+            <Style TargetType="Button" BasedOn="{StaticResource ResourceKey=RoundedRectangularButtonStyle}">
+                <Setter Property="Margin" Value="{StaticResource MarginOfAuthorizationControl}"/>
+                <Setter Property="MinHeight" Value="50"/>
+            </Style>
+            <Style TargetType="GroupBox" BasedOn="{StaticResource ResourceKey=MainGroupBoxStyle}">
+                <Setter Property="Margin" Value="{StaticResource MarginOfAuthorizationControl}"/>
+            </Style>
+            <Style TargetType="PasswordBox" BasedOn="{StaticResource MainPasswordBoxStyle}">
+                <Setter Property="Margin" Value="{StaticResource MarginOfAuthorizationControl}"/>
+            </Style>
         </Grid.Resources>
 
         <Button Grid.ColumnSpan="2" Style="{StaticResource ResourceKey=FlatButtonWithoutHighlightStyle}"
@@ -34,11 +43,11 @@
             <ag:AutoGrid Rows="1*, 1*, 1*, 1*, 1*" Columns="1*" IsEnabled="{Binding RegistrationBackgroundWorker.IsBusy, Converter={StaticResource InvertBooleanConverter}}">
                 <TextBox Text="{Binding Username}" md:HintAssist.Hint="Имя пользователя"/>
 
-                <TextBox Text="{Binding Password}" md:HintAssist.Hint="Пароль"/>
+                <PasswordBox md:PasswordBoxAssist.Password="{Binding Password, TargetNullValue=''}"/>
 
                 <TextBox Text="{Binding FullName}" md:HintAssist.Hint="ФИО"/>
 
-                <GroupBox Style="{StaticResource ResourceKey=MainGroupBoxStyle}" Header="Тип аккаунта" Width="300">
+                <GroupBox Header="Тип аккаунта">
                     <ag:AutoGrid Rows="1*" Columns="1*, 1*">
                         <RadioButton Content="Студент" IsThreeState="False" IsChecked="{Binding IsStudent}"/>
                         <RadioButton Content="Учитель" IsThreeState="False" 
@@ -46,7 +55,7 @@
                     </ag:AutoGrid>
                 </GroupBox>
 
-                <Button Command="{Binding RegisterAsyncCommand}" Height="53" Width="300">
+                <Button Command="{Binding RegisterAsyncCommand}">
                     <TextBlock Text="Зарегистрироваться"/>
                 </Button>
             </ag:AutoGrid>
