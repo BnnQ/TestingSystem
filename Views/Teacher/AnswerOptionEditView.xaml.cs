@@ -20,7 +20,7 @@ namespace TestingSystem.Views.Teacher
                 if (dialogResult is not null)
                     DialogResult = dialogResult;
 
-                Close();
+                Application.Current?.Dispatcher.Invoke(Close);
             };
               
 
