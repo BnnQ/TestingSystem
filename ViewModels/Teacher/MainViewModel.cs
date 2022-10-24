@@ -87,11 +87,8 @@ namespace TestingSystem.ViewModels.Teacher
 
         private void SetupBackgroundWorkers()
         {
-            CategoriesUpdaterFromDatabaseBackgroundWorker.DoWork = async () =>
-            {
-                Task updatingCategoriesTask = UpdateCategoriesFromDatabaseAsync();
-                await Task.WhenAll(updatingCategoriesTask, Task.Delay(500));
-            };
+            CategoriesUpdaterFromDatabaseBackgroundWorker.MinimumWorkExecutionTime = 500;
+            CategoriesUpdaterFromDatabaseBackgroundWorker.DoWork = async () => await UpdateCategoriesFromDatabaseAsync();
             CategoriesUpdaterFromDatabaseBackgroundWorker.OnWorkCompleted = () => CommandManager.InvalidateRequerySuggested();
         }
 
