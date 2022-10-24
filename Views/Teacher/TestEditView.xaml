@@ -172,7 +172,7 @@
             </Grid>
         </GroupBox>
 
-        <Button Command="{Binding ConfirmCommand}" Style="{StaticResource ConfirmButtonStyle}">
+        <Button Command="{Binding ConfirmAsyncCommand}" Style="{StaticResource ConfirmButtonStyle}">
             <TextBlock Text="{StaticResource ConfirmButtonText}"/>
         </Button>
         <Button Command="{Binding CancelCommand}" Style="{StaticResource CancelButtonStyle}">

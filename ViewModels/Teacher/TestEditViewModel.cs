@@ -131,37 +131,37 @@ namespace TestingSystem.ViewModels.Teacher
             try
             {
                 context = new TestingSystemTeacherContext();
+
+                context.Categories.Include(category => category.Tests).Load();
+                Categories = context.Categories.ToArray();
+
+                context.Teachers.Include(teacher => teacher.OwnedTests).Load();
+                Teachers = context.Teachers.ToArray();
+
+                context.Tests
+                       .Include(t => t.Category)
+                       .Include(t => t.Questions)
+                            .ThenInclude(q => q.AnswerOptions)
+                       .Include(t => t.OwnerTeachers)
+                       .Where(t => t.Id == test.Id)
+                       .Load();
+
+                Test? testEntity = context.Tests.Find(test.Id);
+                if (testEntity is not null)
+                {
+                    doesTestExistInDatabase = true;
+                    Test = testEntity;
+                }
+                else
+                {
+                    doesTestExistInDatabase = false;
+                    Test = new(new ConcurrentObservableCollectionBuilder<Models.Teacher>(Teachers.Where(teacher => test.OwnerTeachers.Any(t => t.Id == teacher.Id))).Build());
+                }
             }
             catch (Exception exception)
             {
                 OccurCriticalErrorMessage(exception);
                 return;
-            }
-
-            context.Categories.Include(category => category.Tests).Load();
-            Categories = context.Categories.ToArray();
-
-            context.Teachers.Include(teacher => teacher.OwnedTests).Load();
-            Teachers = context.Teachers.ToArray();
-
-            context.Tests
-                   .Include(t => t.Category)
-                   .Include(t => t.Questions)
-                        .ThenInclude(q => q.AnswerOptions)
-                   .Include(t => t.OwnerTeachers)
-                   .Where(t => t.Id == test.Id)
-                   .Load();
-
-            Test? testEntity = context.Tests.Find(test.Id);
-            if (testEntity is not null)
-            {
-                doesTestExistInDatabase = true;
-                Test = testEntity;
-            }
-            else
-            {
-                doesTestExistInDatabase = false;
-                Test = new(new ConcurrentObservableCollectionBuilder<Models.Teacher>(Teachers.Where(teacher => test.OwnerTeachers.Any(t => t.Id == teacher.Id))).Build());
             }
 
             SetupValidator();
@@ -345,10 +345,10 @@ namespace TestingSystem.ViewModels.Teacher
                 (testOwner) => testOwner is not null && AreOwnerTeachersMoreThanOne());
         }
 
-        private AsyncRelayCommand confirmCommand = null!;
-        public AsyncRelayCommand ConfirmCommand
+        private AsyncRelayCommand confirmAsyncCommand = null!;
+        public AsyncRelayCommand ConfirmAsyncCommand
         {
-            get => confirmCommand ??= new(async () =>
+            get => confirmAsyncCommand ??= new(async () =>
             {
                 if (!await IsNameValidAsync() || !await IsCategoryValidAsync() || !await IsNumberOfQuestionsValidAsync() ||
                     !await IsMaximumPointsValidAsync() || !await IsNumberOfOwnerTeachersValidAsync() || !await IsIsAutoQuestionNumberingEnabledValidAsync())
@@ -356,22 +356,31 @@ namespace TestingSystem.ViewModels.Teacher
                     return;
                 }
 
-                if (!doesTestExistInDatabase)
+                try
                 {
-                    Category? categoryEntity = await context.FindAsync<Category>(Test.Category?.Id);
-                    if (categoryEntity is not null)
+                    if (!doesTestExistInDatabase)
                     {
-                        categoryEntity.Tests.Add(Test);
+                        Category? categoryEntity = await context.FindAsync<Category>(Test.Category?.Id);
+                        if (categoryEntity is not null)
+                        {
+                            categoryEntity.Tests.Add(Test);
+                        }
+                        else
+                        {
+                            OccurErrorMessage("Не удалось сохранить тест, так как во время его редактирования, содержащий тест категория была параллельно удалена другим пользователем или системой.");
+                            return;
+                        }
                     }
-                    else
-                    {
-                        OccurErrorMessage("Не удалось сохранить тест, так как во время его редактирования, содержащий тест категория была параллельно удалена другим пользователем или системой.");
-                        return;
-                    }
+
+                    await context.SaveChangesAsync();
+                    Close(true);
+                }
+                catch (Exception exception)
+                {
+                    OccurCriticalErrorMessage(exception);
+                    return;
                 }
 
-                await context.SaveChangesAsync();
-                Close(true);
             });
         }
 
