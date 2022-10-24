@@ -51,7 +51,9 @@
         <ComboBox ItemsSource="{Binding Test.OwnerTeachers.AsObservable}" SelectedIndex="{StaticResource DefaultSelectedIndex}">
             <ComboBox.ItemTemplate>
                 <DataTemplate>
-                    <TextBlock Text="{Binding FullName}"/>
+                    <TextBlock>
+                        <Run Text="{Binding Name}"/><Run Text=" ("/><Run Text="{Binding FullName}"/><Run Text=")"/>
+                    </TextBlock>
                 </DataTemplate>
             </ComboBox.ItemTemplate>
         </ComboBox>

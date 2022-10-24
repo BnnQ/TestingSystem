@@ -219,8 +219,8 @@ namespace TestingSystem.Models.Contexts
             modelBuilder.Entity<Teacher>(teacherModel =>
             {
                 teacherModel
-                .HasCheckConstraint("CK_Teachers_EncryptedName", "[EncryptedName] != ''")
-                .HasCheckConstraint("CK_Teachers_EncryptedPassword", "[EncryptedPassword] != ''")
+                .HasCheckConstraint("CK_Teachers_Name", "[Name] != ''")
+                .HasCheckConstraint("CK_Teachers_HashedPassword", "[HashedPassword] != ''")
                 .HasKey(teacher => teacher.Id);
 
                 teacherModel.Property(teacher => teacher.Id)
@@ -228,12 +228,12 @@ namespace TestingSystem.Models.Contexts
                 .UseIdentityColumn()
                 .IsRequired();
 
-                teacherModel.Property(teacher => teacher.EncryptedName)
+                teacherModel.Property(teacher => teacher.Name)
                 .HasColumnOrder(2)
-                .HasColumnType("VARCHAR(128)")
+                .HasColumnType("NVARCHAR(20)")
                 .IsRequired();
 
-                teacherModel.Property(teacher => teacher.EncryptedPassword)
+                teacherModel.Property(teacher => teacher.HashedPassword)
                 .HasColumnOrder(3)
                 .HasColumnType("VARCHAR(128)")
                 .IsRequired();

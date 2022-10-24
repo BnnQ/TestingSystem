@@ -131,7 +131,7 @@ namespace TestingSystem.ViewModels.Authorization
             Models.Teacher? foundTeacher =
                 teachers
                 .AsParallel()
-                .FirstOrDefault(teacher => encoder.Compare(Username, teacher.EncryptedName));
+                .FirstOrDefault(teacher => Username.Equals(teacher.Name));
 
             if (foundTeacher is not null)
             {
@@ -152,7 +152,7 @@ namespace TestingSystem.ViewModels.Authorization
             Models.Student? foundStudent =
                 students
                 .AsParallel()
-                .FirstOrDefault(student => encoder.Compare(Username, student.EncryptedName));
+                .FirstOrDefault(student => Username.Equals(student.Name));
 
             if (foundStudent is not null)
             {
@@ -245,11 +245,11 @@ namespace TestingSystem.ViewModels.Authorization
             username = username.ToLower();
 
             await UpdateTeachersFromDatabaseAsync();
-            if (teachers.AsParallel().Any(teacher => encoder.Compare(username, teacher.EncryptedName)))
+            if (teachers.AsParallel().Any(teacher => username.Equals(teacher.Name)))
                 return true;
 
             await UpdateStudentsFromDatabaseAsync();
-            if (students.AsParallel().Any(student => encoder.Compare(username, student.EncryptedName)))
+            if (students.AsParallel().Any(student => username.Equals(student.Name)))
                 return true;
 
             return false;
@@ -257,16 +257,7 @@ namespace TestingSystem.ViewModels.Authorization
 
         private bool IsUserPassedAuthentication(string password)
         {
-            if (encoder.Compare(Username, User?.EncryptedName) &&
-                encoder.Compare(password, User?.EncryptedPassword))
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-
+            return Username.Equals(User?.Name) && encoder.Compare(password, User?.HashedPassword);
         }
         #endregion
 

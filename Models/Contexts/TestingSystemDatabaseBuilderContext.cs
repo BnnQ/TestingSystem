@@ -209,8 +209,8 @@ namespace TestingSystem.Models.Contexts
             modelBuilder.Entity<Student>(studentModel =>
             {
                 studentModel
-                .HasCheckConstraint("CK_Students_EncryptedName", "[EncryptedName] != ''")
-                .HasCheckConstraint("CK_Students_EncryptedPassword", "[EncryptedPassword] != ''")
+                .HasCheckConstraint("CK_Students_Name", "[Name] != ''")
+                .HasCheckConstraint("CK_Students_HashedPassword", "[HashedPassword] != ''")
                 .HasKey(student => student.Id);
 
                 studentModel.Property(student => student.Id)
@@ -218,12 +218,12 @@ namespace TestingSystem.Models.Contexts
                 .UseIdentityColumn()
                 .IsRequired();
 
-                studentModel.Property(student => student.EncryptedName)
+                studentModel.Property(student => student.Name)
                 .HasColumnOrder(2)
-                .HasColumnType("VARCHAR(128)")
+                .HasColumnType("NVARCHAR(20)")
                 .IsRequired();
 
-                studentModel.Property(student => student.EncryptedPassword)
+                studentModel.Property(student => student.HashedPassword)
                 .HasColumnOrder(3)
                 .HasColumnType("VARCHAR(128)")
                 .IsRequired();
@@ -240,8 +240,8 @@ namespace TestingSystem.Models.Contexts
             modelBuilder.Entity<Teacher>(teacherModel =>
             {
                 teacherModel
-                .HasCheckConstraint("CK_Teachers_EncryptedName", "[EncryptedName] != ''")
-                .HasCheckConstraint("CK_Teachers_EncryptedPassword", "[EncryptedPassword] != ''")
+                .HasCheckConstraint("CK_Teachers_Name", "[Name] != ''")
+                .HasCheckConstraint("CK_Teachers_HashedPassword", "[HashedPassword] != ''")
                 .HasKey(teacher => teacher.Id);
 
                 teacherModel.Property(teacher => teacher.Id)
@@ -249,12 +249,12 @@ namespace TestingSystem.Models.Contexts
                 .UseIdentityColumn()
                 .IsRequired();
 
-                teacherModel.Property(teacher => teacher.EncryptedName)
+                teacherModel.Property(teacher => teacher.Name)
                 .HasColumnOrder(2)
-                .HasColumnType("VARCHAR(128)")
+                .HasColumnType("NVARCHAR(20)")
                 .IsRequired();
 
-                teacherModel.Property(teacher => teacher.EncryptedPassword)
+                teacherModel.Property(teacher => teacher.HashedPassword)
                 .HasColumnOrder(3)
                 .HasColumnType("VARCHAR(128)")
                 .IsRequired();

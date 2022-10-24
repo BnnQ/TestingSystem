@@ -13,7 +13,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Input;
 using TestingSystem.Constants.Authorization;
 using TestingSystem.Models.Contexts;
 using Z.Linq;
@@ -131,12 +130,11 @@ namespace TestingSystem.ViewModels.Authorization
             if (!await IsUsernameValidAsync() || !await IsPasswordValidAsync() || !await IsFullNameValidAsync())
                 return;
 
-            string hashedUsername = encoder.Encode(Username);
             string hashedPassword = encoder.Encode(Password);
 
             if (IsStudent)
             {
-                Models.Student registeredStudent = new(hashedUsername, hashedPassword, FullName);
+                Models.Student registeredStudent = new(Username, hashedPassword, FullName);
                 using (TestingSystemAuthorizationContext context = new())
                 {
                     await context.Students.AddAsync(registeredStudent);
@@ -153,7 +151,7 @@ namespace TestingSystem.ViewModels.Authorization
             }
             else
             {
-                Models.Teacher registeredTeacher = new(hashedUsername, hashedPassword, FullName);
+                Models.Teacher registeredTeacher = new(Username, hashedPassword, FullName);
                 using (TestingSystemAuthorizationContext context = new())
                 {
                     await context.Teachers.AddAsync(registeredTeacher);
@@ -286,11 +284,11 @@ namespace TestingSystem.ViewModels.Authorization
         private async Task<bool> IsUsernameExistsAsync(string username)
         {
             await UpdateTeachersFromDatabaseAsync();
-            if (teachers.AsParallel().Any(teacher => encoder.Compare(username, teacher.EncryptedName)))
+            if (teachers.AsParallel().Any(teacher => username.Equals(teacher.Name)))
                 return true;
 
             await UpdateStudentsFromDatabaseAsync();
-            if (students.AsParallel().Any(student => encoder.Compare(username, student.EncryptedName)))
+            if (students.AsParallel().Any(student => username.Equals(student.Name)))
                 return true;
 
             return false;

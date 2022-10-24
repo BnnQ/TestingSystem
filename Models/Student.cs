@@ -21,14 +21,9 @@ namespace TestingSystem.Models
             }
         }
 
-        public Student(string encryptedName, string encryptedPassword, string fullName) : base(encryptedName, encryptedPassword)
+        public Student(string name, string hashedPassword, string fullName) : base(name, hashedPassword)
         {
             FullName = fullName;
-        }
-        public Student(int id, string encryptedName, string encryptedPassword, string fullName) 
-            : this(encryptedName, encryptedPassword, fullName)
-        {
-            Id = id;
         }
 
 

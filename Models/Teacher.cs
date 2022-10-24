@@ -39,13 +39,13 @@ namespace TestingSystem.Models
         }
         
 
-        public Teacher(string encryptedName, string encryptedPassword, string fullName) : base(encryptedName, encryptedPassword)
+        public Teacher(string name, string hashedPassword, string fullName) : base(name, hashedPassword)
         {
             OwnedTests = new ConcurrentObservableCollection<Test>();
             FullName = fullName;
         }
-        public Teacher(string encryptedName, string encryptedPassword, string fullName, ICollection<Test> ownedTests) 
-            : this(encryptedName, encryptedPassword, fullName)
+        public Teacher(string name, string hashedPassword, string fullName, ICollection<Test> ownedTests) 
+            : this(name, hashedPassword, fullName)
         {
             OwnedTests = ownedTests;
         }

@@ -2,14 +2,14 @@
 {
     public class User
     {
-        public string EncryptedName { get; set; }
-        public string EncryptedPassword { get; set; }
+        public string Name { get; set; }
+        public string HashedPassword { get; set; }
 
 
-        public User(string encryptedName, string encryptedPassword)
+        public User(string name, string hashedPassword)
         {
-            EncryptedName = encryptedName;
-            EncryptedPassword = encryptedPassword;
+            Name = name;
+            HashedPassword = hashedPassword;
         }
 
     }

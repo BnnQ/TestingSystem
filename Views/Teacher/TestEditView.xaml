@@ -139,10 +139,12 @@
                     <ColumnDefinition/>
                 </Grid.ColumnDefinitions>
 
-                <accb:AutoCompleteComboBox x:Name="teachersComboBox" ItemsSource="{Binding Teachers}" TextSearch.TextPath="FullName">
+                <accb:AutoCompleteComboBox x:Name="teachersComboBox" ItemsSource="{Binding Teachers}" TextSearch.TextPath="Name">
                     <accb:AutoCompleteComboBox.ItemTemplate>
                         <DataTemplate>
-                            <TextBlock Text="{Binding FullName}"/>
+                            <TextBlock><Run Text="{Binding Name}"/>
+                                <Run Text=" ("/><Run Text="{Binding FullName}"/><Run Text=")"/>
+                            </TextBlock>
                         </DataTemplate>
                     </accb:AutoCompleteComboBox.ItemTemplate>
                 </accb:AutoCompleteComboBox>
@@ -152,10 +154,12 @@
                 </Button>
 
                 <accb:AutoCompleteComboBox Grid.Row="1" x:Name="ownerTeachersComboBox" ItemsSource="{Binding OwnerTeachers.AsObservable}" 
-                                           TextSearch.TextPath="FullName" SelectedIndex="{StaticResource DefaultSelectedIndex}">
+                                           TextSearch.TextPath="Name" SelectedIndex="{StaticResource DefaultSelectedIndex}">
                     <accb:AutoCompleteComboBox.ItemTemplate>
                         <DataTemplate>
-                            <TextBlock Text="{Binding FullName}"/>
+                            <TextBlock><Run Text="{Binding Name}"/>
+                                <Run Text=" ("/><Run Text="{Binding FullName}"/><Run Text=")"/>
+                            </TextBlock>
                         </DataTemplate>
                     </accb:AutoCompleteComboBox.ItemTemplate>
                 </accb:AutoCompleteComboBox>
