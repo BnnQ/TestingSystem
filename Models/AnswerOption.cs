@@ -21,13 +21,13 @@ namespace TestingSystem.Models
             }
         }
 
-        private ushort serialNumberInQuestion;
+        private ushort serialNumberInQuestion = 1;
         public ushort SerialNumberInQuestion
         {
             get => serialNumberInQuestion;
             set
             {
-                if (serialNumberInQuestion != value)
+                if (serialNumberInQuestion != value && value > 0)
                 {
                     serialNumberInQuestion = value;
                     OnPropertyChanged(nameof(SerialNumberInQuestion));

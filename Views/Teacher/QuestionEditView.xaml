@@ -58,7 +58,7 @@
 
                 <DataGrid x:Name="answerOptionsDataGrid" ItemsSource="{Binding AnswerOptions.AsObservable, IsAsync=True}">
                     <DataGrid.Columns>
-                        <md:DataGridTextColumn Header="№" Binding="{Binding SerialNumberInQuestion}">
+                        <md:DataGridTextColumn Header="№" Binding="{Binding SerialNumberInQuestion, Mode=TwoWay, Converter={StaticResource ushortToStringConverter}}">
                             <md:DataGridTextColumn.EditingElementStyle>
                                 <Style TargetType="TextBox" BasedOn="{StaticResource DataGridEditingCellStyle}"/>
                             </md:DataGridTextColumn.EditingElementStyle>

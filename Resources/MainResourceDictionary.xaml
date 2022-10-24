@@ -278,6 +278,8 @@
         <Setter Property="Margin" Value="10"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
         <Setter Property="IsThreeState" Value="False"/>
+        <Setter Property="md:ValidationAssist.OnlyShowOnFocus" Value="False"/>
+        <Setter Property="md:ValidationAssist.FontSize" Value="{StaticResource ValidationMessageFontSize}"/>
     </Style>
 
     <Style x:Key="MainAutoCompleteComboBoxStyle" TargetType="accb:AutoCompleteComboBox" BasedOn="{StaticResource MainComboBoxStyle}"/>

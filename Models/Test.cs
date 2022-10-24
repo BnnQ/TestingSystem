@@ -1,7 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using Meziantou.Framework.WPF.Builders;
 using Meziantou.Framework.WPF.Collections;
-using Meziantou.Framework.WPF.Extensions;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;

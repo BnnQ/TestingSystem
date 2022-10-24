@@ -4,6 +4,7 @@ using MvvmBaseViewModels.Enums;
 using ReactiveValidation;
 using ReactiveValidation.Extensions;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using TestingSystem.Models;
@@ -15,6 +16,7 @@ namespace TestingSystem.ViewModels.Teacher
     {
         private readonly Question questionBackup;
 
+        private void OnQuestionChanged(object? _, System.ComponentModel.PropertyChangedEventArgs args) => OnPropertyChanged(args.PropertyName);
         private Question question = null!;
         public Question Question
         {
@@ -23,8 +25,14 @@ namespace TestingSystem.ViewModels.Teacher
             {
                 if (question != value)
                 {
+                    if (question is not null)
+                        question.PropertyChanged -= OnQuestionChanged;
+
                     question = value;
                     OnPropertyChanged(nameof(Question));
+
+                    if (question is not null)
+                        question.PropertyChanged += OnQuestionChanged;
                 }
             }
         }
@@ -84,6 +92,7 @@ namespace TestingSystem.ViewModels.Teacher
         private ValidationState contentValidationState = ValidationState.Disabled;
         private ValidationState pointsCostValidationState = ValidationState.Disabled;
         private ValidationState numberOfAnswerOptionsValidationState = ValidationState.Disabled;
+        private ValidationState isAutoAnswerOptionNumberingEnabledValidationState = ValidationState.Disabled;
         protected override void SetupValidator()
         {
             ValidationBuilder<QuestionEditViewModel> builder = new();
@@ -104,6 +113,10 @@ namespace TestingSystem.ViewModels.Teacher
                 .When(viewModel => viewModel.numberOfAnswerOptionsValidationState == ValidationState.Enabled)
                 .WithMessage("Должен быть как минимум один вариант ответа");
 
+            builder.RuleFor(viewModel => viewModel.IsAutoAnswerOptionNumberingEnabled)
+                .Must(_ => (_ || !_) && AnswerOptions.DistinctBy(answerOption => answerOption.SerialNumberInQuestion).Count() == AnswerOptions.Count)
+                .When(viewModel => viewModel.isAutoAnswerOptionNumberingEnabledValidationState == ValidationState.Enabled)
+                .WithMessage("Порядковые номера вариантов ответа не могут повторяться");
             Validator = builder.Build(this);
         }
 
@@ -133,6 +146,16 @@ namespace TestingSystem.ViewModels.Teacher
             Validator!.Revalidate();
             await Validator.WaitValidatingCompletedAsync();
             numberOfAnswerOptionsValidationState = ValidationState.Disabled;
+
+            return Validator.IsValid;
+        }
+
+        private async Task<bool> IsIsAutoAnswerOptionNumberingValidAsync()
+        {
+            isAutoAnswerOptionNumberingEnabledValidationState = ValidationState.Enabled;
+            Validator!.Revalidate();
+            await Validator.WaitValidatingCompletedAsync();
+            isAutoAnswerOptionNumberingEnabledValidationState = ValidationState.Disabled;
 
             return Validator.IsValid;
         }
@@ -184,8 +207,11 @@ namespace TestingSystem.ViewModels.Teacher
         {
             get => confirmAsyncCommand ??= new(async () =>
             {
-                if (!await IsContentValidAsync() || !await IsPointsCostValidAsync() || !await IsNumberOfAnswerOptionsValidAsync())
+                if (!await IsContentValidAsync() || !await IsPointsCostValidAsync() || !await IsNumberOfAnswerOptionsValidAsync() ||
+                    !await IsIsAutoAnswerOptionNumberingValidAsync())
+                {
                     return;
+                }
 
                 Close(true);
             });

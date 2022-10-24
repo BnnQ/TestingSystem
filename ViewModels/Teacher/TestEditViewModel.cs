@@ -173,6 +173,7 @@ namespace TestingSystem.ViewModels.Teacher
         private ValidationState numberOfQuestionsValidationState = ValidationState.Disabled;
         private ValidationState numberOfOwnerTeachersValidationState = ValidationState.Disabled;
         private ValidationState categoryValidationState = ValidationState.Disabled;
+        private ValidationState isAutoQuestionNumberingEnabledValidationState = ValidationState.Disabled;
 
         protected override void SetupValidator()
         {
@@ -211,6 +212,11 @@ namespace TestingSystem.ViewModels.Teacher
                 .NotNull()
                 .When(viewModel => viewModel.categoryValidationState == ValidationState.Enabled)
                 .WithMessage("Тест обязательно должен находиться в категории");
+
+            builder.RuleFor(viewModel => viewModel.IsAutoQuestionNumberingEnabled)
+                .Must(_ => (_ || !_) && Questions.DistinctBy(question => question.SerialNumberInTest).Count() == Questions.Count)
+                .When(viewModel => viewModel.isAutoQuestionNumberingEnabledValidationState == ValidationState.Enabled)
+                .WithMessage("Порядковые номера вопросов не могут повторяться");
 
             Validator = builder.Build(this);
         }
@@ -261,6 +267,16 @@ namespace TestingSystem.ViewModels.Teacher
             Validator!.Revalidate();
             await Validator.WaitValidatingCompletedAsync();
             categoryValidationState = ValidationState.Disabled;
+
+            return Validator.IsValid;
+        }
+
+        private async Task<bool> IsIsAutoQuestionNumberingEnabledValidAsync()
+        {
+            isAutoQuestionNumberingEnabledValidationState = ValidationState.Enabled;
+            Validator!.Revalidate();
+            await Validator.WaitValidatingCompletedAsync();
+            isAutoQuestionNumberingEnabledValidationState = ValidationState.Disabled;
 
             return Validator.IsValid;
         }
@@ -335,7 +351,7 @@ namespace TestingSystem.ViewModels.Teacher
             get => confirmCommand ??= new(async () =>
             {
                 if (!await IsNameValidAsync() || !await IsCategoryValidAsync() || !await IsNumberOfQuestionsValidAsync() ||
-                    !await IsMaximumPointsValidAsync() || !await IsNumberOfOwnerTeachersValidAsync())
+                    !await IsMaximumPointsValidAsync() || !await IsNumberOfOwnerTeachersValidAsync() || !await IsIsAutoQuestionNumberingEnabledValidAsync())
                 {
                     return;
                 }
