@@ -3,6 +3,7 @@ using HappyStudio.Mvvm.Input.Wpf;
 using Meziantou.Framework.WPF.Collections;
 using Microsoft.EntityFrameworkCore;
 using MvvmBaseViewModels.Common;
+using System;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
@@ -63,13 +64,21 @@ namespace TestingSystem.ViewModels.Teacher
 
         public MainViewModel(Models.Teacher teacher)
         {
-            using (TestingSystemTeacherContext context = new())
+            try
             {
-                Models.Teacher? teacherEntity = context.Find<Models.Teacher>(teacher.Id);
-                if (teacherEntity is null)
-                    OccurCriticalErrorMessage("Teacher entity missing from the database (most likely, a problem on the DB side)");
-                else
-                    this.teacher = teacherEntity;
+                using (TestingSystemTeacherContext context = new())
+                {
+                    Models.Teacher? teacherEntity = context.Find<Models.Teacher>(teacher.Id);
+                    if (teacherEntity is null)
+                        throw new NullReferenceException("Teacher entity missing from the database (most likely, a problem on the DB side)");
+                    else
+                        this.teacher = teacherEntity;
+                }
+            }
+            catch (Exception exception)
+            {
+                OccurCriticalErrorMessage(exception);
+                return;
             }
 
             SetupBackgroundWorkers();
@@ -88,14 +97,22 @@ namespace TestingSystem.ViewModels.Teacher
 
         private async Task UpdateCategoriesFromDatabaseAsync()
         {
-            using (TestingSystemTeacherContext context = new())
+            try
             {
-                await context.Categories
-                    .Include(category => category.Tests)
-                        .ThenInclude(test => test.Questions)
-                    .LoadAsync();
+                using (TestingSystemTeacherContext context = new())
+                {
+                    await context.Categories
+                        .Include(category => category.Tests)
+                            .ThenInclude(test => test.Questions)
+                        .LoadAsync();
 
-                Categories = await context.Categories.Local.ToArrayAsync();
+                    Categories = await context.Categories.Local.ToArrayAsync();
+                }
+            }
+            catch (Exception exception)
+            {
+                OccurCriticalErrorMessage(exception);
+                return;
             }
         }
 

@@ -16,6 +16,7 @@ using System.Windows;
 using TestingSystem.Constants.Authorization;
 using TestingSystem.Models.Contexts;
 using Z.Linq;
+using System;
 
 namespace TestingSystem.ViewModels.Authorization
 {
@@ -108,19 +109,35 @@ namespace TestingSystem.ViewModels.Authorization
         #region Updating data from database
         private async Task UpdateTeachersFromDatabaseAsync()
         {
-            using (TestingSystemAuthorizationContext context = new())
+            try
             {
-                await context.Teachers.LoadAsync();
-                teachers = await context.Teachers.Local.ToListAsync();
+                using (TestingSystemAuthorizationContext context = new())
+                {
+                    await context.Teachers.LoadAsync();
+                    teachers = await context.Teachers.Local.ToListAsync();
+                }
+            }
+            catch (Exception exception)
+            {
+                OccurCriticalErrorMessage(exception);
+                return;
             }
         }
 
         private async Task UpdateStudentsFromDatabaseAsync()
         {
-            using (TestingSystemAuthorizationContext context = new())
+            try
             {
-                await context.Students.LoadAsync();
-                students = await context.Students.Local.ToListAsync();
+                using (TestingSystemAuthorizationContext context = new())
+                {
+                    await context.Students.LoadAsync();
+                    students = await context.Students.Local.ToListAsync();
+                }
+            }
+            catch (Exception exception)
+            {
+                OccurCriticalErrorMessage(exception);
+                return;
             }
         }
         #endregion
@@ -135,10 +152,18 @@ namespace TestingSystem.ViewModels.Authorization
             if (IsStudent)
             {
                 Models.Student registeredStudent = new(Username, hashedPassword, FullName);
-                using (TestingSystemAuthorizationContext context = new())
+                try
                 {
-                    await context.Students.AddAsync(registeredStudent);
-                    await context.SaveChangesAsync();
+                    using (TestingSystemAuthorizationContext context = new())
+                    {
+                        await context.Students.AddAsync(registeredStudent);
+                        await context.SaveChangesAsync();
+                    }
+                }
+                catch (Exception exception)
+                {
+                    OccurCriticalErrorMessage(exception);
+                    return;
                 }
 
                 Application.Current.Dispatcher.Invoke(() =>
@@ -152,10 +177,18 @@ namespace TestingSystem.ViewModels.Authorization
             else
             {
                 Models.Teacher registeredTeacher = new(Username, hashedPassword, FullName);
-                using (TestingSystemAuthorizationContext context = new())
+                try
                 {
-                    await context.Teachers.AddAsync(registeredTeacher);
-                    await context.SaveChangesAsync();
+                    using (TestingSystemAuthorizationContext context = new())
+                    {
+                        await context.Teachers.AddAsync(registeredTeacher);
+                        await context.SaveChangesAsync();
+                    }
+                }
+                catch (Exception exception)
+                {
+                    OccurCriticalErrorMessage(exception);
+                    return;
                 }
 
                 Application.Current.Dispatcher.Invoke(() =>

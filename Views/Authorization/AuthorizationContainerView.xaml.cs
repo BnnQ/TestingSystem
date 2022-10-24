@@ -1,4 +1,5 @@
 ﻿using Egor92.MvvmNavigation;
+using MvvmBaseViewModels.Helpers;
 using MvvmBaseViewModels.Navigation;
 using System.Windows;
 using TestingSystem.Constants.Authorization;
@@ -23,32 +24,39 @@ namespace TestingSystem.Views.Authorization
             navigationManager = new(FrameContent);
             
             containerViewModel = new(navigationManager);
-            containerViewModel.Closed += (_) => Close();
+            containerViewModel.Closed += (_) => Application.Current?.Dispatcher.Invoke(Close);
 
             authenticationViewModel = new(navigationManager);
             authenticationViewModel.Closed += (_) =>
             {
-                if (containerViewModel is not null && !containerViewModel.IsClosed)
+                if (containerViewModel?.IsClosed == false)
                     containerViewModel.Close();
             };
+            authenticationViewModel.CriticalErrorMessageOccured += (exception) => 
+                DefaultMessageHandlers.HandleCriticalError(this, exception);
 
             registrationViewModel = new(navigationManager);
             registrationViewModel.Closed += (_) =>
             {
-                if (containerViewModel is not null && !containerViewModel.IsClosed)
+                if (containerViewModel?.IsClosed == false)
                     containerViewModel.Close();
             };
+            registrationViewModel.CriticalErrorMessageOccured += (exception) =>
+                DefaultMessageHandlers.HandleCriticalError(this, exception);
 
             DataContext = containerViewModel;
             ConfigureNavigation();
 
             Dispatcher.ShutdownStarted += (_, _) =>
             {
-                if (authenticationViewModel is not null && !authenticationViewModel.IsClosed)
+                if (authenticationViewModel?.IsClosed == false)
                     authenticationViewModel?.Close();
                 
-                if (registrationViewModel is not null && !registrationViewModel.IsClosed)
+                if (registrationViewModel?.IsClosed == false)
                     registrationViewModel?.Close();
+
+                if (containerViewModel?.IsClosed == false)
+                    containerViewModel?.Close();
             };
         }
 

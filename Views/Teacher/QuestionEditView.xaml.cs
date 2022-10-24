@@ -21,13 +21,12 @@ namespace TestingSystem.Views.Teacher
                 if (dialogResult is not null)
                     DialogResult = dialogResult;
 
-                Close();
+                Application.Current?.Dispatcher.Invoke(Close);
             };
             viewModel.ErrorMessageOccurred += DefaultMessageHandlers.HandleError;
-            viewModel.ErrorMessageOccurred += (_) => Close();
-            viewModel.CriticalErrorMessageOccured += DefaultMessageHandlers.HandleCriticalError;
-            viewModel.CriticalErrorMessageOccured += (_) => Close();
-
+            viewModel.ErrorMessageOccurred += (_) => Application.Current?.Dispatcher.Invoke(Close);
+            viewModel.CriticalErrorMessageOccured += (exception) =>
+                DefaultMessageHandlers.HandleCriticalError(this, exception);
 
             DataContext = viewModel;
             Dispatcher.ShutdownStarted += (_, _) =>

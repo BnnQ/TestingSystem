@@ -17,6 +17,8 @@ using TestingSystem.Constants.Authorization;
 using MvvmBaseViewModels.Navigation;
 using BackgroundWorkerLibrary;
 using Z.Linq;
+using System;
+using WpfExceptionMessageBox;
 
 namespace TestingSystem.ViewModels.Authorization
 {
@@ -93,19 +95,33 @@ namespace TestingSystem.ViewModels.Authorization
         #region Updating data from database
         private async Task UpdateTeachersFromDatabaseAsync()
         {
-            using (TestingSystemAuthorizationContext context = new())
+            try
             {
-                await context.Teachers.LoadAsync();
-                teachers = await context.Teachers.Local.ToListAsync();
+                using (TestingSystemAuthorizationContext context = new())
+                {
+                    await context.Teachers.LoadAsync();
+                    teachers = await context.Teachers.Local.ToListAsync();
+                }
+            }
+            catch (Exception exception)
+            {
+                OccurCriticalErrorMessage(exception);
             }
         }
 
         private async Task UpdateStudentsFromDatabaseAsync()
         {
-            using (TestingSystemAuthorizationContext context = new())
+            try
             {
-                await context.Students.LoadAsync();
-                students = await context.Students.Local.ToListAsync();
+                using (TestingSystemAuthorizationContext context = new())
+                {
+                    await context.Students.LoadAsync();
+                    students = await context.Students.Local.ToListAsync();
+                }
+            }
+            catch (Exception exception)
+            {
+                OccurCriticalErrorMessage(exception);
             }
         }
 

@@ -17,15 +17,8 @@ namespace TestingSystem.Views.Teacher
 
             viewModel = new MainViewModel(teacher);
             viewModel.Closed += (_) => Close();
-            viewModel.CriticalErrorMessageOccured += DefaultMessageHandlers.HandleCriticalError;
-            viewModel.CriticalErrorMessageOccured += (_) =>
-            {
-                Application.Current.Dispatcher.Invoke(() =>
-                {
-                    Close();
-                });
-            };
-
+            viewModel.CriticalErrorMessageOccured += (exception) =>
+                DefaultMessageHandlers.HandleCriticalError(this, exception);
 
             DataContext = viewModel;
             Dispatcher.ShutdownStarted += (_, _) =>

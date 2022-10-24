@@ -2,6 +2,7 @@
 using CommunityToolkit.Mvvm.Input;
 using Meziantou.Framework.WPF.Extensions;
 using MvvmBaseViewModels.Common;
+using System;
 using System.Collections.Specialized;
 using System.Linq;
 using System.Threading.Tasks;
@@ -43,18 +44,26 @@ namespace TestingSystem.ViewModels.Teacher
         }
         public int NumberOfTests => Category?.Tests.Count ?? 0;
 
-        private readonly Models.Teacher teacher;
+        private readonly Models.Teacher teacher = null!;
         private readonly BackgroundWorker categoryUpdaterFromDatabaseBackgroundWorker = new();
 
         public CategoryInfoViewModel(Category category, Models.Teacher teacher)
         {
-            using (TestingSystemTeacherContext context = new())
+            try
             {
-                Category? categoryEntity = context.Find<Category>(category.Id);
-                if (categoryEntity is null)
-                    OccurCriticalErrorMessage("Category entity missing from the database (most likely, a problem on the DB side)");
-                else
-                    Category = categoryEntity;
+                using (TestingSystemTeacherContext context = new())
+                {
+                    Category? categoryEntity = context.Find<Category>(category.Id);
+                    if (categoryEntity is null)
+                        throw new NullReferenceException("Category entity missing from the database (most likely, a problem on the DB side)");
+                    else
+                        Category = categoryEntity;
+                }
+            }
+            catch (Exception exception)
+            {
+                OccurCriticalErrorMessage(exception);
+                return;
             }
 
             this.teacher = teacher;
@@ -75,16 +84,24 @@ namespace TestingSystem.ViewModels.Teacher
         {
             if (Category is not null)
             {
-                using (TestingSystemTeacherContext context = new())
+                try
                 {
-                    Category = (await context.FindAsync<Category>(Category.Id))!;
-                    
-                    await context.Entry(Category)
-                        .Collection(category => category.Tests)
-                        .LoadAsync();
+                    using (TestingSystemTeacherContext context = new())
+                    {
+                        Category = (await context.FindAsync<Category>(Category.Id))!;
 
-                    foreach (Test test in Category.Tests)
-                        await context.Entry(test).Collection(test => test.OwnerTeachers).LoadAsync();
+                        await context.Entry(Category)
+                            .Collection(category => category.Tests)
+                            .LoadAsync();
+
+                        foreach (Test test in Category.Tests)
+                            await context.Entry(test).Collection(test => test.OwnerTeachers).LoadAsync();
+                    }
+                }
+                catch (Exception exception)
+                {
+                    OccurCriticalErrorMessage(exception);
+                    return;
                 }
             }
         }
@@ -147,13 +164,22 @@ namespace TestingSystem.ViewModels.Teacher
         {
             get => removeCategoryAsyncCommand ??= new(async () =>
             {
-                using (TestingSystemTeacherContext context = new())
+                try
                 {
-                    context.Categories.Remove(Category!);
-                    await context.SaveChangesAsync();
+                    using (TestingSystemTeacherContext context = new())
+                    {
+                        context.Categories.Remove(Category!);
+                        await context.SaveChangesAsync();
 
-                    Close();
+                        Close();
+                    }
                 }
+                catch (Exception exception)
+                {
+                    OccurCriticalErrorMessage(exception);
+                    return;
+                }
+
             }, () => Category is not null && (AreTestsEmpty() || DoesTeacherOwnAllTests()));
         }
         #endregion

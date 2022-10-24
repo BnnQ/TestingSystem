@@ -42,11 +42,20 @@ namespace TestingSystem.ViewModels.Teacher
 
 
         private readonly bool doesCategoryExistInDatabase;
-        private readonly TestingSystemTeacherContext context;
+        private readonly TestingSystemTeacherContext context = null!;
 
         public CategoryEditViewModel(Category category)
         {
-            context = new TestingSystemTeacherContext();
+            try
+            {
+                context = new TestingSystemTeacherContext();
+            }
+            catch (Exception exception)
+            {
+                OccurCriticalErrorMessage(exception);
+                return;
+            }
+
             Category? categoryEntity = context.Find<Category>(category.Id);
 
             if (categoryEntity is not null)

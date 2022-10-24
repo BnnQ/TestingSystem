@@ -6,14 +6,15 @@
   "compilationOptions": {},
   "targets": {
     ".NETCoreApp,Version=v6.0": {
-      "MvvmBaseViewModels/1.0.0": {
+      "MvvmBaseViewModelsLibrary/1.0.0": {
         "dependencies": {
           "CommunityToolkit.Mvvm": "8.0.0",
           "MvvmNavigation.Abstractions": "3.2.0",
-          "ReactiveValidation.Wpf": "2.0.1"
+          "ReactiveValidation.Wpf": "2.0.2",
+          "WpfExceptionMessageBox": "1.0.1"
         },
         "runtime": {
-          "MvvmBaseViewModels.dll": {}
+          "MvvmBaseViewModelsLibrary.dll": {}
         }
       },
       "CommunityToolkit.Mvvm/8.0.0": {
@@ -43,7 +44,7 @@
           }
         }
       },
-      "ReactiveValidation/2.0.1": {
+      "ReactiveValidation/2.0.2": {
         "runtime": {
           "lib/netcoreapp3.0/ReactiveValidation.dll": {
             "assemblyVersion": "1.0.0.0",
@@ -51,9 +52,9 @@
           }
         }
       },
-      "ReactiveValidation.Wpf/2.0.1": {
+      "ReactiveValidation.Wpf/2.0.2": {
         "dependencies": {
-          "ReactiveValidation": "2.0.1"
+          "ReactiveValidation": "2.0.2"
         },
         "runtime": {
           "lib/netcoreapp3.1/ReactiveValidation.Wpf.dll": {
@@ -61,11 +62,19 @@
             "fileVersion": "1.0.0.0"
           }
         }
+      },
+      "WpfExceptionMessageBox/1.0.1": {
+        "runtime": {
+          "lib/net6.0-windows7.0/WpfExceptionMessageBox.dll": {
+            "assemblyVersion": "1.0.1.0",
+            "fileVersion": "1.0.1.0"
+          }
+        }
       }
     }
   },
   "libraries": {
-    "MvvmBaseViewModels/1.0.0": {
+    "MvvmBaseViewModelsLibrary/1.0.0": {
       "type": "project",
       "serviceable": false,
       "sha512": ""
@@ -91,19 +100,26 @@
       "path": "mvvmnavigation.abstractions/3.2.0",
       "hashPath": "mvvmnavigation.abstractions.3.2.0.nupkg.sha512"
     },
-    "ReactiveValidation/2.0.1": {
+    "ReactiveValidation/2.0.2": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-5mXGef0m9bOlrffyjLr/ah6IwvzvcmXxT61kVdTvG+1c9hb6bGxPrjW/cEfXi6n20T7i7y2A2zRkiCIx7hVHXQ==",
-      "path": "reactivevalidation/2.0.1",
-      "hashPath": "reactivevalidation.2.0.1.nupkg.sha512"
+      "sha512": "sha512-oU57UmYrFsPmjznDlt52xoIW2gZz/SaT/NLFvVO2vsl8+jXtz/NpvfP7Xqklyj0iI4lmf6HftTdu4D4yL0NyfQ==",
+      "path": "reactivevalidation/2.0.2",
+      "hashPath": "reactivevalidation.2.0.2.nupkg.sha512"
     },
-    "ReactiveValidation.Wpf/2.0.1": {
+    "ReactiveValidation.Wpf/2.0.2": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-O6uMC+HmnDebmNbwdzQm+XFO2yhSGp86Jcvg5uG7oeQhbww0ArRbme5OhlIdDdfUa+EpXXt+NYbZrwRQ8DRS/Q==",
-      "path": "reactivevalidation.wpf/2.0.1",
-      "hashPath": "reactivevalidation.wpf.2.0.1.nupkg.sha512"
+      "sha512": "sha512-jv/ehxCuA1y8leodl8g9v0Aygqr+Z5ai9k9w75yo92I4f/N0fnkmshOMlz8NmaxThuT0JbnIu/1zOVEWXOt3iA==",
+      "path": "reactivevalidation.wpf/2.0.2",
+      "hashPath": "reactivevalidation.wpf.2.0.2.nupkg.sha512"
+    },
+    "WpfExceptionMessageBox/1.0.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-9mCG1JRTOVq6PENeTsNurWxms+/mXyEhllTtkgzszK6095yxJ1Q4lFkkv1Q2jd+YcB99OoDaXaVz0f76vtWvbg==",
+      "path": "wpfexceptionmessagebox/1.0.1",
+      "hashPath": "wpfexceptionmessagebox.1.0.1.nupkg.sha512"
     }
   }
 }

@@ -1,6 +1,7 @@
 ﻿using HappyStudio.Mvvm.Input.Wpf;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using MvvmBaseViewModels.Common;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
@@ -27,23 +28,26 @@ namespace TestingSystem.ViewModels.Teacher
             }
         }
         
-        private readonly Models.Teacher teacher;
+        private readonly Models.Teacher teacher = null!;
         private readonly BackgroundWorkerLibrary.BackgroundWorker testUpdaterFromDatabaseBackgroundWorker = new();
 
         public TestInfoViewModel(Test test, Models.Teacher teacher)
         {
-            using (TestingSystemTeacherContext context = new())
+            try
             {
-                Test? testEntity = context.Find<Test>(test.Id);
-                if (testEntity is null)
+                using (TestingSystemTeacherContext context = new())
                 {
-                    OccurCriticalErrorMessage("Test entity missing from the database (most likely, a problem on the DB side)");
-                    Close();
+                    Test? testEntity = context.Find<Test>(test.Id);
+                    if (testEntity is null)
+                        throw new NullReferenceException("Test entity missing from the database (most likely, a problem on the DB side)");
+                    else
+                        Test = testEntity;
                 }
-                else
-                {
-                    Test = testEntity;
-                }
+            }
+            catch (Exception exception)
+            {
+                OccurCriticalErrorMessage(exception);
+                return;
             }
 
             this.teacher = teacher;
@@ -67,22 +71,27 @@ namespace TestingSystem.ViewModels.Teacher
         {
             if (Test is not null)
             {
-                using (TestingSystemTeacherContext context = new())
+                try
                 {
-                    Test = await context.FindAsync<Test>(Test.Id);
-                    if (Test is null)
+                    using (TestingSystemTeacherContext context = new())
                     {
-                        OccurErrorMessage("Во время редактирования теста он был параллельно удалён другим пользователем или системой.");
-                        Close();
+                        Test = await context.FindAsync<Test>(Test.Id);
+                        if (Test is null)
+                            throw new NullReferenceException("Во время редактирования теста он был параллельно удалён другим пользователем или системой.");
+
+                        EntityEntry<Test> testEntry = context.Entry(Test!);
+
+                        await testEntry.Collection(test => test.Questions).LoadAsync();
+                        foreach (Question question in Test!.Questions)
+                            await context.Entry(question).Collection(question => question.AnswerOptions).LoadAsync();
+
+                        await testEntry.Collection(test => test.OwnerTeachers).LoadAsync();
                     }
-
-                    EntityEntry<Test> testEntry = context.Entry(Test!);
-
-                    await testEntry.Collection(test => test.Questions).LoadAsync();
-                    foreach (Question question in Test!.Questions)
-                        await context.Entry(question).Collection(question => question.AnswerOptions).LoadAsync();
-
-                    await testEntry.Collection(test => test.OwnerTeachers).LoadAsync();
+                }
+                catch (Exception exception)
+                {
+                    OccurCriticalErrorMessage(exception);
+                    return;
                 }
             }
         }
@@ -128,12 +137,20 @@ namespace TestingSystem.ViewModels.Teacher
         {
             get => removeTestAsyncCommand ??= new(async () =>
             {
-                using (TestingSystemTeacherContext context = new())
+                try
                 {
-                    context.Tests.Remove(Test!);
-                    await context.SaveChangesAsync();
+                    using (TestingSystemTeacherContext context = new())
+                    {
+                        context.Tests.Remove(Test!);
+                        await context.SaveChangesAsync();
 
-                    Close(true);
+                        Close(true);
+                    }
+                }
+                catch (Exception exception)
+                {
+                    OccurCriticalErrorMessage(exception);
+                    return;
                 }
             }, () => Test is not null && IsTeacherOwner() && !testUpdaterFromDatabaseBackgroundWorker.IsBusy);
         }

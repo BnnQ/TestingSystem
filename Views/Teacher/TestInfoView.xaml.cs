@@ -16,11 +16,11 @@ namespace TestingSystem.Views.Teacher
             InitializeComponent();
 
             viewModel = new TestInfoViewModel(test, teacher);
-            viewModel.Closed += (_) => Close();
+            viewModel.Closed += (_) => Application.Current?.Dispatcher.Invoke(Close);
             viewModel.ErrorMessageOccurred += DefaultMessageHandlers.HandleError;
-            viewModel.ErrorMessageOccurred += (_) => Close();
-            viewModel.CriticalErrorMessageOccured += DefaultMessageHandlers.HandleCriticalError;
-            viewModel.CriticalErrorMessageOccured += (_) => Close();
+            viewModel.ErrorMessageOccurred += (_) => Application.Current?.Dispatcher.Invoke(Close);
+            viewModel.CriticalErrorMessageOccured += (exception) =>
+                DefaultMessageHandlers.HandleCriticalError(this, exception);
 
             DataContext = viewModel;
             Dispatcher.ShutdownStarted += (_, _) =>

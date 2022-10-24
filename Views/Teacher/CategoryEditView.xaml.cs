@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using MvvmBaseViewModels.Helpers;
+using System.Windows;
 using TestingSystem.Models;
 using TestingSystem.ViewModels.Teacher;
 
@@ -22,6 +23,8 @@ namespace TestingSystem.Views.Teacher
 
                 Close();
             };
+            viewModel.CriticalErrorMessageOccured += (exception) =>
+                DefaultMessageHandlers.HandleCriticalError(this, exception);
 
             DataContext = viewModel;
             Dispatcher.ShutdownStarted += (_, _) =>

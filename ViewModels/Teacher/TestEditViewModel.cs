@@ -123,12 +123,20 @@ namespace TestingSystem.ViewModels.Teacher
         public Models.Teacher[] Teachers { get; private set; } = null!;
 
         
-        private readonly TestingSystemTeacherContext context;
+        private readonly TestingSystemTeacherContext context = null!;
         private readonly bool doesTestExistInDatabase;
         
         public TestEditViewModel(Test test)
         {
-            context = new TestingSystemTeacherContext();
+            try
+            {
+                context = new TestingSystemTeacherContext();
+            }
+            catch (Exception exception)
+            {
+                OccurCriticalErrorMessage(exception);
+                return;
+            }
 
             context.Categories.Include(category => category.Tests).Load();
             Categories = context.Categories.ToArray();
