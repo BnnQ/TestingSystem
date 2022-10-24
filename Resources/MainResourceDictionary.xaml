@@ -8,6 +8,7 @@
     <system:Double x:Key="MainFontSize">17</system:Double>
     <system:Double x:Key="ValidationMessageFontSize">11</system:Double>
     <system:Double x:Key="MainEditViewWidth">450</system:Double>
+    <Thickness x:Key="MarginOfAuthorizationControl">75 0</Thickness>
     <Thickness x:Key="MarginOfEditControl">5 10</Thickness>
     <system:Int32 x:Key="DefaultSelectedIndex">0</system:Int32>
 
@@ -61,6 +62,17 @@
         <Setter Property="MinWidth" Value="80"/>
         <Setter Property="md:HintAssist.Hint" Value="(мм:сс)"/>
         <Setter Property="md:HintAssist.IsFloating" Value="False"/>
+    </Style>
+
+    <Style x:Key="MainPasswordBoxStyle" TargetType="PasswordBox" BasedOn="{StaticResource MaterialDesignOutlinedRevealPasswordBox}">
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="FontSize" Value="{StaticResource MainFontSize}"/>
+        <Setter Property="Margin" Value="10"/>
+        <Setter Property="BorderThickness" Value="2"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource MaterialDesignDivider}"/>
+        <Setter Property="md:ValidationAssist.OnlyShowOnFocus" Value="False"/>
+        <Setter Property="md:ValidationAssist.FontSize" Value="{StaticResource ValidationMessageFontSize}"/>
+        <Setter Property="md:HintAssist.Hint" Value="Пароль"/>
     </Style>
 
     <Style x:Key="RoundedRectangularButtonStyle" TargetType="Button" BasedOn="{StaticResource MaterialDesignFlatMidBgButton}">
@@ -223,7 +235,7 @@
     </Style>
 
     <Style x:Key="DataGridEditingCellStyle" TargetType="TextBox" BasedOn="{StaticResource MaterialDesignTextBox}">
-        <Setter Property="Background" Value="{DynamicResource MaterialDesignSelection}"/>
+        <Setter Property="Background" Value="{StaticResource MaterialDesignSelection}"/>
     </Style>
     <Style x:Key="OnlyEditDataGridStyle" TargetType="DataGrid" BasedOn="{StaticResource MaterialDesignDataGrid}">
         <Setter Property="IsReadOnly" Value="False"/>
