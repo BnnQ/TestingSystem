@@ -1,6 +1,9 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using Meziantou.Framework.WPF.Builders;
+using Meziantou.Framework.WPF.Collections;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
+using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Linq;
 
 namespace TestingSystem.Models
@@ -23,6 +26,103 @@ namespace TestingSystem.Models
             }
         }
 
+        private ushort questionsSeed = 0;
+        private void UpdateQuestionsSeed()
+        {
+            if (Questions?.Count == 0)
+            {
+                questionsSeed = 0;
+            }
+            else
+            {
+                ushort maximumSerialNumberInTestOfQuestions = Questions!
+                                                             .MaxBy(question => question.SerialNumberInTest)!
+                                                             .SerialNumberInTest;
+                questionsSeed = maximumSerialNumberInTestOfQuestions;
+            }
+        }
+
+        private bool isAutoQuestionNumberingEnabled;
+        public bool IsAutoQuestionNumberingEnabled
+        {
+            get => isAutoQuestionNumberingEnabled;
+            set
+            {
+                if (isAutoQuestionNumberingEnabled != value)
+                {
+                    isAutoQuestionNumberingEnabled = value;
+                    OnPropertyChanged(nameof(IsAutoQuestionNumberingEnabled));
+
+                    if (IsAutoQuestionNumberingEnabled)
+                        RenumberQuestions();
+                }
+            }
+        }
+        private void RenumberQuestions()
+        {
+            questionsSeed = 0;
+            foreach (Question question in Questions)
+                question.SerialNumberInTest = ++questionsSeed;
+        }
+
+        private bool isAutoCalculationOfQuestionsCostEnabled;
+        public bool IsAutoCalculationOfQuestionsCostEnabled
+        {
+            get => isAutoCalculationOfQuestionsCostEnabled;
+            set
+            {
+                if (isAutoCalculationOfQuestionsCostEnabled != value)
+                {
+                    isAutoCalculationOfQuestionsCostEnabled = value;
+                    OnPropertyChanged(nameof(IsAutoCalculationOfQuestionsCostEnabled));
+
+                    if (IsAutoCalculationOfQuestionsCostEnabled)
+                        CalculateCostOfQuestions();
+                }
+            }
+        }
+        private void CalculateCostOfQuestions()
+        {
+            double costPerQuestion = (double) MaximumPoints / NumberOfQuestions;
+            foreach (Question question in Questions)
+                question.PointsCost = costPerQuestion;
+        }
+
+        private void OnQuestionsItemPropertyChanged(object? _, PropertyChangedEventArgs? __)
+        {
+            if (IsAutoQuestionNumberingEnabled)
+                RenumberQuestions();
+            else
+                UpdateQuestionsSeed();
+
+            if (IsAutoCalculationOfQuestionsCostEnabled)
+                CalculateCostOfQuestions();
+        }
+        private void OnQuestionsChanged(object? _, NotifyCollectionChangedEventArgs args)
+        {
+            if (args.Action == NotifyCollectionChangedAction.Add || args.Action == NotifyCollectionChangedAction.Remove)
+            {
+                OnPropertyChanged(nameof(NumberOfQuestions));
+
+                if (IsAutoQuestionNumberingEnabled)
+                    RenumberQuestions();
+                else
+                    UpdateQuestionsSeed();
+
+                if (IsAutoCalculationOfQuestionsCostEnabled)
+                    CalculateCostOfQuestions();
+            }
+
+            if (NumberOfSecondsToAnswerEachQuestion.HasValue && args.NewItems?.Count > 0)
+            {
+                foreach (Question question in args.NewItems)
+                {
+                    if (!question.NumberOfSecondsToAnswer.HasValue)
+                        question.NumberOfSecondsToAnswer = NumberOfSecondsToAnswerEachQuestion;
+                }
+            }
+
+        }
         private ICollection<Question> questions = null!;
         public virtual ICollection<Question> Questions
         {
@@ -31,10 +131,9 @@ namespace TestingSystem.Models
             {
                 if (questions != value)
                 {
-                    if (value is ObservableCollection<Question>)
-                        questions = value;
-                    else
-                        questions = new ObservableCollection<Question>(value);
+                    questions = new ConcurrentObservableCollectionBuilder<Question>(value)
+                                .WhichToHandleCollectionChangesUses(OnQuestionsChanged)
+                                .Build();
 
                     OnPropertyChanged(nameof(Questions));
                     OnPropertyChanged(nameof(NumberOfQuestions));
@@ -42,12 +141,14 @@ namespace TestingSystem.Models
             }
         }
 
-        private ushort questionsSeed = 0;
         public ushort NumberOfQuestions
         {
             get => (ushort) Questions.Count;
             set
             {
+                if (Questions.Count == value || value > 1000)
+                    return;
+
                 if (Questions.Count < value)
                 {
                     while (Questions.Count < value)
@@ -55,8 +156,12 @@ namespace TestingSystem.Models
                 }
                 else if (Questions.Count > value)
                 {
-                    Questions = new ObservableCollection<Question>(Questions.Take(value));
+                    Questions = new ConcurrentObservableCollectionBuilder<Question>(Questions.Take(value))
+                                .Build();
                 }
+
+                OnPropertyChanged(nameof(Questions));
+                OnPropertyChanged(nameof(NumberOfQuestions));
             }
         }
 
@@ -70,10 +175,18 @@ namespace TestingSystem.Models
                 {
                     maximumPoints = value;
                     OnPropertyChanged(nameof(MaximumPoints));
+
+                    if (IsAutoCalculationOfQuestionsCostEnabled)
+                        CalculateCostOfQuestions();
                 }
             }
         }
 
+        private void ApplyNumberOfSecondsToAnswerEachQuestion()
+        {
+            foreach (Question question in Questions)
+                question.NumberOfSecondsToAnswer = NumberOfSecondsToAnswerEachQuestion;
+        }
         private ushort? numberOfSecondsToAnswerEachQuestion;
         public ushort? NumberOfSecondsToAnswerEachQuestion
         {
@@ -84,6 +197,14 @@ namespace TestingSystem.Models
                 {
                     numberOfSecondsToAnswerEachQuestion = value;
                     OnPropertyChanged(nameof(NumberOfSecondsToAnswerEachQuestion));
+
+                    if (NumberOfSecondsToAnswerEachQuestion.HasValue)
+                    {
+                        if (NumberOfSecondsToComplete.HasValue)
+                            NumberOfSecondsToComplete = null;
+                    }
+
+                    ApplyNumberOfSecondsToAnswerEachQuestion();
                 }
             }
         }
@@ -94,8 +215,17 @@ namespace TestingSystem.Models
             get => numberOfSecondsToComplete;
             set
             {
-                numberOfSecondsToComplete = value;
-                OnPropertyChanged(nameof(NumberOfSecondsToComplete));
+                if (numberOfSecondsToComplete != value)
+                {
+                    numberOfSecondsToComplete = value;
+                    OnPropertyChanged(nameof(NumberOfSecondsToComplete));
+
+                    if (NumberOfSecondsToComplete.HasValue)
+                    {
+                        if (NumberOfSecondsToAnswerEachQuestion.HasValue)
+                            NumberOfSecondsToAnswerEachQuestion = null;
+                    }
+                }
             }
         }
 
@@ -113,22 +243,7 @@ namespace TestingSystem.Models
             }
         }
 
-        private int categoryId;
-        public int CategoryId
-        {
-            get => categoryId;
-            set
-            {
-                if (categoryId != value)
-                {
-                    categoryId = value;
-
-                    if (Category is not null && Category.Id != categoryId)
-                        Category.Id = categoryId;
-                }
-            }
-        }
-
+        public int CategoryId { get; set; }
         private Category category = null!;
         public virtual Category Category
         {
@@ -138,9 +253,6 @@ namespace TestingSystem.Models
                 if (category != value)
                 {
                     category = value;
-                    if (categoryId != category.Id)
-                        categoryId = category.Id;
-
                     OnPropertyChanged(nameof(Category));
                 }
             }
@@ -154,10 +266,8 @@ namespace TestingSystem.Models
             {
                 if (ownerTeachers != value)
                 {
-                    if (value is ObservableCollection<Teacher>)
-                        ownerTeachers = value;
-                    else
-                        ownerTeachers = new ObservableCollection<Teacher>(value);
+                    ownerTeachers = new ConcurrentObservableCollectionBuilder<Teacher>(value).Build();
+                    OnPropertyChanged(nameof(OwnerTeachers));
                 }
             }
         }
@@ -165,12 +275,12 @@ namespace TestingSystem.Models
         
         public Test()
         {
-            Questions = new ObservableCollection<Question>();
-            OwnerTeachers = new ObservableCollection<Teacher>();
+            Questions = new ConcurrentObservableCollection<Question>();
+            OwnerTeachers = new ConcurrentObservableCollection<Teacher>();
         }
         public Test(ICollection<Teacher> ownerTeachers) : this()
         {
-            Questions = new ObservableCollection<Question>();
+            Questions = new ConcurrentObservableCollection<Question>();
             OwnerTeachers = ownerTeachers;
         }
         public Test(string name, ICollection<Question> questions, ushort maximumPoints, bool isAccountingForIncompleteAnswersEnabled,
@@ -213,34 +323,8 @@ namespace TestingSystem.Models
             else
                 NumberOfSecondsToComplete = numberOfSecondsToComplete;
         }
-        public Test(int id, string name, ICollection<Question> questions, ushort maximumPoints, bool isAccountingForIncompleteAnswersEnabled,
-           Category category, ICollection<Teacher> ownerTeachers) 
-            : this(name, questions, maximumPoints, isAccountingForIncompleteAnswersEnabled, category, ownerTeachers)
-        {
-            Id = id;
-        }
-        public Test(int id, string name, ushort numberOfQuestions, ushort maximumPoints, bool isAccountingForIncompleteAnswersEnabled,
-           Category category, ICollection<Teacher> ownerTeachers) 
-            : this(name, numberOfQuestions, maximumPoints, isAccountingForIncompleteAnswersEnabled, category, ownerTeachers)
-        {
-            Id = id;
-        }
-        public Test(int id, string name, ICollection<Question> questions, ushort maximumPoints, bool isAccountingForIncompleteAnswersEnabled,
-            Category category, ICollection<Teacher> ownerTeachers,
-            ushort? numberOfSecondsToAnswerEachQuestion, ushort? numberOfSecondsToComplete)
-            : this(name, questions, maximumPoints, isAccountingForIncompleteAnswersEnabled, category, ownerTeachers,
-                  numberOfSecondsToAnswerEachQuestion, numberOfSecondsToComplete)
-        {
-            Id = id;
-        }
-        public Test(int id, string name, ushort numberOfQuestions, ushort maximumPoints, bool isAccountingForIncompleteAnswersEnabled,
-            Category category, ICollection<Teacher> ownerTeachers,
-            ushort? numberOfSecondsToAnswerEachQuestion, ushort? numberOfSecondsToComplete)
-            : this(name, numberOfQuestions, maximumPoints, isAccountingForIncompleteAnswersEnabled, category, ownerTeachers,
-                  numberOfSecondsToAnswerEachQuestion, numberOfSecondsToComplete)
-        {
-            Id = id;
-        }
+
+        public ushort GetSerialNumberForNewQuestion() => ++questionsSeed;
 
     }
 }

@@ -3,12 +3,110 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:TestingSystem.Views.Teacher"
         mc:Ignorable="d"
+        xmlns:ag="clr-namespace:WpfAutoGrid;assembly=WpfAutoGrid.Core"
         xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:ap="http://schemas.nishy-software.com/xaml/attached-properties"
+        xmlns:vwp="clr-namespace:WpfToolkit.Controls;assembly=VirtualizingWrapPanel"
+        xmlns:busyIndicator="https://github.com/Peoky/BusyIndicator"
         WindowStartupLocation="CenterScreen"
-        Title="MainView" Height="450" Width="800">
-    <Grid>
-       
-    </Grid>
+        TextElement.Foreground="{DynamicResource MaterialDesignBody}"
+        TextElement.FontWeight="Regular"
+        TextElement.FontSize="{StaticResource MainFontSize}"
+        TextOptions.TextFormattingMode="Ideal"
+        TextOptions.TextRenderingMode="Auto"
+        FontFamily="{DynamicResource MaterialDesignFont}"
+        Background="{DynamicResource MaterialDesignPaper}"
+        Title="Система тестирования" Width="800" Height="600" MinWidth="360" MinHeight="350">
+    <ag:AutoGrid Rows="8*, 2*" Columns="1*">
+        <Grid.Resources>
+            <Style TargetType="TextBlock" BasedOn="{StaticResource MainTextBlockStyle}">
+                <Setter Property="TextAlignment" Value="Left"/>
+            </Style>
+            <Style TargetType="ListView" BasedOn="{StaticResource ListViewCardPanelStyle}"/>
+            <Style TargetType="ScrollViewer" BasedOn="{StaticResource MainScrollViewerStyle}"/>
+        </Grid.Resources>
+
+        <busyIndicator:BusyMask IsBusy="{Binding CategoriesUpdaterFromDatabaseBackgroundWorker.IsBusy}" IndicatorType="ThreeDots"
+                                BusyContent="Обновление...">
+            <ScrollViewer>
+                <ListView ItemsSource="{Binding Categories, IsAsync=True}" 
+                  ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                  ap:ScrollViewerProperties.MouseWheelHandlingMode="OnlyScrollable">
+                    <ListView.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Vertical">
+                                <Button Style="{StaticResource FlatButtonWithoutHighlightStyle}" HorizontalAlignment="Left" VerticalAlignment="Center"
+                                Command="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.ManageCategoryAsyncCommand}"
+                                CommandParameter="{Binding}">
+                                    <TextBlock Text="{Binding Name}" Style="{StaticResource ReferenceTextBlockStyle}"
+                                       FontSize="23" FontWeight="Medium" TextAlignment="Left" Foreground="Black" Padding="5"
+                                       MouseEnter="OnReferenceElementMouseEnter" MouseLeave="OnReferenceElementMouseLeave"/>
+                                </Button>
+                                <ListView ItemsSource="{Binding Tests}"
+                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                  ap:ScrollViewerProperties.MouseWheelHandlingMode="OnlyScrollable">
+                                    <ListView.ItemTemplate>
+                                        <DataTemplate>
+                                            <md:Card Width="300">
+                                                <ag:AutoGrid Rows="1*, 1*" Columns="1*">
+                                                    <TextBlock Text="{Binding Name}" FontSize="20" Margin="5"/>
+
+                                                    <Button Style="{StaticResource FlatButtonWithoutHighlightStyle}" 
+                                                    Command="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.ManageTestAsyncCommand}"
+                                                    CommandParameter="{Binding}" Margin="5">
+                                                        <TextBlock Text="Управление" Style="{StaticResource ReferenceTextBlockStyle}"
+                                                           MouseEnter="OnReferenceElementMouseEnter" MouseLeave="OnReferenceElementMouseLeave"/>
+                                                    </Button>
+                                                </ag:AutoGrid>
+                                            </md:Card>
+                                        </DataTemplate>
+                                    </ListView.ItemTemplate>
+                                    <ListView.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <vwp:VirtualizingWrapPanel StretchItems="True" SpacingEnabled="False" Orientation="Vertical" IsItemsHost="True"/>
+                                        </ItemsPanelTemplate>
+                                    </ListView.ItemsPanel>
+                                </ListView>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                    <ListView.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <VirtualizingStackPanel Orientation="Vertical" IsItemsHost="True"/>
+                        </ItemsPanelTemplate>
+                    </ListView.ItemsPanel>
+                </ListView>
+            </ScrollViewer>
+        </busyIndicator:BusyMask>
+
+
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="8*"/>
+                <ColumnDefinition Width="2*"/>
+            </Grid.ColumnDefinitions>
+
+            <Button Style="{StaticResource RoundedRectangularButtonStyle}" Margin="10" MinHeight="40"
+                    Command="{Binding UpdateCategoriesFromDatabaseAsyncCommand}">
+                <TextBlock Text="Обновить категории"/>
+            </Button>
+
+            <md:PopupBox Grid.Column="1" Visibility="Hidden" IsPopupOpen="{Binding IsAddMenuOpen, Mode=TwoWay}">
+                <ag:AutoGrid Rows="1*, 1*" Columns="1*">
+                    <Button Command="{Binding AddCategoryAsyncCommand}">
+                        <TextBlock Text="Добавить категорию"/>
+                    </Button>
+                    <Button Command="{Binding AddTestAsyncCommand}">
+                        <TextBlock Text="Добавить тест"/>
+                    </Button>
+                </ag:AutoGrid>
+            </md:PopupBox>
+            <Button Grid.Column="1" Style="{StaticResource CircleButtonStyle}"
+                    Command="{Binding OpenAddMenuCommand}">
+                <TextBlock Text="+" Foreground="White" FontSize="35"/>
+            </Button>
+
+        </Grid>
+    </ag:AutoGrid>
 </Window>

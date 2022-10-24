@@ -1,7 +1,10 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using Meziantou.Framework.WPF.Collections;
+using Meziantou.Framework.WPF.Builders;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
+using System.Collections.Specialized;
+using System.ComponentModel;
 
 namespace TestingSystem.Models
 {
@@ -37,6 +40,63 @@ namespace TestingSystem.Models
             }
         }
 
+        private ushort answerOptionsSeed = 0;
+        private void UpdateAnswerOptionsSeed()
+        {
+            if (AnswerOptions?.Count == 0)
+            {
+                answerOptionsSeed = 0;
+            }
+            else
+            {
+                ushort maximumSerialNumberInQuestionOfAnswerOptions = AnswerOptions!
+                                                                      .MaxBy(answerOption => answerOption.SerialNumberInQuestion)!
+                                                                      .SerialNumberInQuestion;
+                answerOptionsSeed = maximumSerialNumberInQuestionOfAnswerOptions;
+            }
+        }
+        private bool isAutoAnswerOptionNumberingEnabled;
+        public bool IsAutoAnswerOptionNumberingEnabled
+        {
+            get => isAutoAnswerOptionNumberingEnabled;
+            set
+            {
+                if (isAutoAnswerOptionNumberingEnabled != value)
+                {
+                    isAutoAnswerOptionNumberingEnabled = value;
+                    OnPropertyChanged(nameof(IsAutoAnswerOptionNumberingEnabled));
+
+                    if (IsAutoAnswerOptionNumberingEnabled)
+                        RenumberAnswerOptions();
+                }
+            }
+        }
+        private void RenumberAnswerOptions()
+        {
+            answerOptionsSeed = 0;
+            foreach (AnswerOption answerOption in AnswerOptions)
+                answerOption.SerialNumberInQuestion = ++answerOptionsSeed;
+        }
+
+        private void OnAnswerOptionsItemPropertyChanged(object? _, PropertyChangedEventArgs? __)
+        {
+            if (IsAutoAnswerOptionNumberingEnabled)
+                RenumberAnswerOptions();
+            else
+                UpdateAnswerOptionsSeed();
+        }
+        private void OnAnswerOptionsChanged(object? _, NotifyCollectionChangedEventArgs args)
+        {
+            if (args.Action == NotifyCollectionChangedAction.Add || args.Action == NotifyCollectionChangedAction.Remove)
+            {
+                OnPropertyChanged(nameof(NumberOfAnswerOptions));
+
+                if (IsAutoAnswerOptionNumberingEnabled)
+                    RenumberAnswerOptions();
+                else
+                    UpdateAnswerOptionsSeed();
+            }
+        }
         private ICollection<AnswerOption> answerOptions = null!;
         public virtual ICollection<AnswerOption> AnswerOptions
         {
@@ -45,31 +105,37 @@ namespace TestingSystem.Models
             {
                 if (answerOptions != value)
                 {
-                    if (value is ObservableCollection<AnswerOption>)
-                        answerOptions = value;
-                    else
-                        answerOptions = new ObservableCollection<AnswerOption>(value);
+                    answerOptions = new ConcurrentObservableCollectionBuilder<AnswerOption>(value)
+                                    .WhichToHandleCollectionChangesUses(OnAnswerOptionsChanged)
+                                    .WhichToHandleItemsPropertyChangedUses(OnAnswerOptionsItemPropertyChanged)
+                                    .Build();
 
                     OnPropertyChanged(nameof(AnswerOptions));
+                    OnPropertyChanged(nameof(NumberOfAnswerOptions));
                 }
             }
         }
 
-        private ushort answerOptionsSeed = 0;
         public ushort NumberOfAnswerOptions
         {
             get => (ushort) AnswerOptions.Count;
             set
             {
-                if (AnswerOptions.Count > value)
-                {
-                    AnswerOptions = new ObservableCollection<AnswerOption>(AnswerOptions.Take(value));
-                }
-                else if (AnswerOptions.Count < value)
+                if (AnswerOptions.Count == value || value > 1000)
+                    return;
+
+                if (AnswerOptions.Count < value)
                 {
                     while (AnswerOptions.Count < value)
                         AnswerOptions.Add(new AnswerOption(this, ++answerOptionsSeed));
                 }
+                else if (AnswerOptions.Count > value)
+                {
+                    AnswerOptions = new ConcurrentObservableCollectionBuilder<AnswerOption>(AnswerOptions.Take(value)).Build();
+                }
+
+
+                OnPropertyChanged(nameof(AnswerOptions));
             }
         }
 
@@ -87,19 +153,7 @@ namespace TestingSystem.Models
             }
         }
 
-        private int testId;
-        public int TestId
-        {
-            get => testId;
-            set
-            {
-                testId = value;
-
-                if (Test is not null && Test.Id != testId)
-                    Test.Id = testId;
-            }
-        }
-
+        public int TestId { get; set; }
         private Test test = null!;
         public virtual Test Test
         {
@@ -114,13 +168,13 @@ namespace TestingSystem.Models
             }
         }
 
-        private ushort serialNumberInTest;
+        private ushort serialNumberInTest = 1;
         public ushort SerialNumberInTest
         {
             get => serialNumberInTest;
             set
             {
-                if (serialNumberInTest != value)
+                if (serialNumberInTest != value && value > 0)
                 {
                     serialNumberInTest = value;
                     OnPropertyChanged(nameof(SerialNumberInTest));
@@ -132,12 +186,19 @@ namespace TestingSystem.Models
 
         public Question()
         {
-            AnswerOptions = new ObservableCollection<AnswerOption>();
+            AnswerOptions = new ConcurrentObservableCollection<AnswerOption>();
         }
         public Question(Test test, ushort serialNumberInTest) : this()
         {
             Test = test;
             SerialNumberInTest = serialNumberInTest;
+            Content = $"{SerialNumberInTest} вопрос";
+            PointsCost = 1;
+            NumberOfAnswerOptions = 1;
+        }
+        public Question(Test test, ushort serialNumberInTest, double pointsCost) : this(test, serialNumberInTest)
+        {
+            PointsCost = pointsCost;
         }
         public Question(string content, double pointsCost, ICollection<AnswerOption> answerOptions,
             Test test, ushort serialNumberInTest)
@@ -157,16 +218,18 @@ namespace TestingSystem.Models
             SerialNumberInTest = serialNumberInTest;
         }
         public Question(string content, double pointsCost, ICollection<AnswerOption> answerOptions,
-            ushort numberOfSecondsToAnswer, Test test, ushort serialNumberInTest) 
+            ushort? numberOfSecondsToAnswer, Test test, ushort serialNumberInTest) 
             : this(content, pointsCost, answerOptions, test, serialNumberInTest)
         {
             NumberOfSecondsToAnswer = numberOfSecondsToAnswer;
         }
-        public Question(string content, double pointsCost, ushort numberOfAnswerOptions, ushort numberOfSecondsToAnswer, Test test,
+        public Question(string content, double pointsCost, ushort numberOfAnswerOptions, ushort? numberOfSecondsToAnswer, Test test,
             ushort serialNumberInTest) : this(content, pointsCost, numberOfAnswerOptions, test, serialNumberInTest)
         {
             NumberOfSecondsToAnswer = numberOfSecondsToAnswer;
         }
+
+        public ushort GetSerialNumberForNewAnswerOption() => ++answerOptionsSeed;
 
     }
 }

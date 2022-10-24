@@ -3,10 +3,45 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:TestingSystem.Views.Teacher"
+        xmlns:ag="clr-namespace:WpfAutoGrid;assembly=WpfAutoGrid.Core"
+        xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:converters="clr-namespace:TestingSystem.Views.Converters"
         mc:Ignorable="d"
-        Title="AnswerOptionEditView" Height="450" Width="800">
-    <Grid>
-        
-    </Grid>
+        WindowStartupLocation="CenterScreen"
+        TextElement.Foreground="{DynamicResource MaterialDesignBody}"
+        TextElement.FontWeight="Regular"
+        TextElement.FontSize="{StaticResource MainFontSize}"
+        TextOptions.TextFormattingMode="Ideal"
+        TextOptions.TextRenderingMode="Auto"
+        FontFamily="{DynamicResource MaterialDesignFont}"
+        Background="{DynamicResource MaterialDesignPaper}"
+        Title="Редактор варианта ответа" Width="500" Height="400" MinWidth="350" MinHeight="400">
+    <ag:AutoGrid Rows="1*, 1*, 1*, 1*" Columns="1*, 1*">
+        <Grid.Resources>
+            <Style TargetType="TextBlock" BasedOn="{StaticResource MainTextBlockStyle}"/>
+            <Style TargetType="TextBox" BasedOn="{StaticResource OutlinedTextBoxStyle}">
+                <Setter Property="Margin" Value="10"/>
+                <Setter Property="Padding" Value="5"/>
+            </Style>
+            <Style TargetType="CheckBox" BasedOn="{StaticResource MainCheckBoxStyle}"/>
+        </Grid.Resources>
+
+        <TextBlock Text="*Вариант ответа:"/>
+        <TextBox Text="{Binding Content}"/>
+
+        <TextBlock Text="Порядковый номер варианта ответа в вопросе:"/>
+        <TextBox Text="{Binding SerialNumberInQuestion, Converter={StaticResource ushortToStringConverter}}"
+                 Style="{StaticResource NumericTextBoxStyle}" Margin="10 20" Padding="5"/>
+
+        <TextBlock Text="Является правильным ответом:"/>
+        <CheckBox IsChecked="{Binding IsCorrect}"/>
+
+        <Button Command="{Binding ConfirmAsyncCommand}" Style="{StaticResource ConfirmButtonStyle}">
+            <TextBlock Text="{StaticResource ConfirmButtonText}"/>
+        </Button>
+        <Button Command="{Binding CancelCommand}" Style="{StaticResource CancelButtonStyle}">
+            <TextBlock Text="{StaticResource CancelButtonText}"/>
+        </Button>
+
+    </ag:AutoGrid>
 </Window>

@@ -4,8 +4,7 @@ using HappyStudio.Mvvm.Input.Wpf;
 using Microsoft.EntityFrameworkCore;
 using MvvmBaseViewModels.Navigation;
 using MvvmBaseViewModels.Navigation.Validatable;
-using MvvmBaseViewModelsLibrary.Enumerables;
-using NeoSmart.AsyncLock;
+using MvvmBaseViewModels.Enums;
 using ReactiveValidation;
 using ReactiveValidation.Extensions;
 using Scrypt;
@@ -14,9 +13,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Input;
 using TestingSystem.Constants.Authorization;
 using TestingSystem.Models.Contexts;
+using Z.Linq;
+using System;
 
 namespace TestingSystem.ViewModels.Authorization
 {
@@ -53,6 +53,20 @@ namespace TestingSystem.ViewModels.Authorization
             }
         }
 
+        private string fullName = null!;
+        public string FullName
+        {
+            get => fullName;
+            set
+            {
+                if (fullName != value)
+                {
+                    fullName = value;
+                    OnPropertyChanged(nameof(FullName));
+                }
+            }
+        }
+
         private bool isStudent = true;
         public bool IsStudent
         {
@@ -70,50 +84,91 @@ namespace TestingSystem.ViewModels.Authorization
         private IList<Models.Teacher> teachers = null!;
         private IList<Models.Student> students = null!;
 
-        private const string UsernameRegexPattern = @"^[a-z0-9]([._-](?![._-])|[a-z0-9]){3,18}[a-z0-9]$";
-        private const string PasswordRegexPattern = @"^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,20}$";
-        private readonly AsyncLock databaseContextLocker;
-        private readonly TestingSystemAuthorizationContext databaseContext;
-
-        private ValidationState usernameValidationState = ValidationState.Disabled;
-        private ValidationState passwordValidationState = ValidationState.Disabled;
-
         //Performs registration of a user in the background,
         //including verification that the data matches the requirements and such a user is not yet registered
         public BackgroundWorker RegistrationBackgroundWorker { get; init; } = new();
+        //Performs initial loading of data from the database in the background when the application starts
+        private readonly BackgroundWorker initialDatabaseLoadBackgroundWorker = new();
 
-        public RegistrationViewModel(INavigationManager navigationManager, TestingSystemAuthorizationContext databaseContext,
-            AsyncLock databaseContextLocker) : base(navigationManager)
+        public RegistrationViewModel(INavigationManager navigationManager) : base(navigationManager)
         {
-            this.databaseContext = databaseContext;
-            this.databaseContextLocker = databaseContextLocker;
-
             SetupBackgroundWorkers();
             SetupValidator();
+
+            _ = initialDatabaseLoadBackgroundWorker.RunWorkerAsync();
+        }
+
+        private void SetupBackgroundWorkers()
+        {
+            RegistrationBackgroundWorker.DoWork = async () => await RegisterAsync();
+
+            initialDatabaseLoadBackgroundWorker.DoWork = async () => await UpdateStudentsFromDatabaseAsync();
         }
 
 
+        #region Updating data from database
+        private async Task UpdateTeachersFromDatabaseAsync()
+        {
+            try
+            {
+                using (TestingSystemAuthorizationContext context = new())
+                {
+                    await context.Teachers.LoadAsync();
+                    teachers = await context.Teachers.Local.ToListAsync();
+                }
+            }
+            catch (Exception exception)
+            {
+                OccurCriticalErrorMessage(exception);
+                return;
+            }
+        }
+
+        private async Task UpdateStudentsFromDatabaseAsync()
+        {
+            try
+            {
+                using (TestingSystemAuthorizationContext context = new())
+                {
+                    await context.Students.LoadAsync();
+                    students = await context.Students.Local.ToListAsync();
+                }
+            }
+            catch (Exception exception)
+            {
+                OccurCriticalErrorMessage(exception);
+                return;
+            }
+        }
+        #endregion
+
         private async Task RegisterAsync()
         {
-            if (!await IsUsernameValidAsync() || !await IsPasswordValidAsync())
+            if (!await IsUsernameValidAsync() || !await IsPasswordValidAsync() || !await IsFullNameValidAsync())
                 return;
 
-            string hashedUsername = encoder.Encode(Username);
             string hashedPassword = encoder.Encode(Password);
 
             if (IsStudent)
             {
-                Models.Student registeredStudent = new(hashedUsername, hashedPassword);
-                using (await databaseContextLocker.LockAsync())
+                Models.Student registeredStudent = new(Username, hashedPassword, FullName);
+                try
                 {
-                    await databaseContext.Students.AddAsync(registeredStudent);
-                    await databaseContext.SaveChangesAsync();
+                    using (TestingSystemAuthorizationContext context = new())
+                    {
+                        await context.Students.AddAsync(registeredStudent);
+                        await context.SaveChangesAsync();
+                    }
+                }
+                catch (Exception exception)
+                {
+                    OccurCriticalErrorMessage(exception);
+                    return;
                 }
 
                 Application.Current.Dispatcher.Invoke(() =>
                 {
                     Views.Student.MainView studentMainView = new(registeredStudent);
-                    Mouse.OverrideCursor = Cursors.Arrow;
                     studentMainView.Show();
 
                     Close();
@@ -121,17 +176,24 @@ namespace TestingSystem.ViewModels.Authorization
             }
             else
             {
-                Models.Teacher registeredTeacher = new(hashedUsername, hashedPassword);
-                using (await databaseContextLocker.LockAsync())
+                Models.Teacher registeredTeacher = new(Username, hashedPassword, FullName);
+                try
                 {
-                    await databaseContext.Teachers.AddAsync(registeredTeacher);
-                    await databaseContext.SaveChangesAsync();
+                    using (TestingSystemAuthorizationContext context = new())
+                    {
+                        await context.Teachers.AddAsync(registeredTeacher);
+                        await context.SaveChangesAsync();
+                    }
+                }
+                catch (Exception exception)
+                {
+                    OccurCriticalErrorMessage(exception);
+                    return;
                 }
 
                 Application.Current.Dispatcher.Invoke(() =>
                 {
                     Views.Teacher.MainView teacherMainView = new(registeredTeacher);
-                    Mouse.OverrideCursor = Cursors.Arrow;
                     teacherMainView.Show();
 
                     Close();
@@ -161,20 +223,14 @@ namespace TestingSystem.ViewModels.Authorization
         }
         #endregion
 
-        private void SetupBackgroundWorkers()
-        {
-            RegistrationBackgroundWorker.DoWork = async () =>
-            {
-                Application.Current.Dispatcher.Invoke(() => Mouse.OverrideCursor = Cursors.Wait);
-                await RegisterAsync();
-            };
-            RegistrationBackgroundWorker.OnWorkCompleted = () =>
-            {
-                Mouse.OverrideCursor = Cursors.Arrow;
-            };
-        }
-
         #region Validation setup
+        private const string UsernameRegexPattern = @"^[a-z0-9]([._-](?![._-])|[a-z0-9]){3,18}[a-z0-9]$";
+        private const string PasswordRegexPattern = @"^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,20}$";
+
+        private ValidationState usernameValidationState = ValidationState.Disabled;
+        private ValidationState passwordValidationState = ValidationState.Disabled;
+        private ValidationState fullNameValidationState = ValidationState.Disabled;
+
         protected override void SetupValidator()
         {
             ValidationBuilder<RegistrationViewModel> builder = new();
@@ -216,6 +272,15 @@ namespace TestingSystem.ViewModels.Authorization
                 .When(viewModel => viewModel.passwordValidationState == ValidationState.Enabled)
                 .WithMessage(errorMessageBuilder.ToString());
 
+            builder.RuleFor(viewModel => viewModel.FullName)
+                .NotEmpty()
+                .When(viewModel => viewModel.fullNameValidationState == ValidationState.Enabled)
+                .WithMessage("ФИО не может быть пустым");
+            builder.RuleFor(viewModel => viewModel.FullName)
+                .MaxLength(128)
+                .When(viewModel => viewModel.fullNameValidationState == ValidationState.Enabled)
+                .WithMessage("ФИО не может быть длиннее 128 символов");
+
             Validator = builder.Build(this);
         }
 
@@ -239,23 +304,25 @@ namespace TestingSystem.ViewModels.Authorization
             return Validator.IsValid;
         }
 
+        private async Task<bool> IsFullNameValidAsync()
+        {
+            fullNameValidationState = ValidationState.Enabled;
+            Validator!.Revalidate();
+            await Validator.WaitValidatingCompletedAsync();
+            fullNameValidationState = ValidationState.Disabled;
+
+            return Validator.IsValid;
+        }
+
         private async Task<bool> IsUsernameExistsAsync(string username)
         {
-            using (await databaseContextLocker.LockAsync())
-            {
-                await databaseContext.Teachers.LoadAsync();
-                teachers = await databaseContext.Teachers.ToListAsync();
-                if (teachers.AsParallel().Any(teacher => encoder.Compare(username, teacher.EncryptedName)))
-                    return true;
-            }
+            await UpdateTeachersFromDatabaseAsync();
+            if (teachers.AsParallel().Any(teacher => username.Equals(teacher.Name)))
+                return true;
 
-            using (await databaseContextLocker.LockAsync())
-            {
-                await databaseContext.Students.LoadAsync();
-                students = await databaseContext.Students.ToListAsync();
-                if (students.AsParallel().Any(student => encoder.Compare(username, student.EncryptedName)))
-                    return true;
-            }
+            await UpdateStudentsFromDatabaseAsync();
+            if (students.AsParallel().Any(student => username.Equals(student.Name)))
+                return true;
 
             return false;
         }

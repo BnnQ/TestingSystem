@@ -11,14 +11,14 @@ using TestingSystem.Models.Contexts;
 namespace TestingSystem.Migrations
 {
     [DbContext(typeof(TestingSystemDatabaseBuilderContext))]
-    [Migration("20221009182332_InitialCreate")]
+    [Migration("20221024025547_InitialCreate")]
     partial class InitialCreate
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "6.0.9")
+                .HasAnnotation("ProductVersion", "6.0.10")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder, 1L, 1);
@@ -129,21 +129,28 @@ namespace TestingSystem.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
 
-                    b.Property<string>("EncryptedName")
+                    b.Property<string>("FullName")
                         .IsRequired()
-                        .HasColumnType("VARCHAR(128)");
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
 
-                    b.Property<string>("EncryptedPassword")
+                    b.Property<string>("HashedPassword")
                         .IsRequired()
-                        .HasColumnType("VARCHAR(128)");
+                        .HasColumnType("VARCHAR(128)")
+                        .HasColumnOrder(3);
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("NVARCHAR(20)")
+                        .HasColumnOrder(2);
 
                     b.HasKey("Id");
 
                     b.ToTable("Students");
 
-                    b.HasCheckConstraint("CK_Students_EncryptedName", "[EncryptedName] != ''");
+                    b.HasCheckConstraint("CK_Students_Name", "[Name] != ''");
 
-                    b.HasCheckConstraint("CK_Students_EncryptedPassword", "[EncryptedPassword] != ''");
+                    b.HasCheckConstraint("CK_Students_HashedPassword", "[HashedPassword] != ''");
                 });
 
             modelBuilder.Entity("TestingSystem.Models.Teacher", b =>
@@ -155,21 +162,28 @@ namespace TestingSystem.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
 
-                    b.Property<string>("EncryptedName")
+                    b.Property<string>("FullName")
                         .IsRequired()
-                        .HasColumnType("VARCHAR(128)");
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
 
-                    b.Property<string>("EncryptedPassword")
+                    b.Property<string>("HashedPassword")
                         .IsRequired()
-                        .HasColumnType("VARCHAR(128)");
+                        .HasColumnType("VARCHAR(128)")
+                        .HasColumnOrder(3);
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("NVARCHAR(20)")
+                        .HasColumnOrder(2);
 
                     b.HasKey("Id");
 
                     b.ToTable("Teachers");
 
-                    b.HasCheckConstraint("CK_Teachers_EncryptedName", "[EncryptedName] != ''");
+                    b.HasCheckConstraint("CK_Teachers_Name", "[Name] != ''");
 
-                    b.HasCheckConstraint("CK_Teachers_EncryptedPassword", "[EncryptedPassword] != ''");
+                    b.HasCheckConstraint("CK_Teachers_HashedPassword", "[HashedPassword] != ''");
                 });
 
             modelBuilder.Entity("TestingSystem.Models.Test", b =>

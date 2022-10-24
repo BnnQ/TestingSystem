@@ -9,14 +9,16 @@ using System.Threading.Tasks;
 using TestingSystem.Models;
 using TestingSystem.Models.Contexts;
 using Scrypt;
-using MvvmBaseViewModelsLibrary.Enumerables;
+using MvvmBaseViewModels.Enums;
 using HappyStudio.Mvvm.Input.Wpf;
 using System.Windows;
 using System.Windows.Input;
 using TestingSystem.Constants.Authorization;
 using MvvmBaseViewModels.Navigation;
 using BackgroundWorkerLibrary;
-using NeoSmart.AsyncLock;
+using Z.Linq;
+using System;
+using WpfExceptionMessageBox;
 
 namespace TestingSystem.ViewModels.Authorization
 {
@@ -24,8 +26,6 @@ namespace TestingSystem.ViewModels.Authorization
     {
         private readonly static ScryptEncoder encoder = new();
 
-        private readonly AsyncLock databaseContextLocker;
-        private readonly TestingSystemAuthorizationContext databaseContext;
         private IList<Models.Teacher> teachers = null!;
         private IList<Models.Student> students = null!;
 
@@ -82,40 +82,61 @@ namespace TestingSystem.ViewModels.Authorization
         private readonly BackgroundWorker initialDatabaseLoadBackgroundWorker = new();
 
 
-        public AuthenticationViewModel(INavigationManager navigationManager, TestingSystemAuthorizationContext databaseContext,
-            AsyncLock databaseContextLocker) 
+        public AuthenticationViewModel(INavigationManager navigationManager) 
             : base(navigationManager, true, ValidationState.Disabled)
         {
-            this.databaseContext = databaseContext;
-            this.databaseContextLocker = databaseContextLocker;
-
             SetupBackgroundWorkers();
             SetupValidator();
 
             _ = initialDatabaseLoadBackgroundWorker.RunWorkerAsync();
         }
 
+
+        #region Updating data from database
+        private async Task UpdateTeachersFromDatabaseAsync()
+        {
+            try
+            {
+                using (TestingSystemAuthorizationContext context = new())
+                {
+                    await context.Teachers.LoadAsync();
+                    teachers = await context.Teachers.Local.ToListAsync();
+                }
+            }
+            catch (Exception exception)
+            {
+                OccurCriticalErrorMessage(exception);
+            }
+        }
+
+        private async Task UpdateStudentsFromDatabaseAsync()
+        {
+            try
+            {
+                using (TestingSystemAuthorizationContext context = new())
+                {
+                    await context.Students.LoadAsync();
+                    students = await context.Students.Local.ToListAsync();
+                }
+            }
+            catch (Exception exception)
+            {
+                OccurCriticalErrorMessage(exception);
+            }
+        }
+
+        private async Task UpdateDataFromDatabaseAsync()
+        {
+            await UpdateTeachersFromDatabaseAsync();
+            await UpdateStudentsFromDatabaseAsync();
+        }
+        #endregion
+
         private void SetupBackgroundWorkers()
         {
-            AuthenticationBackgroundWorker.DoWork = async () =>
-            {
-                Application.Current.Dispatcher.Invoke(() => Mouse.OverrideCursor = Cursors.Wait);
-                await AuthenticateAsync();
-            };
-            AuthenticationBackgroundWorker.OnWorkCompleted = () =>
-            {
-                Mouse.OverrideCursor = Cursors.Arrow;
-            };
+            AuthenticationBackgroundWorker.DoWork = async () => await AuthenticateAsync();
 
-            initialDatabaseLoadBackgroundWorker.DoWork = async () =>
-            {
-                using (await databaseContextLocker.LockAsync())
-                {
-                    await databaseContext.Teachers.LoadAsync();
-                    await databaseContext.Students.LoadAsync();
-                }
-            };
-
+            initialDatabaseLoadBackgroundWorker.DoWork = async () => await UpdateDataFromDatabaseAsync();
         }
 
         private async Task AuthenticateAsync()
@@ -126,7 +147,7 @@ namespace TestingSystem.ViewModels.Authorization
             Models.Teacher? foundTeacher =
                 teachers
                 .AsParallel()
-                .FirstOrDefault(teacher => encoder.Compare(Username, teacher.EncryptedName));
+                .FirstOrDefault(teacher => Username.Equals(teacher.Name));
 
             if (foundTeacher is not null)
             {
@@ -137,7 +158,6 @@ namespace TestingSystem.ViewModels.Authorization
                 Application.Current.Dispatcher.Invoke(() =>
                 {
                     Views.Teacher.MainView teacherView = new(foundTeacher);
-                    Application.Current.Dispatcher.Invoke(() => Mouse.OverrideCursor = Cursors.Arrow);
                     teacherView.Show();
 
                     Close();
@@ -148,7 +168,7 @@ namespace TestingSystem.ViewModels.Authorization
             Models.Student? foundStudent =
                 students
                 .AsParallel()
-                .FirstOrDefault(student => encoder.Compare(Username, student.EncryptedName));
+                .FirstOrDefault(student => Username.Equals(student.Name));
 
             if (foundStudent is not null)
             {
@@ -159,7 +179,6 @@ namespace TestingSystem.ViewModels.Authorization
                 Application.Current.Dispatcher.Invoke(() =>
                 {
                     Views.Student.MainView studentView = new(foundStudent);
-                    Application.Current.Dispatcher.Invoke(() => Mouse.OverrideCursor = Cursors.Arrow);
                     studentView.Show();
                     
                     Close();
@@ -241,37 +260,20 @@ namespace TestingSystem.ViewModels.Authorization
         {
             username = username.ToLower();
 
-            using (await databaseContextLocker.LockAsync())
-            {
-                await databaseContext.Teachers.LoadAsync();
-                teachers = await databaseContext.Teachers.ToListAsync();
-                if (teachers.AsParallel().Any(teacher => encoder.Compare(username, teacher.EncryptedName)))
-                    return true;
-            }
-            
-            using (await databaseContextLocker.LockAsync())
-            {
-                await databaseContext.Students.LoadAsync();
-                students = await databaseContext.Students.ToListAsync();
-                if (students.AsParallel().Any(student => encoder.Compare(username, student.EncryptedName)))
-                    return true;
-            }
+            await UpdateTeachersFromDatabaseAsync();
+            if (teachers.AsParallel().Any(teacher => username.Equals(teacher.Name)))
+                return true;
+
+            await UpdateStudentsFromDatabaseAsync();
+            if (students.AsParallel().Any(student => username.Equals(student.Name)))
+                return true;
 
             return false;
         }
 
         private bool IsUserPassedAuthentication(string password)
         {
-            if (encoder.Compare(Username, User?.EncryptedName) &&
-                encoder.Compare(password, User?.EncryptedPassword))
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-
+            return Username.Equals(User?.Name) && encoder.Compare(password, User?.HashedPassword);
         }
         #endregion
 

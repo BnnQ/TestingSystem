@@ -1,12 +1,16 @@
 ﻿using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.Configuration;
+using System.IO;
 
 namespace TestingSystem.Models.Contexts
 {
     public class TestingSystemTeacherContext : DbContext
     {
         public virtual DbSet<Category> Categories { get; set; } = null!;
+        public virtual DbSet<Test> Tests { get; set; } = null!;
+        public virtual DbSet<Teacher> Teachers { get; set; } = null!;
 
 
         public TestingSystemTeacherContext() : base()
@@ -22,31 +26,58 @@ namespace TestingSystem.Models.Contexts
         {
             if (!optionsBuilder.IsConfigured)
             {
-                //string? userId = ConfigurationManager.AppSettings["databaseTeacherUserId"];
-                //if (string.IsNullOrWhiteSpace(userId))
-                //{
-                //    throw new ConfigurationErrorsException(
-                //        message: "Configuration file must contain \"databaseTeacherUserId\"",
-                //        filename: "App.config",
-                //        line: 4);
-                //}
+                DirectoryInfo? applicationDirectory = Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory)?.Parent?.Parent?.Parent;
+                if (applicationDirectory is null)
+                    throw new DirectoryNotFoundException("Application directory not found");
+                string pathToConfigFile = Path.Combine(applicationDirectory.FullName, "App.config");
+                if (!File.Exists(pathToConfigFile))
+                    throw new FileNotFoundException("Application configuration file not found", "App.config");
 
-                //string? password = ConfigurationManager.AppSettings["databasePassword"];
-                //if (string.IsNullOrWhiteSpace(password))
-                //{
-                //    throw new ConfigurationErrorsException(
-                //        message: "Configuration file must contain \"databasePassword\"",
-                //        filename: "App.config",
-                //        line: 5);
-                //}
+                ExeConfigurationFileMap fileMap = new();
+                fileMap.ExeConfigFilename = pathToConfigFile;
+                Configuration config = ConfigurationManager.OpenMappedExeConfiguration(fileMap, ConfigurationUserLevel.None);
+
+                string? dataSource = config.AppSettings.Settings["databaseDataSource"]?.Value;
+                if (string.IsNullOrWhiteSpace(dataSource))
+                {
+                    throw new ConfigurationErrorsException(
+                        message: "Configuration file must contain \"databaseDataSource\"",
+                        filename: "App.config",
+                        line: 4);
+                }
+
+                string? initialCatalog = config.AppSettings.Settings["databaseInitialCatalog"]?.Value;
+                if (string.IsNullOrWhiteSpace(dataSource))
+                {
+                    throw new ConfigurationErrorsException(
+                        message: "Configuration file must contain \"databaseInitialCatalog\")",
+                        filename: "App.config",
+                        line: 5);
+                }
+
+                string? userId = config.AppSettings.Settings["databaseAdminUserId"]?.Value;
+                if (string.IsNullOrWhiteSpace(userId))
+                {
+                    throw new ConfigurationErrorsException(
+                        message: "Configuration file must contain \"databaseAdminUserId\"",
+                        filename: "App.config",
+                        line: 6);
+                }
+
+                string? password = config.AppSettings.Settings["databasePassword"]?.Value;
+                if (string.IsNullOrWhiteSpace(password))
+                {
+                    throw new ConfigurationErrorsException(
+                        message: "Configuration file must contain \"databasePassword\"",
+                        filename: "App.config",
+                        line: 7);
+                }
 
                 SqlConnectionStringBuilder connectionStringBuilder = new();
-                connectionStringBuilder.DataSource = "SQL8001.site4now.net";
-                connectionStringBuilder.InitialCatalog = "db_a8dd9e_testingsystem";
-                //connectionStringBuilder.UserID = userId;
-                //connectionStringBuilder.Password = password;
-                connectionStringBuilder.UserID = "db_a8dd9e_testingsystem_admin";
-                connectionStringBuilder.Password = "49Exra2ix";
+                connectionStringBuilder.DataSource = dataSource;
+                connectionStringBuilder.InitialCatalog = initialCatalog;
+                connectionStringBuilder.UserID = userId;
+                connectionStringBuilder.Password = password;
 
                 optionsBuilder
                     .UseSqlServer(connectionStringBuilder.ConnectionString);
@@ -106,6 +137,7 @@ namespace TestingSystem.Models.Contexts
                 .HasCheckConstraint("CK_Questions_Content", "[Content] != ''")
                 .HasCheckConstraint("CK_Questions_PointsCost", "[PointsCost] > 0")
                 .Ignore(question => question.NumberOfAnswerOptions)
+                .Ignore(question => question.IsAutoAnswerOptionNumberingEnabled)
                 .HasKey(question => question.Id);
 
                 questionModel.Property(question => question.Id)
@@ -154,6 +186,8 @@ namespace TestingSystem.Models.Contexts
                 .HasCheckConstraint("CK_Tests_Name", "[Name] != ''")
                 .HasCheckConstraint("CK_Tests_MaximumPoints", "[MaximumPoints] > 0")
                 .Ignore(test => test.NumberOfQuestions)
+                .Ignore(test => test.IsAutoCalculationOfQuestionsCostEnabled)
+                .Ignore(test => test.IsAutoQuestionNumberingEnabled)
                 .HasKey(test => test.Id);
 
                 testModel.Property(test => test.Id)
@@ -206,6 +240,39 @@ namespace TestingSystem.Models.Contexts
             });
             modelBuilder.Entity<Category>()
                 .ToTable("Categories");
+
+            modelBuilder.Entity<Teacher>()
+                .HasMany(teacher => teacher.OwnedTests)
+                .WithMany(test => test.OwnerTeachers)
+                .UsingEntity("TestsTeacherOwners");
+            modelBuilder.Entity<Teacher>(teacherModel =>
+            {
+                teacherModel
+                .HasCheckConstraint("CK_Teachers_Name", "[Name] != ''")
+                .HasCheckConstraint("CK_Teachers_HashedPassword", "[HashedPassword] != ''")
+                .HasKey(teacher => teacher.Id);
+
+                teacherModel.Property(teacher => teacher.Id)
+                .HasColumnOrder(1)
+                .UseIdentityColumn()
+                .IsRequired();
+
+                teacherModel.Property(teacher => teacher.Name)
+                .HasColumnOrder(2)
+                .HasColumnType("NVARCHAR(20)")
+                .IsRequired();
+
+                teacherModel.Property(teacher => teacher.HashedPassword)
+                .HasColumnOrder(3)
+                .HasColumnType("VARCHAR(128)")
+                .IsRequired();
+
+                teacherModel.Property(teacher => teacher.FullName)
+                .HasMaxLength(128)
+                .IsRequired();
+            });
+            modelBuilder.Entity<Teacher>()
+                .ToTable("Teachers");
 
             base.OnModelCreating(modelBuilder);
         }

@@ -1,16 +1,29 @@
-﻿namespace TestingSystem.Models
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+
+namespace TestingSystem.Models
 {
-    public class Student : User
+    [ObservableObject]
+    public partial class Student : User
     {
         public int Id { get; set; }
 
-        public Student(string encryptedName, string encryptedPassword) : base(encryptedName, encryptedPassword)
+        private string fullName = null!;
+        public string FullName
         {
-            //empty
+            get => fullName;
+            set
+            {
+                if (fullName != value)
+                {
+                    fullName = value;
+                    OnPropertyChanged(nameof(FullName));
+                }
+            }
         }
-        public Student(int id, string encryptedName, string encryptedPassword) : this(encryptedName, encryptedPassword)
+
+        public Student(string name, string hashedPassword, string fullName) : base(name, hashedPassword)
         {
-            Id = id;
+            FullName = fullName;
         }
 
 

@@ -28,14 +28,15 @@ namespace TestingSystem.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    EncryptedName = table.Column<string>(type: "VARCHAR(128)", nullable: false),
-                    EncryptedPassword = table.Column<string>(type: "VARCHAR(128)", nullable: false)
+                    Name = table.Column<string>(type: "NVARCHAR(20)", nullable: false),
+                    HashedPassword = table.Column<string>(type: "VARCHAR(128)", nullable: false),
+                    FullName = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Students", x => x.Id);
-                    table.CheckConstraint("CK_Students_EncryptedName", "[EncryptedName] != ''");
-                    table.CheckConstraint("CK_Students_EncryptedPassword", "[EncryptedPassword] != ''");
+                    table.CheckConstraint("CK_Students_Name", "[Name] != ''");
+                    table.CheckConstraint("CK_Students_HashedPassword", "[HashedPassword] != ''");
                 });
 
             migrationBuilder.CreateTable(
@@ -44,14 +45,15 @@ namespace TestingSystem.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    EncryptedName = table.Column<string>(type: "VARCHAR(128)", nullable: false),
-                    EncryptedPassword = table.Column<string>(type: "VARCHAR(128)", nullable: false)
+                    Name = table.Column<string>(type: "NVARCHAR(20)", nullable: false),
+                    HashedPassword = table.Column<string>(type: "VARCHAR(128)", nullable: false),
+                    FullName = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Teachers", x => x.Id);
-                    table.CheckConstraint("CK_Teachers_EncryptedName", "[EncryptedName] != ''");
-                    table.CheckConstraint("CK_Teachers_EncryptedPassword", "[EncryptedPassword] != ''");
+                    table.CheckConstraint("CK_Teachers_Name", "[Name] != ''");
+                    table.CheckConstraint("CK_Teachers_HashedPassword", "[HashedPassword] != ''");
                 });
 
             migrationBuilder.CreateTable(

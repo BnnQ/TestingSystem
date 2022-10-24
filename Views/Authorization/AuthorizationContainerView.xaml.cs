@@ -1,9 +1,8 @@
 ﻿using Egor92.MvvmNavigation;
+using MvvmBaseViewModels.Helpers;
 using MvvmBaseViewModels.Navigation;
-using NeoSmart.AsyncLock;
 using System.Windows;
 using TestingSystem.Constants.Authorization;
-using TestingSystem.Models.Contexts;
 using TestingSystem.ViewModels.Authorization;
 
 namespace TestingSystem.Views.Authorization
@@ -14,8 +13,6 @@ namespace TestingSystem.Views.Authorization
     public partial class AuthorizationContainerView : Window
     {
         private readonly AuthorizationContainerViewModel containerViewModel;
-        private readonly TestingSystemAuthorizationContext databaseContext;
-        private readonly AsyncLock databaseContextLocker;
         private readonly AuthenticationViewModel authenticationViewModel;
         private readonly RegistrationViewModel registrationViewModel;
         private readonly NavigationManager navigationManager;
@@ -27,21 +24,39 @@ namespace TestingSystem.Views.Authorization
             navigationManager = new(FrameContent);
             
             containerViewModel = new(navigationManager);
-            containerViewModel.Closed += (_) => Close();
+            containerViewModel.Closed += (_) => Application.Current?.Dispatcher.Invoke(Close);
 
-            databaseContext = new TestingSystemAuthorizationContext();
-            databaseContextLocker = new AsyncLock();
-            authenticationViewModel = new(navigationManager, databaseContext, databaseContextLocker);
-            registrationViewModel = new(navigationManager, databaseContext, databaseContextLocker);
+            authenticationViewModel = new(navigationManager);
+            authenticationViewModel.Closed += (_) =>
+            {
+                if (containerViewModel?.IsClosed == false)
+                    containerViewModel.Close();
+            };
+            authenticationViewModel.CriticalErrorMessageOccured += (exception) => 
+                DefaultMessageHandlers.HandleCriticalError(this, exception);
+
+            registrationViewModel = new(navigationManager);
+            registrationViewModel.Closed += (_) =>
+            {
+                if (containerViewModel?.IsClosed == false)
+                    containerViewModel.Close();
+            };
+            registrationViewModel.CriticalErrorMessageOccured += (exception) =>
+                DefaultMessageHandlers.HandleCriticalError(this, exception);
 
             DataContext = containerViewModel;
             ConfigureNavigation();
 
             Dispatcher.ShutdownStarted += (_, _) =>
             {
-                authenticationViewModel?.Close();
-                registrationViewModel?.Close();
-                databaseContext.Dispose();
+                if (authenticationViewModel?.IsClosed == false)
+                    authenticationViewModel?.Close();
+                
+                if (registrationViewModel?.IsClosed == false)
+                    registrationViewModel?.Close();
+
+                if (containerViewModel?.IsClosed == false)
+                    containerViewModel?.Close();
             };
         }
 

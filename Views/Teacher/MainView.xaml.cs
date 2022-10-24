@@ -1,4 +1,6 @@
-﻿using System.Windows;
+﻿using MvvmBaseViewModels.Helpers;
+using System.Windows;
+using System.Windows.Input;
 using TestingSystem.ViewModels.Teacher;
 
 namespace TestingSystem.Views.Teacher
@@ -15,9 +17,25 @@ namespace TestingSystem.Views.Teacher
 
             viewModel = new MainViewModel(teacher);
             viewModel.Closed += (_) => Close();
+            viewModel.CriticalErrorMessageOccured += (exception) =>
+                DefaultMessageHandlers.HandleCriticalError(this, exception);
 
             DataContext = viewModel;
-            Dispatcher.ShutdownStarted += (_, _) => viewModel?.Dispose();
+            Dispatcher.ShutdownStarted += (_, _) =>
+            {
+                if (viewModel?.IsClosed == false)
+                    viewModel.Close();
+            };
+        }
+
+        private void OnReferenceElementMouseEnter(object sender, MouseEventArgs e)
+        {
+            Mouse.OverrideCursor = Cursors.Hand;
+        }
+
+        private void OnReferenceElementMouseLeave(object sender, MouseEventArgs e)
+        {
+            Mouse.OverrideCursor = Cursors.Arrow;
         }
     }
 }

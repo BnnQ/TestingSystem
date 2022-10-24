@@ -1,12 +1,9 @@
 ﻿using BackgroundWorkerLibrary;
 using HappyStudio.Mvvm.Input.Wpf;
+using Meziantou.Framework.WPF.Collections;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
 using MvvmBaseViewModels.Common;
-using NeoSmart.AsyncLock;
 using System;
-using System.Collections.ObjectModel;
-using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
@@ -19,22 +16,8 @@ namespace TestingSystem.ViewModels.Teacher
 {
     public class MainViewModel : ViewModelBase
     {
-        private Models.Teacher teacher = null!;
-        public Models.Teacher Teacher
-        {
-            get => teacher;
-            set
-            {
-                if (teacher != value)
-                {
-                    teacher = value;
-                    OnPropertyChanged(nameof(Teacher));
-                }
-            }
-        }
+        private readonly Models.Teacher teacher = null!;
 
-        private readonly AsyncLock databaseContextLocker = new();
-        private readonly TestingSystemTeacherContext databaseContext;
         private Category[] categories = null!;
         public Category[] Categories
         {
@@ -48,42 +31,88 @@ namespace TestingSystem.ViewModels.Teacher
                 }
             }
         }
+        private Models.Teacher[] teachers = null!;
+        public Models.Teacher[] Teachers
+        {
+            get => teachers;
+            set
+            {
+                if (teachers != value)
+                {
+                    teachers = value;
+                    OnPropertyChanged(nameof(Teachers));
+                }
+            }
+        }
 
-        private readonly BackgroundWorker categoriesUpdaterFromDatabaseBackgroundWorker = new();
+        private bool isAddMenuOpen = false;
+        public bool IsAddMenuOpen
+        {
+            get => isAddMenuOpen;
+            set
+            {
+                if (isAddMenuOpen != value)
+                {
+                    isAddMenuOpen = value;
+                    OnPropertyChanged(nameof(IsAddMenuOpen));
+                }
+            }
+        }
+
+        public BackgroundWorker CategoriesUpdaterFromDatabaseBackgroundWorker { get; init; } = new();
 
 
         public MainViewModel(Models.Teacher teacher)
         {
-            Teacher = teacher;
-            databaseContext = new TestingSystemTeacherContext();
+            try
+            {
+                using (TestingSystemTeacherContext context = new())
+                {
+                    Models.Teacher? teacherEntity = context.Find<Models.Teacher>(teacher.Id);
+                    if (teacherEntity is null)
+                        throw new NullReferenceException("Teacher entity missing from the database (most likely, a problem on the DB side)");
+                    else
+                        this.teacher = teacherEntity;
+                }
+            }
+            catch (Exception exception)
+            {
+                OccurCriticalErrorMessage(exception);
+                return;
+            }
 
             SetupBackgroundWorkers();
+            UpdateCategoriesFromDatabaseAsyncCommand.Execute(null);
         }
 
         private void SetupBackgroundWorkers()
         {
-            categoriesUpdaterFromDatabaseBackgroundWorker.DoWork = async () =>
+            CategoriesUpdaterFromDatabaseBackgroundWorker.DoWork = async () =>
             {
-                Application.Current.Dispatcher.Invoke(() => Mouse.OverrideCursor = Cursors.Wait);
-                await UpdateCategoriesFromDatabaseAsync();
+                Task updatingCategoriesTask = UpdateCategoriesFromDatabaseAsync();
+                await Task.WhenAll(updatingCategoriesTask, Task.Delay(500));
             };
-            categoriesUpdaterFromDatabaseBackgroundWorker.OnWorkCompleted = () =>
-            {
-                Mouse.OverrideCursor = Cursors.Arrow;
-            };
-
+            CategoriesUpdaterFromDatabaseBackgroundWorker.OnWorkCompleted = () => CommandManager.InvalidateRequerySuggested();
         }
 
         private async Task UpdateCategoriesFromDatabaseAsync()
         {
-            using (await databaseContextLocker.LockAsync())
+            try
             {
-                await databaseContext.Categories.LoadAsync();
-                await databaseContext.Categories
-                    .Include(category => category.Tests)
-                    .LoadAsync();
+                using (TestingSystemTeacherContext context = new())
+                {
+                    await context.Categories
+                        .Include(category => category.Tests)
+                            .ThenInclude(test => test.Questions)
+                        .LoadAsync();
 
-                Categories = await databaseContext.Categories.ToArrayAsync();
+                    Categories = await context.Categories.Local.ToArrayAsync();
+                }
+            }
+            catch (Exception exception)
+            {
+                OccurCriticalErrorMessage(exception);
+                return;
             }
         }
 
@@ -93,9 +122,15 @@ namespace TestingSystem.ViewModels.Teacher
         {
             get => updateCategoriesFromDatabaseAsyncCommand ??= new(async () =>
             {
-                if (!categoriesUpdaterFromDatabaseBackgroundWorker.IsBusy)
-                    await categoriesUpdaterFromDatabaseBackgroundWorker.RunWorkerAsync();
+                if (!CategoriesUpdaterFromDatabaseBackgroundWorker.IsBusy)
+                    await CategoriesUpdaterFromDatabaseBackgroundWorker.RunWorkerAsync();
             });
+        }
+
+        private RelayCommand openAddMenuCommand = null!;
+        public RelayCommand OpenAddMenuCommand
+        {
+            get => openAddMenuCommand ??= new(() => IsAddMenuOpen = !IsAddMenuOpen);
         }
 
         private AsyncRelayCommand addCategoryAsyncCommand = null!;
@@ -112,15 +147,7 @@ namespace TestingSystem.ViewModels.Teacher
                 });
 
                 if (editViewDialogResult == true)
-                {
-                    using (await databaseContextLocker.LockAsync())
-                    {
-                        await databaseContext.Categories.AddAsync(categoryToBeAdded);
-                        await databaseContext.SaveChangesAsync();
-                        UpdateCategoriesFromDatabaseAsyncCommand.Execute(null);
-                    }
-                }
-
+                    await UpdateCategoriesFromDatabaseAsyncCommand.ExecuteAsync(null);
             });
         }
 
@@ -129,31 +156,32 @@ namespace TestingSystem.ViewModels.Teacher
         {
             get => addTestAsyncCommand ??= new(async () =>
             {
-                Test testToBeAdded = new(new ObservableCollection<Models.Teacher>() { Teacher });
+                Test testToBeAdded = new(new ConcurrentObservableCollection<Models.Teacher>() { teacher });
                 bool? editViewDialogResult = default;
                 Application.Current.Dispatcher.Invoke(() =>
                 {
-                    TestEditView testEditView = new(Categories, testToBeAdded);
+                    TestEditView testEditView = new(testToBeAdded);
                     editViewDialogResult = testEditView.ShowDialog();
                 });
 
                 if (editViewDialogResult == true)
-                {
-                    using (await databaseContextLocker.LockAsync())
-                    {
-                        Category? categoryToWhichTestBeAdded =
-                        await databaseContext.FindAsync<Category>(testToBeAdded.CategoryId);
-
-                        if (categoryToWhichTestBeAdded is not null)
-                        {
-                            categoryToWhichTestBeAdded.Tests.Add(testToBeAdded);
-                            await databaseContext.SaveChangesAsync();
-                            UpdateCategoriesFromDatabaseAsyncCommand.Execute(null);
-                        }
-
-                    }
-                }
+                    await UpdateCategoriesFromDatabaseAsyncCommand.ExecuteAsync(null);
             });
+        }
+
+        private AsyncRelayCommand<Category> manageCategoryAsyncCommand = null!;
+        public AsyncRelayCommand<Category> ManageCategoryAsyncCommand
+        {
+            get => manageCategoryAsyncCommand ??= new(async (category) =>
+            {
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        CategoryInfoView categoryInfoView = new(category!, teacher);
+                        categoryInfoView.ShowDialog();
+                    });
+                
+                await UpdateCategoriesFromDatabaseAsyncCommand.ExecuteAsync(null);
+            }, (category) => category is not null && !CategoriesUpdaterFromDatabaseBackgroundWorker.IsBusy);
         }
 
         private AsyncRelayCommand<Test> manageTestAsyncCommand = null!;
@@ -161,61 +189,15 @@ namespace TestingSystem.ViewModels.Teacher
         {
             get => manageTestAsyncCommand ??= new(async (test) =>
             {
-                using (await databaseContextLocker.LockAsync())
-                {
-                    EntityEntry<Test> testEntryFromDatabase = databaseContext.Entry(test!);
-                    await testEntryFromDatabase.Collection(test => test.Questions).LoadAsync();
-
                     Application.Current.Dispatcher.Invoke(() =>
                     {
-                        TestInfoView testInfoView = new(databaseContext, databaseContextLocker, test!);
+                        TestInfoView testInfoView = new(test!, teacher);
                         testInfoView.ShowDialog();
                     });
 
-                }
-            }, (test) => test is not null);
+                await UpdateCategoriesFromDatabaseAsyncCommand.ExecuteAsync(null);
+            }, (test) => test is not null && !CategoriesUpdaterFromDatabaseBackgroundWorker.IsBusy);
         }
-
-        private RelayCommand<Category> manageCategoryCommand = null!;
-        public RelayCommand<Category> ManageCategoryCommand
-        {
-            get => manageCategoryCommand ??= new((category) =>
-            {
-                CategoryInfoView categoryInfoView = new(databaseContext, databaseContextLocker, category!);
-                categoryInfoView.ShowDialog();
-            }, (category) => category is not null);
-        }
-        #endregion
-
-        #region Closing and disposing
-        public override void Close(bool? dialogResult = null)
-        {
-            Dispose();
-            base.Close(dialogResult);
-        }
-
-        public override void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        private bool isDisposed = false;
-        protected virtual void Dispose(bool needDisposing)
-        {
-            if (isDisposed)
-                return;
-
-            if (needDisposing)
-            {
-                using (databaseContextLocker.Lock())
-                    databaseContext?.Dispose();
-            }
-
-            isDisposed = true;
-        }
-
-        ~MainViewModel() => Dispose(false);
         #endregion
     }
 }

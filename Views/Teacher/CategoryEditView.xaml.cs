@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using MvvmBaseViewModels.Helpers;
+using System.Windows;
 using TestingSystem.Models;
 using TestingSystem.ViewModels.Teacher;
 
@@ -17,12 +18,20 @@ namespace TestingSystem.Views.Teacher
             viewModel = new CategoryEditViewModel(category);
             viewModel.Closed += (dialogResult) =>
             {
-                DialogResult = dialogResult;
+                if (dialogResult is not null)
+                    DialogResult = dialogResult;
+
                 Close();
             };
+            viewModel.CriticalErrorMessageOccured += (exception) =>
+                DefaultMessageHandlers.HandleCriticalError(this, exception);
 
             DataContext = viewModel;
-            Dispatcher.ShutdownStarted += (_, _) => viewModel?.Dispose();
+            Dispatcher.ShutdownStarted += (_, _) =>
+            {
+                if (viewModel?.IsClosed == false)
+                    viewModel.Close();
+            };
         }
     }
 }

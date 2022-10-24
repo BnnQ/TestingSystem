@@ -17,13 +17,19 @@ namespace TestingSystem.Views.Teacher
             viewModel = new AnswerOptionEditViewModel(answerOption);
             viewModel.Closed += (dialogResult) =>
             {
-                DialogResult = dialogResult;
-                Close();
+                if (dialogResult is not null)
+                    DialogResult = dialogResult;
+
+                Application.Current?.Dispatcher.Invoke(Close);
             };
               
 
             DataContext = viewModel;
-            Dispatcher.ShutdownStarted += (_, _) => viewModel.Dispose();
+            Dispatcher.ShutdownStarted += (_, _) =>
+            {
+                if (viewModel?.IsClosed == false)
+                    viewModel.Close();
+            };
         }
     }
 }

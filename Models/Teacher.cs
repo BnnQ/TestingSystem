@@ -1,6 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using Meziantou.Framework.WPF.Builders;
+using Meziantou.Framework.WPF.Collections;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 
 namespace TestingSystem.Models
 {
@@ -8,6 +9,20 @@ namespace TestingSystem.Models
     public partial class Teacher : User
     {
         public int Id { get; set; }
+
+        private string fullName = null!;
+        public string FullName
+        {
+            get => fullName;
+            set
+            {
+                if (fullName != value)
+                {
+                    fullName = value;
+                    OnPropertyChanged(nameof(FullName));
+                }
+            }
+        }
 
         private ICollection<Test> ownedTests = null!;
         public virtual ICollection<Test> OwnedTests
@@ -17,34 +32,22 @@ namespace TestingSystem.Models
             {
                 if (ownedTests != value)
                 {
-                    if (value is ObservableCollection<Test>)
-                        ownedTests = value;
-                    else
-                        ownedTests = new ObservableCollection<Test>(value);
-
+                    ownedTests = new ConcurrentObservableCollectionBuilder<Test>(value).Build();
                     OnPropertyChanged(nameof(OwnedTests));
                 }
             }
         }
         
 
-        public Teacher(string encryptedName, string encryptedPassword) : base(encryptedName, encryptedPassword)
+        public Teacher(string name, string hashedPassword, string fullName) : base(name, hashedPassword)
         {
-            OwnedTests = new ObservableCollection<Test>();
+            OwnedTests = new ConcurrentObservableCollection<Test>();
+            FullName = fullName;
         }
-        public Teacher(string encryptedName, string encryptedPassword, ICollection<Test> ownedTests) 
-            : this(encryptedName, encryptedPassword)
+        public Teacher(string name, string hashedPassword, string fullName, ICollection<Test> ownedTests) 
+            : this(name, hashedPassword, fullName)
         {
             OwnedTests = ownedTests;
-        }
-        public Teacher(int id, string encryptedName, string encryptedPassword) : this(encryptedName, encryptedPassword)
-        {
-            Id = id;
-        }
-        public Teacher(int id, string encryptedName, string encryptedPassword, ICollection<Test> ownedTests)
-            : this(encryptedName, encryptedPassword, ownedTests)
-        {
-            Id = id;
         }
 
     }

@@ -1,0 +1,52 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v6.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v6.0": {
+      "ConcurrentObservableCollectionHelpersLibrary/1.0.0": {
+        "dependencies": {
+          "Meziantou.Framework.WPF": "1.5.4"
+        },
+        "runtime": {
+          "ConcurrentObservableCollectionHelpersLibrary.dll": {}
+        }
+      },
+      "Meziantou.Framework.WPF/1.5.4": {
+        "dependencies": {
+          "System.Collections.Immutable": "5.0.0"
+        },
+        "runtime": {
+          "lib/net6.0-windows7.0/Meziantou.Framework.WPF.dll": {
+            "assemblyVersion": "1.5.4.0",
+            "fileVersion": "1.5.4.0"
+          }
+        }
+      },
+      "System.Collections.Immutable/5.0.0": {}
+    }
+  },
+  "libraries": {
+    "ConcurrentObservableCollectionHelpersLibrary/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Meziantou.Framework.WPF/1.5.4": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-6J0dSW1msQFvd+EpUnfXZXRoHV5mkK0cASApteN0KiOKyvrbzXqDVqxn4HTY5KV+87DmWIfEus+IXzx1NpH+Ig==",
+      "path": "meziantou.framework.wpf/1.5.4",
+      "hashPath": "meziantou.framework.wpf.1.5.4.nupkg.sha512"
+    },
+    "System.Collections.Immutable/5.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-FXkLXiK0sVVewcso0imKQoOxjoPAj42R8HtjjbSjVPAzwDfzoyoznWxgA3c38LDbN9SJux1xXoXYAhz98j7r2g==",
+      "path": "system.collections.immutable/5.0.0",
+      "hashPath": "system.collections.immutable.5.0.0.nupkg.sha512"
+    }
+  }
+}

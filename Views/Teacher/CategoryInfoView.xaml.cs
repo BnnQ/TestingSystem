@@ -1,7 +1,6 @@
-﻿using NeoSmart.AsyncLock;
+﻿using MvvmBaseViewModels.Helpers;
 using System.Windows;
 using TestingSystem.Models;
-using TestingSystem.Models.Contexts;
 using TestingSystem.ViewModels.Teacher;
 
 namespace TestingSystem.Views.Teacher
@@ -12,15 +11,21 @@ namespace TestingSystem.Views.Teacher
     public partial class CategoryInfoView : Window
     {
         private readonly CategoryInfoViewModel viewModel;
-        public CategoryInfoView(TestingSystemTeacherContext databaseContext, AsyncLock databaseContextLocker, Category category)
+        public CategoryInfoView(Category category, Models.Teacher teacher)
         {
             InitializeComponent();
 
-            viewModel = new CategoryInfoViewModel(databaseContext, databaseContextLocker, category);
-            viewModel.Closed += (_) => Close();
+            viewModel = new CategoryInfoViewModel(category, teacher);
+            viewModel.Closed += (_) => Application.Current?.Dispatcher.Invoke(Close);
+            viewModel.CriticalErrorMessageOccured += (exception) =>
+                DefaultMessageHandlers.HandleCriticalError(this, exception);
 
             DataContext = viewModel;
-            Dispatcher.ShutdownStarted += (_, _) => viewModel?.Dispose();
+            Dispatcher.ShutdownStarted += (_, _) =>
+            {
+                if (viewModel?.IsClosed == false)
+                    viewModel.Close();
+            };
         }
     }
 }
