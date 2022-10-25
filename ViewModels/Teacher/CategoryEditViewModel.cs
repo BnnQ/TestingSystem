@@ -130,7 +130,7 @@ namespace TestingSystem.ViewModels.Teacher
         #region Disposing
         public override void Close(bool? dialogResult = null)
         {
-            Dispose(true);
+            Dispose();
             base.Close(dialogResult);
         }
 
