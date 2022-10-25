@@ -14,8 +14,8 @@ namespace TestingSystem.ViewModels.Teacher
 {
     public class TestInfoViewModel : ViewModelBase
     {
-        private Test? test = null!;
-        public Test? Test
+        private Test test = null!;
+        public Test Test
         {
             get => test;
             set
@@ -69,40 +69,35 @@ namespace TestingSystem.ViewModels.Teacher
 
         private async Task UpdateTestFromDatabaseAsync()
         {
-            if (Test is not null)
+            try
             {
-                try
+                using (TestingSystemTeacherContext context = new())
                 {
-                    using (TestingSystemTeacherContext context = new())
-                    {
-                        Test = await context.FindAsync<Test>(Test.Id);
-                        if (Test is null)
-                            throw new NullReferenceException("Во время редактирования теста он был параллельно удалён другим пользователем или системой.");
+                    Test = (await context.FindAsync<Test>(Test.Id))!;
+                    if (Test is null)
+                        throw new NullReferenceException("Во время редактирования теста он был параллельно удалён другим пользователем или системой.");
 
-                        EntityEntry<Test> testEntry = context.Entry(Test!);
+                    EntityEntry<Test> testEntry = context.Entry(Test!);
 
-                        await testEntry.Collection(test => test.Questions).LoadAsync();
-                        foreach (Question question in Test!.Questions)
-                            await context.Entry(question).Collection(question => question.AnswerOptions).LoadAsync();
+                    await testEntry.Collection(test => test.Questions).LoadAsync();
+                    foreach (Question question in Test!.Questions)
+                        await context.Entry(question).Collection(question => question.AnswerOptions).LoadAsync();
 
-                        await testEntry.Collection(test => test.OwnerTeachers).LoadAsync();
-                    }
-                }
-                catch (Exception exception)
-                {
-                    OccurCriticalErrorMessage(exception);
-                    return;
+                    await testEntry.Collection(test => test.OwnerTeachers).LoadAsync();
                 }
             }
+            catch (Exception exception)
+            {
+                OccurCriticalErrorMessage(exception);
+                return;
+            }
         }
+
 
         #region Commands
         private bool IsTeacherOwner()
         {
-            if (Test is null)
-                return false;
-            else
-                return Test.OwnerTeachers.Any(t => t.Id == teacher.Id);
+            return Test.OwnerTeachers.Any(t => t.Id == teacher.Id);
         }
 
         private AsyncRelayCommand updateTestFromDatabaseAsyncCommand = null!;
