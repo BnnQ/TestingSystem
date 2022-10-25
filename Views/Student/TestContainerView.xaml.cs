@@ -1,4 +1,5 @@
 ﻿using Egor92.MvvmNavigation;
+using MvvmBaseViewModels.Helpers;
 using MvvmBaseViewModels.Navigation;
 using System.Windows;
 using TestingSystem.Constants.Student;
@@ -23,14 +24,41 @@ namespace TestingSystem.Views.Student
 
             navigationManager = new(FrameContent);
 
-            containerViewModel = new(navigationManager, test);
-            containerViewModel.Closed += (_) => Close();
+            containerViewModel = new(navigationManager);
+            containerViewModel.Closed += (_) => Application.Current?.Dispatcher.Invoke(Close);
 
             testPassingViewModel = new(navigationManager, test, student);
+            testPassingViewModel.Closed += (_) =>
+            {
+                if (containerViewModel?.IsClosed == false)
+                    containerViewModel.Close();
+            };
+            testPassingViewModel.CriticalErrorMessageOccured += (exception) =>
+                DefaultMessageHandlers.HandleCriticalError(this, exception);
+
             testResultsViewModel = new(navigationManager, null);
+            testResultsViewModel.Closed += (_) =>
+            {
+                if (containerViewModel?.IsClosed == false)
+                    containerViewModel.Close();
+            };
+            testResultsViewModel.CriticalErrorMessageOccured += (exception) =>
+                DefaultMessageHandlers.HandleCriticalError(this, exception);
 
             DataContext = containerViewModel;
             ConfigureNavigation();
+
+            Dispatcher.ShutdownStarted += (_, _) =>
+            {
+                if (testPassingViewModel?.IsClosed == false)
+                    testPassingViewModel?.Close();
+
+                if (testResultsViewModel?.IsClosed == false)
+                    testResultsViewModel?.Close();
+
+                if (containerViewModel?.IsClosed == false)
+                    containerViewModel?.Close();
+            };
         }
 
         private void ConfigureNavigation()

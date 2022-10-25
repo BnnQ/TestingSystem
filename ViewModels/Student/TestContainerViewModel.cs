@@ -6,9 +6,10 @@ namespace TestingSystem.ViewModels.Student
 {
     public class TestContainerViewModel : ViewModelBase
     {
-        public TestContainerViewModel(INavigationManager navigationManager, Test test)
+        private readonly INavigationManager navigationManager;
+        public TestContainerViewModel(INavigationManager navigationManager)
         {
-
+            this.navigationManager = navigationManager;
         }
 
     }
