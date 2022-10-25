@@ -10,7 +10,7 @@ namespace TestingSystem.Models.Contexts
     {
         public virtual DbSet<Category> Categories { get; set; } = null!;
 
-        
+
         public TestingSystemStudentContext() : base()
         {
             //empty
@@ -19,7 +19,6 @@ namespace TestingSystem.Models.Contexts
         {
             //empty
         }
-
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -79,8 +78,7 @@ namespace TestingSystem.Models.Contexts
                 connectionStringBuilder.Password = password;
 
                 optionsBuilder
-                    .UseSqlServer(connectionStringBuilder.ConnectionString)
-                    .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
+                    .UseSqlServer(connectionStringBuilder.ConnectionString);
             }
         }
 
@@ -176,6 +174,10 @@ namespace TestingSystem.Models.Contexts
                 .WithMany(category => category.Tests)
                 .HasForeignKey(test => test.CategoryId)
                 .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<Test>()
+                .HasMany(test => test.OwnerTeachers)
+                .WithMany(teacher => teacher.OwnedTests)
+                .UsingEntity("TestsTeacherOwners");
             modelBuilder.Entity<Test>(testModel =>
             {
                 testModel
@@ -236,6 +238,68 @@ namespace TestingSystem.Models.Contexts
             });
             modelBuilder.Entity<Category>()
                 .ToTable("Categories");
+
+            modelBuilder.Entity<Teacher>()
+                .HasMany(teacher => teacher.OwnedTests)
+                .WithMany(test => test.OwnerTeachers)
+                .UsingEntity("TestsTeacherOwners");
+            modelBuilder.Entity<Teacher>(teacherModel =>
+            {
+                teacherModel
+                .HasCheckConstraint("CK_Teachers_Name", "[Name] != ''")
+                .HasCheckConstraint("CK_Teachers_HashedPassword", "[HashedPassword] != ''")
+                .HasKey(teacher => teacher.Id);
+
+                teacherModel.Property(teacher => teacher.Id)
+                .HasColumnOrder(1)
+                .UseIdentityColumn()
+                .IsRequired();
+
+                teacherModel.Property(teacher => teacher.Name)
+                .HasColumnOrder(2)
+                .HasColumnType("NVARCHAR(20)")
+                .IsRequired();
+
+                teacherModel.Property(teacher => teacher.HashedPassword)
+                .HasColumnOrder(3)
+                .HasColumnType("VARCHAR(128)")
+                .IsRequired();
+
+                teacherModel.Property(teacher => teacher.FullName)
+                .HasMaxLength(128)
+                .IsRequired();
+            });
+            modelBuilder.Entity<Teacher>()
+                .ToTable("Teachers");
+
+            modelBuilder.Entity<Student>(studentModel =>
+            {
+                studentModel
+                .HasCheckConstraint("CK_Students_Name", "[Name] != ''")
+                .HasCheckConstraint("CK_Students_HashedPassword", "[HashedPassword] != ''")
+                .HasKey(student => student.Id);
+
+                studentModel.Property(student => student.Id)
+                .HasColumnOrder(1)
+                .UseIdentityColumn()
+                .IsRequired();
+
+                studentModel.Property(student => student.Name)
+                .HasColumnOrder(2)
+                .HasColumnType("NVARCHAR(20)")
+                .IsRequired();
+
+                studentModel.Property(student => student.HashedPassword)
+                .HasColumnOrder(3)
+                .HasColumnType("VARCHAR(128)")
+                .IsRequired();
+
+                studentModel.Property(student => student.FullName)
+                .HasMaxLength(128)
+                .IsRequired();
+            });
+            modelBuilder.Entity<Student>()
+                .ToTable("Students");
 
             base.OnModelCreating(modelBuilder);
         }
