@@ -12,13 +12,11 @@ using Scrypt;
 using MvvmBaseViewModels.Enums;
 using HappyStudio.Mvvm.Input.Wpf;
 using System.Windows;
-using System.Windows.Input;
 using TestingSystem.Constants.Authorization;
 using MvvmBaseViewModels.Navigation;
 using BackgroundWorkerLibrary;
 using Z.Linq;
 using System;
-using WpfExceptionMessageBox;
 
 namespace TestingSystem.ViewModels.Authorization
 {
