@@ -1,11 +1,14 @@
-﻿using HappyStudio.Mvvm.Input.Wpf;
+﻿using BackgroundWorkerLibrary;
+using HappyStudio.Mvvm.Input.Wpf;
 using MvvmBaseViewModels.Common.Validatable;
 using MvvmBaseViewModels.Enums;
 using ReactiveValidation;
 using ReactiveValidation.Extensions;
 using System;
 using System.ComponentModel;
+using System.Linq;
 using System.Threading.Tasks;
+using System.Windows.Input;
 using TestingSystem.Models;
 using TestingSystem.Models.Contexts;
 
@@ -41,36 +44,52 @@ namespace TestingSystem.ViewModels.Teacher
         }
 
 
-        private readonly bool doesCategoryExistInDatabase;
+        private bool doesCategoryExistInDatabase;
         private readonly TestingSystemTeacherContext context = null!;
+        public BackgroundWorker<Category> InitialLoaderBackgroundWorker { get; init; } = new();
 
         public CategoryEditViewModel(Category category)
         {
             context = new TestingSystemTeacherContext();
+            
+            SetupBackgroundWorkers();
+            _ = InitialLoaderBackgroundWorker.RunWorkerAsync(category);
+        }
 
-            Category? categoryEntity;
-            try
+        public void SetupBackgroundWorkers()
+        {
+            InitialLoaderBackgroundWorker.OnWorkStarting = () => Mouse.OverrideCursor = Cursors.Wait;
+            InitialLoaderBackgroundWorker.DoWork = async (parameters) =>
             {
-                categoryEntity = context.Find<Category>(category.Id);
-            }
-            catch (Exception exception)
-            {
-                OccurCriticalErrorMessage(exception);
-                return;
-            }
+                if (parameters?.Length < 1)
+                    return;
 
-            if (categoryEntity is not null)
-            {
-                doesCategoryExistInDatabase = true;
-                Category = categoryEntity;
-            }
-            else
-            {
-                doesCategoryExistInDatabase = false;
-                Category = new(category.Name);
-            }
+                Category category = parameters!.First();
+                Category? categoryEntity;
+                try
+                {
+                    categoryEntity = await context.FindAsync<Category>(category.Id);
+                }
+                catch (Exception exception)
+                {
+                    OccurCriticalErrorMessage(exception);
+                    return;
+                }
 
-            SetupValidator();
+                if (categoryEntity is not null)
+                {
+                    doesCategoryExistInDatabase = true;
+                    Category = categoryEntity;
+                }
+                else
+                {
+                    doesCategoryExistInDatabase = false;
+                    Category = new(category.Name);
+                }
+
+                SetupValidator();
+            };
+            InitialLoaderBackgroundWorker.OnWorkStarting = () => Mouse.OverrideCursor = Cursors.Arrow;
         }
 
         #region Validation setup
@@ -104,26 +123,40 @@ namespace TestingSystem.ViewModels.Teacher
         #endregion
 
         #region Commands
+        private bool isConfirmLocked = false;
         private AsyncRelayCommand confirmAsyncCommand = null!;
         public AsyncRelayCommand ConfirmAsyncCommand
         {
             get => confirmAsyncCommand ??= new(async () =>
             {
+                isConfirmLocked = true;
                 if (!await IsNameValidAsync())
+                {
+                    isConfirmLocked = false;
                     return;
+                }
 
-                if (!doesCategoryExistInDatabase)
-                    await context.Categories.AddAsync(Category);
+                isConfirmLocked = true;
+                try
+                {
+                    if (!doesCategoryExistInDatabase)
+                        await context.Categories.AddAsync(Category);
 
-                await context.SaveChangesAsync();
-                Close(true);
-            });
+                    await context.SaveChangesAsync();
+                    Close(true);
+                }
+                catch (Exception exception)
+                {
+                    OccurCriticalErrorMessage(exception);
+                    return;
+                }
+            }, () => !isConfirmLocked);
         }
 
         private RelayCommand cancelCommand = null!;
         public RelayCommand CancelCommand
         {
-            get => cancelCommand ??= new(() => Close(false));
+            get => cancelCommand ??= new(() => Close(false), () => !isConfirmLocked);
         }
         #endregion
 

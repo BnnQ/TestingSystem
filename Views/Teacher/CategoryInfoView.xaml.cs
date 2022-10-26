@@ -10,22 +10,40 @@ namespace TestingSystem.Views.Teacher
     /// </summary>
     public partial class CategoryInfoView : Window
     {
-        private readonly CategoryInfoViewModel viewModel;
+        private CategoryInfoViewModel viewModel = null!;
+        private Category category;
+        private Models.Teacher teacher;
         public CategoryInfoView(Category category, Models.Teacher teacher)
         {
             InitializeComponent();
+            this.category = category;
+            this.teacher = teacher;
+        }
 
-            viewModel = new CategoryInfoViewModel(category, teacher);
-            viewModel.Closed += (_) => Application.Current?.Dispatcher.Invoke(Close);
-            viewModel.CriticalErrorMessageOccured += (exception) =>
-                DefaultMessageHandlers.HandleCriticalError(this, exception);
-
+        public void OnViewModelLoaded()
+        {
             DataContext = viewModel;
-            Dispatcher.ShutdownStarted += (_, _) =>
+            Tag = ConstantStringKeys.LoadedState;
+            viewModel.CategoryUpdaterFromDatabaseBackgroundWorker.WorkCompleted -= OnViewModelLoaded;
+        }
+
+        private void OnWindowLoaded(object sender, RoutedEventArgs e)
+        {
+            Application.Current?.Dispatcher.Invoke(() =>
             {
-                if (viewModel?.IsClosed == false)
-                    viewModel.Close();
-            };
+                Tag = ConstantStringKeys.NotLoadedState;
+                viewModel = new CategoryInfoViewModel(category, teacher);
+                viewModel.Closed += (_) => Application.Current?.Dispatcher.Invoke(Close);
+                viewModel.CriticalErrorMessageOccured += (exception) =>
+                    DefaultMessageHandlers.HandleCriticalError(this, exception);
+
+                viewModel.CategoryUpdaterFromDatabaseBackgroundWorker.WorkCompleted += OnViewModelLoaded;
+                Dispatcher.ShutdownStarted += (_, _) =>
+                {
+                    if (viewModel?.IsClosed == false)
+                        viewModel.Close();
+                };
+            });
         }
     }
 }

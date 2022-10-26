@@ -5,6 +5,7 @@
         mc:Ignorable="d"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:ag="clr-namespace:WpfAutoGrid;assembly=WpfAutoGrid.Core"
+        xmlns:busyIndicator="https://github.com/Peoky/BusyIndicator"
         TextElement.Foreground="{DynamicResource MaterialDesignBody}"
         TextElement.FontWeight="Regular"
         TextElement.FontSize="{StaticResource MainFontSize}"
@@ -13,21 +14,25 @@
         WindowStartupLocation="CenterScreen"
         FontFamily="{DynamicResource MaterialDesignFont}"
         Background="{DynamicResource MaterialDesignPaper}"
-        Title="Просмотр и управление категорией" Width="800" Height="450" MinWidth="580" MinHeight="200">
-    <ag:AutoGrid Rows="1*, 1*, 1*" Columns="1*, 1*">
-        <Grid.Resources>
-            <Style TargetType="TextBlock" BasedOn="{StaticResource MainTextBlockStyle}"/>
-        </Grid.Resources>
-        
-        <TextBlock Grid.ColumnSpan="2" FontSize="30" Text="{Binding Category.Name}"/>
-        <TextBlock Text="Количество тестов:"/>
-        <TextBlock Text="{Binding NumberOfTests}"/>
+        Title="Просмотр и управление категорией" Width="800" Height="450" MinWidth="580" MinHeight="200" Loaded="OnWindowLoaded">
+    <busyIndicator:BusyMask IsBusy="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Tag, Mode=OneWay,
+                                     Converter={StaticResource stringIsLoadedToBoolIsBusyConverter}}"
+                            IndicatorType="ThreeDots" BusyContent="Загрузка...">
+        <ag:AutoGrid Rows="1*, 1*, 1*" Columns="1*, 1*">
+            <Grid.Resources>
+                <Style TargetType="TextBlock" BasedOn="{StaticResource MainTextBlockStyle}"/>
+            </Grid.Resources>
 
-        <Button Style="{StaticResource EditButtonStyle}" Command="{Binding EditCategoryAsyncCommand}" Margin="50 0">
-            <TextBlock Text="Изменить категорию"/>
-        </Button>
-        <Button Style="{StaticResource RemoveButtonStyle}" Command="{Binding RemoveCategoryAsyncCommand}" Margin="50 0">
-            <TextBlock Text="Удалить категорию"/>
-        </Button>
-    </ag:AutoGrid>
+            <TextBlock Grid.ColumnSpan="2" FontSize="30" Text="{Binding Category.Name}"/>
+            <TextBlock Text="Количество тестов:"/>
+            <TextBlock Text="{Binding NumberOfTests}"/>
+
+            <Button Style="{StaticResource EditButtonStyle}" Command="{Binding EditCategoryAsyncCommand}" Margin="50 0">
+                <TextBlock Text="Изменить категорию"/>
+            </Button>
+            <Button Style="{StaticResource RemoveButtonStyle}" Command="{Binding RemoveCategoryAsyncCommand}" Margin="50 0">
+                <TextBlock Text="Удалить категорию"/>
+            </Button>
+        </ag:AutoGrid>
+    </busyIndicator:BusyMask>
 </Window>
