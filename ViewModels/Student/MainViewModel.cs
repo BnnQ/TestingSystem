@@ -14,7 +14,7 @@ namespace TestingSystem.ViewModels.Student
 {
     public class MainViewModel : ViewModelBase
     {
-        private readonly Models.Student student = null!;
+        private Models.Student student = null!;
 
         private Category[] categories = null!;
         public Category[] Categories
@@ -34,23 +34,7 @@ namespace TestingSystem.ViewModels.Student
 
         public MainViewModel(Models.Student student)
         {
-            try
-            {
-                using (TestingSystemStudentContext context = new())
-                {
-                    Models.Student? studentEntity = context.Find<Models.Student>(student.Id);
-                    if (studentEntity is null)
-                        throw new NullReferenceException("Teacher entity missing from the database (most likely, a problem on the DB side)");
-                    else
-                        this.student = studentEntity;
-                }
-            }
-            catch (Exception exception)
-            {
-                OccurCriticalErrorMessage(exception);
-                return;
-            }
-
+            _ = InitialLoadAsync(student);
             SetupBackgroundWorkers();
             UpdateCategoriesFromDatabaseAsyncCommand.Execute(null);
         }
@@ -62,11 +46,31 @@ namespace TestingSystem.ViewModels.Student
             CategoriesUpdaterFromDatabaseBackgroundWorker.OnWorkCompleted = () => CommandManager.InvalidateRequerySuggested();
         }
 
+        private async Task InitialLoadAsync(Models.Student student)
+        {
+            try
+            {
+                using (TestingSystemStudentContext context = new())
+                {
+                    Models.Student? studentEntity = await context.FindAsync<Models.Student>(student.Id);
+                    if (studentEntity is null)
+                        throw new NullReferenceException("Student entity missing from the database (most likely, a problem on the DB side)");
+                    else
+                        this.student = studentEntity;
+                }
+            }
+            catch (Exception exception)
+            {
+                OccurCriticalErrorMessage(exception);
+                return;
+            }
+        }
+
         private async Task UpdateCategoriesFromDatabaseAsync()
         {
             try
             {
-                using (TestingSystemTeacherContext context = new())
+                using (TestingSystemStudentContext context = new())
                 {
                     await context.Categories
                         .Include(category => category.Tests)
@@ -104,6 +108,8 @@ namespace TestingSystem.ViewModels.Student
                     TestInfoView infoView = new(test!, student);
                     infoView.ShowDialog();
                 });
+
+                _ = UpdateCategoriesFromDatabaseAsyncCommand.ExecuteAsync(null);
             }, (test) => test is not null);
         }
         #endregion
