@@ -3,10 +3,92 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:local="clr-namespace:TestingSystem.Views.Student"
-             mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800" Background="White">
-    <Grid>
+             mc:Ignorable="d"
+             xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:ag="clr-namespace:WpfAutoGrid;assembly=WpfAutoGrid.Core"
+             xmlns:ap="http://schemas.nishy-software.com/xaml/attached-properties"
+             xmlns:st="http://schemas.spicytaco.io/"
+             xmlns:converters="clr-namespace:TestingSystem.Views.Converters"
+             xmlns:system="clr-namespace:System;assembly=mscorlib"
+             TextElement.Foreground="{DynamicResource MaterialDesignBody}"
+             TextElement.FontWeight="Regular"
+             TextElement.FontSize="{StaticResource MainFontSize}"
+             TextOptions.TextFormattingMode="Ideal"
+             TextOptions.TextRenderingMode="Auto"
+             FontFamily="{DynamicResource MaterialDesignFont}"
+             Background="{DynamicResource MaterialDesignPaper}"
+             d:DesignHeight="450" d:DesignWidth="800">
+    <ag:AutoGrid Rows="2*, 1*, 6*, 1*" Columns="1*">
+        <Grid.Resources>
+            <converters:BoolByDoesQuestionOnlyHaveOneCorrectAnswerToStringConverter x:Key="boolByDoesQuestionOnlyHaveOneCorrectAnswerToStringConverter"/>
+            <converters:NullableDateTimeToNullableShortTimeStringConverter x:Key="nullableDateTimeToNullableShortTimeStringConverter"/>
+            <converters:OneWayNullableDateTimeToBrushConverter x:Key="oneWayNullableDateTimeToBrushConverter"/>
 
-    </Grid>
+            <Style TargetType="TextBlock" BasedOn="{StaticResource MainTextBlockStyle}"/>
+            <Style TargetType="ListView" BasedOn="{StaticResource ListViewCardPanelStyle}"/>
+            <Style x:Key="AnswerOptionButtonStyle" TargetType="Button" BasedOn="{StaticResource RectangularButtonStyle}">
+                <Setter Property="md:ButtonAssist.CornerRadius" Value="15"/>
+                <Setter Property="Padding" Value="5"/>
+            </Style>
+        </Grid.Resources>
+        <Viewbox StretchDirection="DownOnly">
+            <TextBlock FontSize="23" FontWeight="Medium">
+            <Run Text="{Binding CurrentQuestion.SerialNumberInTest}"/><Run Text="-й вопрос:"/>
+            <Run Text="{Binding CurrentQuestion.Content}"/>
+            <Run Text="("/><Run Text="{Binding DoesCurrentQuestionOnlyHaveOneCorrectAnswer, 
+                Converter={StaticResource boolByDoesQuestionOnlyHaveOneCorrectAnswerToStringConverter}, Mode=OneWay}"/><Run Text=")"/>
+            </TextBlock>
+        </Viewbox>
+
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Grid.Column="0" Visibility="{Binding CurrentQuestionTimeLeft, Converter={StaticResource NullableToVisibilityConverter}, Mode=OneWay}"
+                   Text="{Binding CurrentQuestionTimeLeft, Converter={StaticResource nullableDateTimeToNullableShortTimeStringConverter}, Mode=OneWay}"
+                   Foreground="{Binding CurrentQuestionTimeLeft, Converter={StaticResource oneWayNullableDateTimeToBrushConverter}, Mode=OneWay}"
+                   TextAlignment="Left" VerticalAlignment="Center" FontSize="20" FontWeight="Medium"/>
+            <TextBlock Grid.Column="1" Visibility="{Binding TestTimeLeft, Converter={StaticResource NullableToVisibilityConverter}, Mode=OneWay}"
+                   Text="{Binding TestTimeLeft, Converter={StaticResource nullableDateTimeToNullableShortTimeStringConverter}, Mode=OneWay}"
+                   Foreground="{Binding TestTimeLeft, Converter={StaticResource oneWayNullableDateTimeToBrushConverter}, Mode=OneWay}"
+                   TextAlignment="Right" VerticalAlignment="Center" FontSize="20" FontWeight="Medium"/>
+        </Grid>
+
+        <ListView ItemsSource="{Binding CurrentQuestionAnswerOptions}" ap:ScrollViewerProperties.MouseWheelHandlingMode="OnlyScrollable"
+                  ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                  md:ScrollViewerAssist.IsAutoHideEnabled="False" md:ScrollViewerAssist.SupportHorizontalScroll="False">
+            <ListView.ItemContainerStyle>
+                <Style TargetType="ListViewItem" BasedOn="{StaticResource ListViewCardPanelItemStyle}">
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                    <Setter Property="VerticalContentAlignment" Value="Stretch"/>
+                    <Setter Property="st:StackPanel.Fill" Value="Fill"/>
+                </Style>
+            </ListView.ItemContainerStyle>
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <Button Command="{Binding RelativeSource={RelativeSource AncestorType=UserControl}, Path=DataContext.ChooseAnswerOptionCommand}" 
+                            CommandParameter="{Binding}"
+                            Click="OnAnswerOptionClick" Style="{StaticResource AnswerOptionButtonStyle}">
+                        <Viewbox StretchDirection="DownOnly">
+                            <TextBlock TextWrapping="Wrap">
+                            <Run Text="{Binding SerialNumberInQuestion, Mode=OneWay}"/><Run Text="."/>
+                            <Run Text="{Binding Content, Mode=OneWay}"/>
+                            </TextBlock>
+                        </Viewbox>
+                    </Button>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+            <ListView.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <st:StackPanel IsItemsHost="True" Orientation="Vertical"/>
+                </ItemsPanelTemplate>
+            </ListView.ItemsPanel>
+        </ListView>
+
+        <Button Command="{Binding ConfirmSelectedAnswerOptionsCommand}" Style="{StaticResource ConfirmButtonStyle}" Margin="50 10">
+            <TextBlock Text="Подтвердить ответ"/>
+        </Button>
+    </ag:AutoGrid>
 </UserControl>
