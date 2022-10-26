@@ -15,7 +15,6 @@ using System.Windows;
 using TestingSystem.Constants.Authorization;
 using MvvmBaseViewModels.Navigation;
 using BackgroundWorkerLibrary;
-using Z.Linq;
 using System;
 
 namespace TestingSystem.ViewModels.Authorization
@@ -98,7 +97,7 @@ namespace TestingSystem.ViewModels.Authorization
                 using (TestingSystemAuthorizationContext context = new())
                 {
                     await context.Teachers.LoadAsync();
-                    teachers = await context.Teachers.Local.ToListAsync();
+                    teachers = await context.Teachers.ToListAsync();
                 }
             }
             catch (Exception exception)
@@ -114,7 +113,7 @@ namespace TestingSystem.ViewModels.Authorization
                 using (TestingSystemAuthorizationContext context = new())
                 {
                     await context.Students.LoadAsync();
-                    students = await context.Students.Local.ToListAsync();
+                    students = await context.Students.ToListAsync();
                 }
             }
             catch (Exception exception)
