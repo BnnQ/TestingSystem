@@ -27,6 +27,8 @@ namespace TestingSystem.Views.Teacher
                     Close();
                 });
             };
+            viewModel.ErrorMessageOccurred += (exception) => DefaultMessageHandlers.HandleError(this, exception);
+            viewModel.ErrorMessageOccurred += (_) => Application.Current?.Dispatcher.Invoke(Close);
             viewModel.CriticalErrorMessageOccured += (exception) =>
                 DefaultMessageHandlers.HandleCriticalError(this, exception);
 
