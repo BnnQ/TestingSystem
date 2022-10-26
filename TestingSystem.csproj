@@ -35,7 +35,6 @@
     <PackageReference Include="VirtualizingWrapPanel" Version="1.5.7" />
     <PackageReference Include="WpfAutoGrid.Core" Version="1.5.1" />
     <PackageReference Include="WpfExceptionMessageBox" Version="1.0.1" />
-    <PackageReference Include="Z.Linq.Async" Version="1.0.3" />
   </ItemGroup>
 
   <ItemGroup>
