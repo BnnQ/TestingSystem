@@ -3,7 +3,12 @@
                     xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
                     xmlns:accb="clr-namespace:DotNetKit.Windows.Controls;assembly=DotNetKit.Wpf.AutoCompleteComboBox"
                     xmlns:wpf="http://materialdesigninxaml.net/winfx/xaml/themes"
+                    xmlns:converters="clr-namespace:TestingSystem.Views.Converters"
                     xmlns:system="clr-namespace:System;assembly=mscorlib">
+
+    <converters:ObjectToBoolByHasValueConverter x:Key="objectToBoolByHasValueConverter"/>
+    <converters:ObjectToBoolByHasNotValueConverter x:Key="objectToBoolByHasNotValueConverter"/>
+    <converters:StringIsLoadedToBoolIsBusyConverter x:Key="stringIsLoadedToBoolIsBusyConverter"/>
 
     <system:Double x:Key="MainFontSize">17</system:Double>
     <system:Double x:Key="DataGridFontSize">16</system:Double>

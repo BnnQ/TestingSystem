@@ -8,6 +8,7 @@
         xmlns:ag="clr-namespace:WpfAutoGrid;assembly=WpfAutoGrid.Core"
         xmlns:accb="clr-namespace:DotNetKit.Windows.Controls;assembly=DotNetKit.Wpf.AutoCompleteComboBox"
         xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:busyIndicator="https://github.com/Peoky/BusyIndicator"
         WindowStartupLocation="CenterScreen"
         TextElement.Foreground="{DynamicResource MaterialDesignBody}"
         TextElement.FontWeight="Regular"
@@ -17,167 +18,174 @@
         FontFamily="{DynamicResource MaterialDesignFont}"
         Background="{DynamicResource MaterialDesignPaper}"
         Title="Редактор теста" Width="1000" Height="950" MinWidth="750" MinHeight="850">
-    <ag:AutoGrid Rows="1*, 1*, 1*, 1*, 1*, 1*, 1*, 1*, 4*, 3*, 1*" Columns="1*, 1*" ChildMargin="{StaticResource MarginOfEditControl}">
-        <Grid.Resources>
-            <converters:UshortNumberOfSecondsToTimeHoursMinutesStringConverter x:Key="ushortNumberOfSecondsToTimeHoursMinutesStringConverter"/>
-            <converters:UshortNumberOfSecondsToTimeMinutesSecondsStringConverter x:Key="ushortNumberOfSecondsToTimeMinutesSecondsStringConverter"/>
+    <busyIndicator:BusyMask IsBusy="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Tag, Mode=OneWay,
+                                     Converter={StaticResource stringIsLoadedToBoolIsBusyConverter}}"
+                            IndicatorType="ThreeDots" BusyContent="Загрузка...">
+        <busyIndicator:BusyMask IsBusy="{Binding ConfirmerBackgroundWorker.IsBusy}" IndicatorType="ThreeDots"
+                            BusyContent="Проверка и подтверждение...">
+            <ag:AutoGrid Rows="1*, 1*, 1*, 1*, 1*, 1*, 1*, 1*, 4*, 3*, 1*" Columns="1*, 1*" ChildMargin="{StaticResource MarginOfEditControl}">
+                <Grid.Resources>
+                    <converters:UshortNumberOfSecondsToTimeHoursMinutesStringConverter x:Key="ushortNumberOfSecondsToTimeHoursMinutesStringConverter"/>
+                    <converters:UshortNumberOfSecondsToTimeMinutesSecondsStringConverter x:Key="ushortNumberOfSecondsToTimeMinutesSecondsStringConverter"/>
 
-            <Style TargetType="TextBlock" BasedOn="{StaticResource MainTextBlockStyle}"/>
-            <Style TargetType="TextBox" BasedOn="{StaticResource OutlinedTextBoxStyle}"/>
-            <Style TargetType="DataGrid" BasedOn="{StaticResource OnlyEditDataGridStyle}"/>
-            <Style TargetType="accb:AutoCompleteComboBox" BasedOn="{StaticResource MainAutoCompleteComboBoxStyle}"/>
-            <Style TargetType="GroupBox" BasedOn="{StaticResource MainGroupBoxStyle}"/>
-            <Style TargetType="CheckBox" BasedOn="{StaticResource MainCheckBoxStyle}"/>
-        </Grid.Resources>
+                    <Style TargetType="TextBlock" BasedOn="{StaticResource MainTextBlockStyle}"/>
+                    <Style TargetType="TextBox" BasedOn="{StaticResource OutlinedTextBoxStyle}"/>
+                    <Style TargetType="DataGrid" BasedOn="{StaticResource OnlyEditDataGridStyle}"/>
+                    <Style TargetType="accb:AutoCompleteComboBox" BasedOn="{StaticResource MainAutoCompleteComboBoxStyle}"/>
+                    <Style TargetType="GroupBox" BasedOn="{StaticResource MainGroupBoxStyle}"/>
+                    <Style TargetType="CheckBox" BasedOn="{StaticResource MainCheckBoxStyle}"/>
+                </Grid.Resources>
 
-        <TextBlock Text="*Название:"/>
-        <TextBox Text="{Binding Name}" Padding="5"/>
+                <TextBlock Text="*Название:"/>
+                <TextBox Text="{Binding Name}" Padding="5"/>
 
-        <TextBlock Text="*Категория:"/>
-        <accb:AutoCompleteComboBox ItemsSource="{Binding Categories}" TextSearch.TextPath="Name"
+                <TextBlock Text="*Категория:"/>
+                <accb:AutoCompleteComboBox ItemsSource="{Binding Categories}" TextSearch.TextPath="Name"
                                    SelectedItem="{Binding Category}">
-            <accb:AutoCompleteComboBox.ItemTemplate>
-                <DataTemplate>
-                    <TextBlock Text="{Binding Name}"/>
-                </DataTemplate>
-            </accb:AutoCompleteComboBox.ItemTemplate>
-        </accb:AutoCompleteComboBox>
+                    <accb:AutoCompleteComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Name}"/>
+                        </DataTemplate>
+                    </accb:AutoCompleteComboBox.ItemTemplate>
+                </accb:AutoCompleteComboBox>
 
-        <TextBlock Text="Количество вопросов:"/>
-        <TextBox Text="{Binding NumberOfQuestions, Converter={StaticResource ushortToStringConverter}}" 
+                <TextBlock Text="Количество вопросов:"/>
+                <TextBox Text="{Binding NumberOfQuestions, Converter={StaticResource ushortToStringConverter}}" 
                  Style="{StaticResource NumericTextBoxStyle}"
                  Padding="5"/>
 
-        <TextBlock Text="*Максимальное количество баллов:"/>
-        <StackPanel Orientation="Horizontal" Margin="0">
-            <TextBox Text="{Binding MaximumPoints, Converter={StaticResource ushortToStringConverter}}" 
+                <TextBlock Text="*Максимальное количество баллов:"/>
+                <StackPanel Orientation="Horizontal" Margin="0">
+                    <TextBox Text="{Binding MaximumPoints, Converter={StaticResource ushortToStringConverter}}" 
                  Style="{StaticResource NumericTextBoxStyle}"
                  Padding="5"/>
-            <CheckBox IsChecked="{Binding IsAutoCalculationOfQuestionsCostEnabled}">
-                <TextBlock Text="Авторасчёт стоимости вопросов" Padding="0" Margin="0"/>
-            </CheckBox>
+                    <CheckBox IsChecked="{Binding IsAutoCalculationOfQuestionsCostEnabled}">
+                        <TextBlock Text="Авторасчёт стоимости вопросов" Padding="0" Margin="0"/>
+                    </CheckBox>
 
-        </StackPanel>
+                </StackPanel>
 
-        <TextBlock Text="/Максимальное время на ответ для каждого вопроса (по умолчанию):"/>
-        <TextBox Text="{Binding NumberOfSecondsToAnswerEachQuestion, 
+                <TextBlock Text="/Максимальное время на ответ для каждого вопроса (по умолчанию):"/>
+                <TextBox Text="{Binding NumberOfSecondsToAnswerEachQuestion, 
                  Converter={StaticResource ushortNumberOfSecondsToTimeMinutesSecondsStringConverter}}"
                  Style="{StaticResource TimeMinutesSecondsTextBoxStyle}" Padding="5"/>
 
-        <TextBlock Text="/Максимальное время на прохождение теста:"/>
-        <TextBox Text="{Binding NumberOfSecondsToComplete,
+                <TextBlock Text="/Максимальное время на прохождение теста:"/>
+                <TextBox Text="{Binding NumberOfSecondsToComplete,
             Converter={StaticResource ushortNumberOfSecondsToTimeHoursMinutesStringConverter}}"
                  Style="{StaticResource TimeHoursMinutesTextBoxStyle}" Padding="5"/>
 
-        <TextBlock Text="Частично засчитывать баллы за неполный ответ:"/>
-        <CheckBox IsChecked="{Binding IsAccountingForIncompleteAnswersEnabled}"/>
+                <TextBlock Text="Частично засчитывать баллы за неполный ответ:"/>
+                <CheckBox IsChecked="{Binding IsAccountingForIncompleteAnswersEnabled}"/>
 
-        <TextBlock Text="Автоматическая нумерация вопросов:"/>
-        <CheckBox IsChecked="{Binding IsAutoQuestionNumberingEnabled}"/>
+                <TextBlock Text="Автоматическая нумерация вопросов:"/>
+                <CheckBox IsChecked="{Binding IsAutoQuestionNumberingEnabled}"/>
 
-        <GroupBox Grid.ColumnSpan="2" Header="Вопросы" Margin="0">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="7*"/>
-                    <RowDefinition Height="3*"/>
-                </Grid.RowDefinitions>
+                <GroupBox Grid.ColumnSpan="2" Header="Вопросы" Margin="0">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="7*"/>
+                            <RowDefinition Height="3*"/>
+                        </Grid.RowDefinitions>
 
-                <DataGrid x:Name="questionsDataGrid" ItemsSource="{Binding Questions.AsObservable, IsAsync=True}">
-                    <DataGrid.Columns>
-                        <md:DataGridTextColumn Header="№" Binding="{Binding SerialNumberInTest, Mode=TwoWay, Converter={StaticResource ushortToStringConverter}}">
-                            <md:DataGridTextColumn.EditingElementStyle>
-                                <Style TargetType="TextBox" BasedOn="{StaticResource DataGridEditingCellStyle}"/>
-                            </md:DataGridTextColumn.EditingElementStyle>
-                        </md:DataGridTextColumn>
-                        <md:DataGridTextColumn Header="Стоимость в баллах" Binding="{Binding PointsCost, Converter={StaticResource doubleOneDecimalToStringConverter}, Mode=TwoWay}">
-                            <md:DataGridTextColumn.EditingElementStyle>
-                                <Style TargetType="TextBox" BasedOn="{StaticResource DataGridEditingCellStyle}"/>
-                            </md:DataGridTextColumn.EditingElementStyle>
-                        </md:DataGridTextColumn>
-                        <md:DataGridTextColumn Header="Количество вариантов ответа" Binding="{Binding NumberOfAnswerOptions, Mode=TwoWay}" IsReadOnly="True">
-                            <md:DataGridTextColumn.EditingElementStyle>
-                                <Style TargetType="TextBox" BasedOn="{StaticResource DataGridEditingCellStyle}"/>
-                            </md:DataGridTextColumn.EditingElementStyle>
-                        </md:DataGridTextColumn>
-                        <md:DataGridTextColumn Header="Время на ответ" 
+                        <DataGrid x:Name="questionsDataGrid" ItemsSource="{Binding Questions.AsObservable, IsAsync=True}">
+                            <DataGrid.Columns>
+                                <md:DataGridTextColumn Header="№" Binding="{Binding SerialNumberInTest, Mode=TwoWay, Converter={StaticResource ushortToStringConverter}}">
+                                    <md:DataGridTextColumn.EditingElementStyle>
+                                        <Style TargetType="TextBox" BasedOn="{StaticResource DataGridEditingCellStyle}"/>
+                                    </md:DataGridTextColumn.EditingElementStyle>
+                                </md:DataGridTextColumn>
+                                <md:DataGridTextColumn Header="Стоимость в баллах" Binding="{Binding PointsCost, Converter={StaticResource doubleOneDecimalToStringConverter}, Mode=TwoWay}">
+                                    <md:DataGridTextColumn.EditingElementStyle>
+                                        <Style TargetType="TextBox" BasedOn="{StaticResource DataGridEditingCellStyle}"/>
+                                    </md:DataGridTextColumn.EditingElementStyle>
+                                </md:DataGridTextColumn>
+                                <md:DataGridTextColumn Header="Количество вариантов ответа" Binding="{Binding NumberOfAnswerOptions, Mode=TwoWay}" IsReadOnly="True">
+                                    <md:DataGridTextColumn.EditingElementStyle>
+                                        <Style TargetType="TextBox" BasedOn="{StaticResource DataGridEditingCellStyle}"/>
+                                    </md:DataGridTextColumn.EditingElementStyle>
+                                </md:DataGridTextColumn>
+                                <md:DataGridTextColumn Header="Время на ответ" 
                                            Binding="{Binding NumberOfSecondsToAnswer, Converter={StaticResource ushortNumberOfSecondsToTimeMinutesSecondsStringConverter}, Mode=TwoWay}">
-                            <md:DataGridTextColumn.EditingElementStyle>
-                                <Style TargetType="TextBox" BasedOn="{StaticResource DataGridEditingCellStyle}"/>
-                            </md:DataGridTextColumn.EditingElementStyle>
-                        </md:DataGridTextColumn>
-                        <md:DataGridTextColumn Header="Содержимое вопроса" Binding="{Binding Content}" IsReadOnly="True">
-                            <md:DataGridTextColumn.EditingElementStyle>
-                                <Style TargetType="TextBox" BasedOn="{StaticResource DataGridEditingCellStyle}"/>
-                            </md:DataGridTextColumn.EditingElementStyle>
-                        </md:DataGridTextColumn>
-                    </DataGrid.Columns>
-                </DataGrid>
-                <ag:AutoGrid Grid.Row="1" Rows="1*" Columns="1*, 1*, 1*">
-                    <Button Command="{Binding AddQuestionCommand}" Style="{StaticResource AddButtonStyle}">
-                        <TextBlock Text="Добавить вопрос"/>
-                    </Button>
-                    <Button Command="{Binding EditQuestionCommand}" Style="{StaticResource EditButtonStyle}"
+                                    <md:DataGridTextColumn.EditingElementStyle>
+                                        <Style TargetType="TextBox" BasedOn="{StaticResource DataGridEditingCellStyle}"/>
+                                    </md:DataGridTextColumn.EditingElementStyle>
+                                </md:DataGridTextColumn>
+                                <md:DataGridTextColumn Header="Содержимое вопроса" Binding="{Binding Content}" IsReadOnly="True">
+                                    <md:DataGridTextColumn.EditingElementStyle>
+                                        <Style TargetType="TextBox" BasedOn="{StaticResource DataGridEditingCellStyle}"/>
+                                    </md:DataGridTextColumn.EditingElementStyle>
+                                </md:DataGridTextColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        <ag:AutoGrid Grid.Row="1" Rows="1*" Columns="1*, 1*, 1*">
+                            <Button Command="{Binding AddQuestionCommand}" Style="{StaticResource AddButtonStyle}">
+                                <TextBlock Text="Добавить вопрос"/>
+                            </Button>
+                            <Button Command="{Binding EditQuestionCommand}" Style="{StaticResource EditButtonStyle}"
                         CommandParameter="{Binding ElementName=questionsDataGrid, Path=SelectedItem}">
-                        <TextBlock Text="Изменить вопрос"/>
-                    </Button>
-                    <Button Command="{Binding RemoveQuestionCommand}" Style="{StaticResource RemoveButtonStyle}"
+                                <TextBlock Text="Изменить вопрос"/>
+                            </Button>
+                            <Button Command="{Binding RemoveQuestionCommand}" Style="{StaticResource RemoveButtonStyle}"
                         CommandParameter="{Binding ElementName=questionsDataGrid, Path=SelectedItem}">
-                        <TextBlock Text="Удалить вопрос"/>
-                    </Button>
-                </ag:AutoGrid>
-            </Grid>
-        </GroupBox>
+                                <TextBlock Text="Удалить вопрос"/>
+                            </Button>
+                        </ag:AutoGrid>
+                    </Grid>
+                </GroupBox>
 
-        <GroupBox Grid.ColumnSpan="2" Header="Владельцы теста" Margin="0">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition/>
-                    <RowDefinition/>
-                </Grid.RowDefinitions>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition/>
-                    <ColumnDefinition/>
-                </Grid.ColumnDefinitions>
+                <GroupBox Grid.ColumnSpan="2" Header="Владельцы теста" Margin="0">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition/>
+                            <ColumnDefinition/>
+                        </Grid.ColumnDefinitions>
 
-                <accb:AutoCompleteComboBox x:Name="teachersComboBox" ItemsSource="{Binding Teachers}" TextSearch.TextPath="Name">
-                    <accb:AutoCompleteComboBox.ItemTemplate>
-                        <DataTemplate>
-                            <TextBlock><Run Text="{Binding Name}"/>
+                        <accb:AutoCompleteComboBox x:Name="teachersComboBox" ItemsSource="{Binding Teachers}" TextSearch.TextPath="Name">
+                            <accb:AutoCompleteComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock><Run Text="{Binding Name}"/>
                                 <Run Text=" ("/><Run Text="{Binding FullName}"/><Run Text=")"/>
-                            </TextBlock>
-                        </DataTemplate>
-                    </accb:AutoCompleteComboBox.ItemTemplate>
-                </accb:AutoCompleteComboBox>
-                <Button Grid.Column="1" Command="{Binding AddTestOwnerCommand}" Style="{StaticResource AddButtonStyle}" 
+                                    </TextBlock>
+                                </DataTemplate>
+                            </accb:AutoCompleteComboBox.ItemTemplate>
+                        </accb:AutoCompleteComboBox>
+                        <Button Grid.Column="1" Command="{Binding AddTestOwnerCommand}" Style="{StaticResource AddButtonStyle}" 
                         Margin="70 0" CommandParameter="{Binding ElementName=teachersComboBox,Path=SelectedItem}">
-                    <TextBlock Text="Добавить владельца теста"/>
-                </Button>
+                            <TextBlock Text="Добавить владельца теста"/>
+                        </Button>
 
-                <accb:AutoCompleteComboBox Grid.Row="1" x:Name="ownerTeachersComboBox" ItemsSource="{Binding OwnerTeachers.AsObservable}" 
+                        <accb:AutoCompleteComboBox Grid.Row="1" x:Name="ownerTeachersComboBox" ItemsSource="{Binding OwnerTeachers.AsObservable}" 
                                            TextSearch.TextPath="Name" SelectedIndex="{StaticResource DefaultSelectedIndex}">
-                    <accb:AutoCompleteComboBox.ItemTemplate>
-                        <DataTemplate>
-                            <TextBlock><Run Text="{Binding Name}"/>
+                            <accb:AutoCompleteComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock><Run Text="{Binding Name}"/>
                                 <Run Text=" ("/><Run Text="{Binding FullName}"/><Run Text=")"/>
-                            </TextBlock>
-                        </DataTemplate>
-                    </accb:AutoCompleteComboBox.ItemTemplate>
-                </accb:AutoCompleteComboBox>
-                <Button Grid.Row="1" Grid.Column="1" Command="{Binding RemoveTestOwnerCommand}" 
+                                    </TextBlock>
+                                </DataTemplate>
+                            </accb:AutoCompleteComboBox.ItemTemplate>
+                        </accb:AutoCompleteComboBox>
+                        <Button Grid.Row="1" Grid.Column="1" Command="{Binding RemoveTestOwnerCommand}" 
                         Style="{StaticResource RemoveButtonStyle}" Margin="70 0"
                         CommandParameter="{Binding ElementName=ownerTeachersComboBox, Path=SelectedItem}">
-                    <TextBlock Text="Удалить владельца теста"/>
+                            <TextBlock Text="Удалить владельца теста"/>
+                        </Button>
+
+                    </Grid>
+                </GroupBox>
+
+                <Button Command="{Binding ConfirmAsyncCommand}" Style="{StaticResource ConfirmButtonStyle}">
+                    <TextBlock Text="{StaticResource ConfirmButtonText}"/>
+                </Button>
+                <Button Command="{Binding CancelCommand}" Style="{StaticResource CancelButtonStyle}">
+                    <TextBlock Text="{StaticResource CancelButtonText}"/>
                 </Button>
 
-            </Grid>
-        </GroupBox>
-
-        <Button Command="{Binding ConfirmAsyncCommand}" Style="{StaticResource ConfirmButtonStyle}">
-            <TextBlock Text="{StaticResource ConfirmButtonText}"/>
-        </Button>
-        <Button Command="{Binding CancelCommand}" Style="{StaticResource CancelButtonStyle}">
-            <TextBlock Text="{StaticResource CancelButtonText}"/>
-        </Button>
-        
-    </ag:AutoGrid>
+            </ag:AutoGrid>
+        </busyIndicator:BusyMask>
+    </busyIndicator:BusyMask>
 </Window>

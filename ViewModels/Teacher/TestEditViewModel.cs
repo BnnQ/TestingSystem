@@ -1,4 +1,5 @@
-﻿using HappyStudio.Mvvm.Input.Wpf;
+﻿using BackgroundWorkerLibrary;
+using HappyStudio.Mvvm.Input.Wpf;
 using Meziantou.Framework.WPF.Builders;
 using Microsoft.EntityFrameworkCore;
 using MvvmBaseViewModels.Common.Validatable;
@@ -14,7 +15,6 @@ using System.Windows;
 using TestingSystem.Models;
 using TestingSystem.Models.Contexts;
 using TestingSystem.Views.Teacher;
-using Z.Linq;
 
 namespace TestingSystem.ViewModels.Teacher
 {
@@ -124,47 +124,100 @@ namespace TestingSystem.ViewModels.Teacher
 
         
         private readonly TestingSystemTeacherContext context = null!;
-        private readonly bool doesTestExistInDatabase;
+        private bool doesTestExistInDatabase;
+        public BackgroundWorker<Test> InitialLoaderBackgroundWorker { get; init; } = new();
+        public BackgroundWorker ConfirmerBackgroundWorker { get; init; } = new();
         
         public TestEditViewModel(Test test)
         {
-            try
+            context = new TestingSystemTeacherContext();
+
+            SetupBackgroundWorkers();
+            _ = InitialLoaderBackgroundWorker.RunWorkerAsync(test);
+        }
+
+        private void SetupBackgroundWorkers()
+        {
+            InitialLoaderBackgroundWorker.DoWork = async (parameters) =>
             {
-                context = new TestingSystemTeacherContext();
+                if (parameters?.Length < 1)
+                    return;
 
-                context.Categories.Include(category => category.Tests).Load();
-                Categories = context.Categories.ToArray();
-
-                context.Teachers.Include(teacher => teacher.OwnedTests).Load();
-                Teachers = context.Teachers.ToArray();
-
-                context.Tests
-                       .Include(t => t.Category)
-                       .Include(t => t.Questions)
-                            .ThenInclude(q => q.AnswerOptions)
-                       .Include(t => t.OwnerTeachers)
-                       .Where(t => t.Id == test.Id)
-                       .Load();
-
-                Test? testEntity = context.Tests.Find(test.Id);
-                if (testEntity is not null)
+                Test test = parameters!.First();
+                try
                 {
-                    doesTestExistInDatabase = true;
-                    Test = testEntity;
+                    await context.Categories
+                                 .Include(category => category.Tests)  
+                                 .LoadAsync();
+                    Categories = await context.Categories.ToArrayAsync();
+
+                    await context.Teachers
+                                 .Include(teacher => teacher.OwnedTests)
+                                 .LoadAsync();
+                    Teachers = await context.Teachers.ToArrayAsync();
+
+                    await context.Tests
+                                 .Include(t => t.Category)
+                                 .Include(t => t.Questions)
+                                      .ThenInclude(q => q.AnswerOptions)
+                                 .Include(t => t.OwnerTeachers)
+                                 .Where(t => t.Id == test.Id)
+                                 .LoadAsync();
+
+                    Test? testEntity = await context.Tests.FindAsync(test.Id);
+                    if (testEntity is not null)
+                    {
+                        doesTestExistInDatabase = true;
+                        Test = testEntity;
+                    }
+                    else
+                    {
+                        doesTestExistInDatabase = false;
+                        Test = new(new ConcurrentObservableCollectionBuilder<Models.Teacher>(Teachers.Where(teacher => test.OwnerTeachers.Any(t => t.Id == teacher.Id))).Build());
+                    }
                 }
-                else
+                catch (Exception exception)
                 {
-                    doesTestExistInDatabase = false;
-                    Test = new(new ConcurrentObservableCollectionBuilder<Models.Teacher>(Teachers.Where(teacher => test.OwnerTeachers.Any(t => t.Id == teacher.Id))).Build());
+                    OccurCriticalErrorMessage(exception);
+                    return;
                 }
-            }
-            catch (Exception exception)
+
+                SetupValidator();
+            };
+
+            ConfirmerBackgroundWorker.DoWork = async () =>
             {
-                OccurCriticalErrorMessage(exception);
-                return;
-            }
+                if (!await IsNameValidAsync() || !await IsCategoryValidAsync() || !await IsNumberOfQuestionsValidAsync() ||
+                    !await IsMaximumPointsValidAsync() || !await IsNumberOfOwnerTeachersValidAsync() || !await IsIsAutoQuestionNumberingEnabledValidAsync())
+                {
+                    return;
+                }
 
-            SetupValidator();
+                try
+                {
+                    if (!doesTestExistInDatabase)
+                    {
+                        Category? categoryEntity = await context.FindAsync<Category>(Test.Category?.Id);
+                        if (categoryEntity is not null)
+                        {
+                            categoryEntity.Tests.Add(Test);
+                        }
+                        else
+                        {
+                            OccurErrorMessage("Не удалось сохранить тест, так как во время его редактирования, содержащий тест категория была параллельно удалена другим пользователем или системой.");
+                            return;
+                        }
+                    }
+
+                    await context.SaveChangesAsync();
+                    Close(true);
+                }
+                catch (Exception exception)
+                {
+                    OccurCriticalErrorMessage(exception);
+                    return;
+                }
+            };
         }
 
         #region Validation setup
@@ -194,7 +247,7 @@ namespace TestingSystem.ViewModels.Teacher
                 .When(viewModel => viewModel.maximumPointsValidationState == ValidationState.Enabled)
                 .WithMessage("Максимальное количество баллов не может быть меньше 1");
             builder.RuleFor(viewModel => viewModel.MaximumPoints)
-                .Must(maximumPoints => maximumPoints == Questions.Sum(question => question.PointsCost))
+                .Must(maximumPoints => maximumPoints == Math.Round(Questions.Sum(question => question.PointsCost)))
                 .When(viewModel => viewModel.maximumPointsValidationState == ValidationState.Enabled)
                 .WithMessage("Сумма стоимости вопросов должна быть равна максимальному количеству баллов за тест");
 
@@ -350,32 +403,8 @@ namespace TestingSystem.ViewModels.Teacher
         {
             get => confirmAsyncCommand ??= new(async () =>
             {
-                if (!await IsNameValidAsync() || !await IsCategoryValidAsync() || !await IsNumberOfQuestionsValidAsync() ||
-                    !await IsMaximumPointsValidAsync() || !await IsNumberOfOwnerTeachersValidAsync() || !await IsIsAutoQuestionNumberingEnabledValidAsync())
-                {
-                    return;
-                }
-
-                try
-                {
-                    if (!doesTestExistInDatabase)
-                    {
-                        Category? categoryEntity = await context.FindAsync<Category>(Test.Category?.Id);
-                        if (categoryEntity is not null)
-                            categoryEntity.Tests.Add(Test);
-                        else
-                            throw new NullReferenceException("Не удалось сохранить тест, так как во время его редактирования, содержащий тест категория была параллельно удалена другим пользователем или системой.");
-                    }
-
-                    await context.SaveChangesAsync();
-                    Close(true);
-                }
-                catch (Exception exception)
-                {
-                    OccurCriticalErrorMessage(exception);
-                    return;
-                }
-
+                if (!ConfirmerBackgroundWorker.IsBusy)
+                    await ConfirmerBackgroundWorker.RunWorkerAsync();
             });
         }
 

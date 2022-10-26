@@ -11,7 +11,6 @@ using System.Windows.Input;
 using TestingSystem.Models;
 using TestingSystem.Models.Contexts;
 using TestingSystem.Views.Teacher;
-using Z.Linq;
 
 namespace TestingSystem.ViewModels.Teacher
 {
@@ -22,8 +21,8 @@ namespace TestingSystem.ViewModels.Teacher
             if (args.Action == NotifyCollectionChangedAction.Add || args.Action == NotifyCollectionChangedAction.Remove)
                 OnPropertyChanged(nameof(NumberOfTests));
         }
-        private Category? category = null!;
-        public Category? Category
+        private Category category = null!;
+        public Category Category
         {
             get => category;
             set
@@ -45,28 +44,13 @@ namespace TestingSystem.ViewModels.Teacher
         public int NumberOfTests => Category?.Tests.Count ?? 0;
 
         private readonly Models.Teacher teacher = null!;
-        private readonly BackgroundWorker categoryUpdaterFromDatabaseBackgroundWorker = new();
+        public BackgroundWorker CategoryUpdaterFromDatabaseBackgroundWorker { get; init; } = new();
 
         public CategoryInfoViewModel(Category category, Models.Teacher teacher)
         {
-            try
-            {
-                using (TestingSystemTeacherContext context = new())
-                {
-                    Category? categoryEntity = context.Find<Category>(category.Id);
-                    if (categoryEntity is null)
-                        throw new NullReferenceException("Category entity missing from the database (most likely, a problem on the DB side)");
-                    else
-                        Category = categoryEntity;
-                }
-            }
-            catch (Exception exception)
-            {
-                OccurCriticalErrorMessage(exception);
-                return;
-            }
-
+            Category = category;
             this.teacher = teacher;
+
             SetupBackgroundWorkers();
 
             _ = UpdateCategoryFromDatabaseAsyncCommand.ExecuteAsync(null);
@@ -74,16 +58,22 @@ namespace TestingSystem.ViewModels.Teacher
 
         private void SetupBackgroundWorkers()
         {
-            categoryUpdaterFromDatabaseBackgroundWorker.OnWorkStarting = () => Mouse.OverrideCursor = Cursors.Wait;
-            categoryUpdaterFromDatabaseBackgroundWorker.DoWork = async () => await UpdateCategoryFromDatabaseAsync();
-            categoryUpdaterFromDatabaseBackgroundWorker.OnWorkCompleted = () => Mouse.OverrideCursor = Cursors.Arrow;
+            CategoryUpdaterFromDatabaseBackgroundWorker.OnWorkStarting = () =>
+            {
+                Mouse.OverrideCursor = Cursors.Wait;
+                CommandManager.InvalidateRequerySuggested();
+            };
+            CategoryUpdaterFromDatabaseBackgroundWorker.DoWork = async () => await UpdateCategoryFromDatabaseAsync();
+            CategoryUpdaterFromDatabaseBackgroundWorker.OnWorkCompleted = () =>
+            {
+                Mouse.OverrideCursor = Cursors.Arrow;
+                CommandManager.InvalidateRequerySuggested();
+            };
         }
         
         #region Commands
         private async Task UpdateCategoryFromDatabaseAsync()
         {
-            if (Category is not null)
-            {
                 try
                 {
                     using (TestingSystemTeacherContext context = new())
@@ -103,7 +93,6 @@ namespace TestingSystem.ViewModels.Teacher
                     OccurCriticalErrorMessage(exception);
                     return;
                 }
-            }
         }
 
         private AsyncRelayCommand updateCategoryFromDatabaseAsyncCommand = null!;
@@ -111,8 +100,8 @@ namespace TestingSystem.ViewModels.Teacher
         {
             get => updateCategoryFromDatabaseAsyncCommand ??= new(async () =>
             {
-                if (!categoryUpdaterFromDatabaseBackgroundWorker.IsBusy)
-                    await categoryUpdaterFromDatabaseBackgroundWorker.RunWorkerAsync();
+                if (!CategoryUpdaterFromDatabaseBackgroundWorker.IsBusy)
+                    await CategoryUpdaterFromDatabaseBackgroundWorker.RunWorkerAsync();
             });
         }
 
@@ -156,14 +145,18 @@ namespace TestingSystem.ViewModels.Teacher
 
                 if (editViewDialogResult == true)
                     await UpdateCategoryFromDatabaseAsyncCommand.ExecuteAsync(null);
-            }, () => Category is not null && (AreTestsEmpty() || DoesTeacherOwnAtLeastOneTest()));
+            },
+            () => Category is not null && !CategoryUpdaterFromDatabaseBackgroundWorker.IsBusy && 
+            (AreTestsEmpty() || DoesTeacherOwnAtLeastOneTest()));
         }
 
+        private bool isRemoveLocked = false;
         private AsyncRelayCommand removeCategoryAsyncCommand = null!;
         public AsyncRelayCommand RemoveCategoryAsyncCommand
         {
             get => removeCategoryAsyncCommand ??= new(async () =>
             {
+                isRemoveLocked = true;
                 try
                 {
                     using (TestingSystemTeacherContext context = new())
@@ -180,7 +173,9 @@ namespace TestingSystem.ViewModels.Teacher
                     return;
                 }
 
-            }, () => Category is not null && (AreTestsEmpty() || DoesTeacherOwnAllTests()));
+            }, 
+            () => !isRemoveLocked && Category is not null && !CategoryUpdaterFromDatabaseBackgroundWorker.IsBusy &&
+            (AreTestsEmpty() || DoesTeacherOwnAllTests()));
         }
         #endregion
 
