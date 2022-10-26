@@ -32,27 +32,13 @@ namespace TestingSystem.ViewModels.Student
 
         public TestInfoViewModel(Test test, Models.Student student)
         {
-            try
-            {
-                using (TestingSystemStudentContext context = new())
-                {
-                    Test? testEntity = context.Find<Test>(test.Id);
-                    if (testEntity is null)
-                        throw new NullReferenceException("Test entity missing from the database (most likely, a problem on the DB side)");
-                    else
-                        Test = testEntity;
-                }
-            }
-            catch (Exception exception)
-            {
-                OccurCriticalErrorMessage(exception);
-                return;
-            }
-
-            this.student = student;
             SetupBackgroundWorkers();
 
+            Test = test;
             _ = UpdateTestFromDatabaseAsyncCommand.ExecuteAsync(null);
+            
+
+            this.student = student;
         }
 
         private void SetupBackgroundWorkers()
@@ -74,7 +60,7 @@ namespace TestingSystem.ViewModels.Student
                 {
                     Test = (await context.FindAsync<Test>(Test.Id))!;
                     if (Test is null)
-                        throw new NullReferenceException("Во время редактирования теста он был параллельно удалён другим пользователем или системой.");
+                        throw new NullReferenceException("Тест недоступен, поскольку с момента последнего обновления был удалён учителем или системой.");
 
                     EntityEntry<Test> testEntry = context.Entry(Test!);
 
@@ -85,7 +71,7 @@ namespace TestingSystem.ViewModels.Student
             }
             catch (Exception exception)
             {
-                OccurCriticalErrorMessage(exception);
+                OccurErrorMessage(exception);
                 return;
             }
         }
@@ -111,7 +97,7 @@ namespace TestingSystem.ViewModels.Student
                     TestContainerView testContainerView = new(Test, student);
                     testContainerView.ShowDialog();
                 });
-            });
+            }, () => !testUpdaterFromDatabaseBackgroundWorker.IsBusy);
         }
         #endregion
     }
