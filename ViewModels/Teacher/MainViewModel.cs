@@ -4,19 +4,19 @@ using Meziantou.Framework.WPF.Collections;
 using Microsoft.EntityFrameworkCore;
 using MvvmBaseViewModels.Common;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using TestingSystem.Models;
 using TestingSystem.Models.Contexts;
 using TestingSystem.Views.Teacher;
-using Z.Linq;
 
 namespace TestingSystem.ViewModels.Teacher
 {
     public class MainViewModel : ViewModelBase
     {
-        private readonly Models.Teacher teacher = null!;
+        private Models.Teacher teacher = null!;
 
         private Category[] categories = null!;
         public Category[] Categories
@@ -60,33 +60,41 @@ namespace TestingSystem.ViewModels.Teacher
         }
 
         public BackgroundWorker CategoriesUpdaterFromDatabaseBackgroundWorker { get; init; } = new();
-
+        public BackgroundWorker<Models.Teacher> InitialLoaderBackgroundWorker { get; init; } = new();
 
         public MainViewModel(Models.Teacher teacher)
         {
-            try
-            {
-                using (TestingSystemTeacherContext context = new())
-                {
-                    Models.Teacher? teacherEntity = context.Find<Models.Teacher>(teacher.Id);
-                    if (teacherEntity is null)
-                        throw new NullReferenceException("Teacher entity missing from the database (most likely, a problem on the DB side)");
-                    else
-                        this.teacher = teacherEntity;
-                }
-            }
-            catch (Exception exception)
-            {
-                OccurCriticalErrorMessage(exception);
-                return;
-            }
-
             SetupBackgroundWorkers();
+            _ = InitialLoaderBackgroundWorker.RunWorkerAsync(teacher);
             UpdateCategoriesFromDatabaseAsyncCommand.Execute(null);
         }
 
         private void SetupBackgroundWorkers()
         {
+            InitialLoaderBackgroundWorker.DoWork = async (parameters) =>
+            {
+                if (parameters?.Length < 1)
+                    return;
+
+                Models.Teacher teacher = parameters!.First();
+                try
+                {
+                    using (TestingSystemTeacherContext context = new())
+                    {
+                        Models.Teacher? teacherEntity = await context.FindAsync<Models.Teacher>(teacher.Id);
+                        if (teacherEntity is null)
+                            throw new NullReferenceException("Teacher entity missing from the database (most likely, a problem on the DB side)");
+                        else
+                            this.teacher = teacherEntity;
+                    }
+                }
+                catch (Exception exception)
+                {
+                    OccurCriticalErrorMessage(exception);
+                    return;
+                }
+            };
+
             CategoriesUpdaterFromDatabaseBackgroundWorker.DoWork = async () =>
             {
                 Task updatingCategoriesTask = UpdateCategoriesFromDatabaseAsync();
@@ -106,7 +114,7 @@ namespace TestingSystem.ViewModels.Teacher
                             .ThenInclude(test => test.Questions)
                         .LoadAsync();
 
-                    Categories = await context.Categories.Local.ToArrayAsync();
+                    Categories = await context.Categories.ToArrayAsync();
                 }
             }
             catch (Exception exception)

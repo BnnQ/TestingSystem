@@ -14,21 +14,29 @@ namespace TestingSystem.Views.Teacher
         public TestEditView(Test test)
         {
             InitializeComponent();
+            Tag = ConstantStringKeys.NotLoadedState;
 
             viewModel = new TestEditViewModel(test);
             viewModel.Closed += (dialogResult) =>
             {
-                if (dialogResult is not null)
-                    DialogResult = dialogResult;
+                Application.Current?.Dispatcher.Invoke(() =>
+                {
+                    if (dialogResult is not null)
+                        DialogResult = dialogResult;
 
-                Application.Current?.Dispatcher.Invoke(Close);
+                    Close();
+                });
             };
             viewModel.ErrorMessageOccurred += DefaultMessageHandlers.HandleError;
             viewModel.ErrorMessageOccurred += (_) => Application.Current?.Dispatcher.Invoke(Close);
             viewModel.CriticalErrorMessageOccured += (exception) =>
                 DefaultMessageHandlers.HandleCriticalError(this, exception);
 
-            DataContext = viewModel;
+            viewModel.InitialLoaderBackgroundWorker.WorkCompleted += () =>
+            {
+                DataContext = viewModel;
+                Tag = ConstantStringKeys.LoadedState;
+            };
             Dispatcher.ShutdownStarted += (_, _) =>
             {
                 if (viewModel?.IsClosed == false)

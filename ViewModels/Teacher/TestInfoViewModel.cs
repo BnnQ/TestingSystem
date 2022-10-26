@@ -29,70 +29,47 @@ namespace TestingSystem.ViewModels.Teacher
         }
         
         private readonly Models.Teacher teacher = null!;
-        private readonly BackgroundWorkerLibrary.BackgroundWorker testUpdaterFromDatabaseBackgroundWorker = new();
+        public BackgroundWorkerLibrary.BackgroundWorker TestUpdaterFromDatabaseBackgroundWorker { get; init; } = new();
 
         public TestInfoViewModel(Test test, Models.Teacher teacher)
+        {
+            Test = test;
+            this.teacher = teacher;
+
+            SetupBackgroundWorkers();
+            _ = UpdateTestFromDatabaseAsyncCommand.ExecuteAsync(null);
+        }
+
+        private void SetupBackgroundWorkers()
+        {
+            TestUpdaterFromDatabaseBackgroundWorker.OnWorkStarting = () => CommandManager.InvalidateRequerySuggested();
+            TestUpdaterFromDatabaseBackgroundWorker.DoWork = async () => await UpdateTestFromDatabaseAsync();
+            TestUpdaterFromDatabaseBackgroundWorker.OnWorkCompleted = () => CommandManager.InvalidateRequerySuggested();
+        }
+
+        private async Task UpdateTestFromDatabaseAsync()
         {
             try
             {
                 using (TestingSystemTeacherContext context = new())
                 {
-                    Test? testEntity = context.Find<Test>(test.Id);
-                    if (testEntity is null)
-                        throw new NullReferenceException("Test entity missing from the database (most likely, a problem on the DB side)");
-                    else
-                        Test = testEntity;
+                    Test = await context.FindAsync<Test>(Test!.Id);
+                    if (Test is null)
+                        throw new NullReferenceException("Во время редактирования теста он был параллельно удалён другим пользователем или системой.");
+
+                    EntityEntry<Test> testEntry = context.Entry(Test!);
+
+                    await testEntry.Collection(test => test.Questions).LoadAsync();
+                    foreach (Question question in Test!.Questions)
+                        await context.Entry(question).Collection(question => question.AnswerOptions).LoadAsync();
+
+                    await testEntry.Collection(test => test.OwnerTeachers).LoadAsync();
                 }
             }
             catch (Exception exception)
             {
                 OccurCriticalErrorMessage(exception);
                 return;
-            }
-
-            this.teacher = teacher;
-            SetupBackgroundWorkers();
-
-            _ = UpdateTestFromDatabaseAsyncCommand.ExecuteAsync(null);
-        }
-
-        private void SetupBackgroundWorkers()
-        {
-            testUpdaterFromDatabaseBackgroundWorker.OnWorkStarting = () => Mouse.OverrideCursor = Cursors.Wait;
-            testUpdaterFromDatabaseBackgroundWorker.DoWork = async () => await UpdateTestFromDatabaseAsync();
-            testUpdaterFromDatabaseBackgroundWorker.OnWorkCompleted = () =>
-            {
-                Mouse.OverrideCursor = Cursors.Arrow;
-                CommandManager.InvalidateRequerySuggested();
-            };
-        }
-
-        private async Task UpdateTestFromDatabaseAsync()
-        {
-            if (Test is not null)
-            {
-                try
-                {
-                    using (TestingSystemTeacherContext context = new())
-                    {
-                        Test = await context.FindAsync<Test>(Test.Id);
-                        if (Test is null)
-                            throw new NullReferenceException("Во время редактирования теста он был параллельно удалён другим пользователем или системой.");
-
-                        EntityEntry<Test> testEntry = context.Entry(Test!);
-
-                        await testEntry.Collection(test => test.Questions).LoadAsync();
-                        foreach (Question question in Test!.Questions)
-                            await context.Entry(question).Collection(question => question.AnswerOptions).LoadAsync();
-
-                        await testEntry.Collection(test => test.OwnerTeachers).LoadAsync();
-                    }
-                }
-                catch (Exception exception)
-                {
-                    OccurCriticalErrorMessage(exception);
-                    return;
-                }
             }
         }
 
@@ -110,8 +87,8 @@ namespace TestingSystem.ViewModels.Teacher
         {
             get => updateTestFromDatabaseAsyncCommand ??= new(async () =>
             {
-                if (!testUpdaterFromDatabaseBackgroundWorker.IsBusy)
-                    await testUpdaterFromDatabaseBackgroundWorker.RunWorkerAsync();
+                if (!TestUpdaterFromDatabaseBackgroundWorker.IsBusy)
+                    await TestUpdaterFromDatabaseBackgroundWorker.RunWorkerAsync();
             });
         }
 
@@ -129,14 +106,16 @@ namespace TestingSystem.ViewModels.Teacher
 
                 if (editViewDialogResult == true)
                     await UpdateTestFromDatabaseAsyncCommand.ExecuteAsync(null);
-            }, () => Test is not null && IsTeacherOwner() && !testUpdaterFromDatabaseBackgroundWorker.IsBusy);
+            }, () => !isRemoveLocked && Test is not null && IsTeacherOwner());
         }
 
+        private bool isRemoveLocked = false;
         private AsyncRelayCommand removeTestAsyncCommand = null!;
         public AsyncRelayCommand RemoveTestAsyncCommand
         {
             get => removeTestAsyncCommand ??= new(async () =>
             {
+                isRemoveLocked = true;
                 try
                 {
                     using (TestingSystemTeacherContext context = new())
@@ -152,7 +131,7 @@ namespace TestingSystem.ViewModels.Teacher
                     OccurCriticalErrorMessage(exception);
                     return;
                 }
-            }, () => Test is not null && IsTeacherOwner() && !testUpdaterFromDatabaseBackgroundWorker.IsBusy);
+            }, () => !isRemoveLocked && Test is not null && IsTeacherOwner());
         }
         #endregion
 

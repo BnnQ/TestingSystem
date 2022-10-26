@@ -1,5 +1,6 @@
 ﻿using MvvmBaseViewModels.Helpers;
 using System.Windows;
+using System.Windows.Input;
 using TestingSystem.Models;
 using TestingSystem.ViewModels.Teacher;
 
@@ -14,19 +15,32 @@ namespace TestingSystem.Views.Teacher
         public CategoryEditView(Category category)
         {
             InitializeComponent();
+            Application.Current?.Dispatcher.Invoke(() =>
+            {
+                IsEnabled = false;
+                Mouse.OverrideCursor = Cursors.Wait;
+            });
 
             viewModel = new CategoryEditViewModel(category);
             viewModel.Closed += (dialogResult) =>
             {
-                if (dialogResult is not null)
-                    DialogResult = dialogResult;
+                Application.Current?.Dispatcher.Invoke(() =>
+                {
+                    if (dialogResult is not null)
+                        DialogResult = dialogResult;
 
-                Close();
+                    Close();
+                });
             };
             viewModel.CriticalErrorMessageOccured += (exception) =>
                 DefaultMessageHandlers.HandleCriticalError(this, exception);
 
-            DataContext = viewModel;
+            viewModel.InitialLoaderBackgroundWorker.WorkCompleted += () =>
+            {
+                DataContext = viewModel;
+                IsEnabled = true;
+                Mouse.OverrideCursor = Cursors.Arrow;
+            };
             Dispatcher.ShutdownStarted += (_, _) =>
             {
                 if (viewModel?.IsClosed == false)
