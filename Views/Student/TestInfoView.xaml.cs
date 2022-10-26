@@ -17,7 +17,7 @@ namespace TestingSystem.Views.Student
 
             viewModel = new TestInfoViewModel(test, student);
             viewModel.Closed += (_) => Application.Current?.Dispatcher.Invoke(Close);
-            viewModel.ErrorMessageOccurred += DefaultMessageHandlers.HandleError;
+            viewModel.ErrorMessageOccurred += (exception) => DefaultMessageHandlers.HandleError(this, exception);
             viewModel.ErrorMessageOccurred += (_) => Application.Current?.Dispatcher.Invoke(Close);
             viewModel.CriticalErrorMessageOccured += (exception) =>
                 DefaultMessageHandlers.HandleCriticalError(this, exception);

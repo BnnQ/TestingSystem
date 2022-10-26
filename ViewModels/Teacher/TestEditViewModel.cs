@@ -362,14 +362,9 @@ namespace TestingSystem.ViewModels.Teacher
                     {
                         Category? categoryEntity = await context.FindAsync<Category>(Test.Category?.Id);
                         if (categoryEntity is not null)
-                        {
                             categoryEntity.Tests.Add(Test);
-                        }
                         else
-                        {
-                            OccurErrorMessage("Не удалось сохранить тест, так как во время его редактирования, содержащий тест категория была параллельно удалена другим пользователем или системой.");
-                            return;
-                        }
+                            throw new NullReferenceException("Не удалось сохранить тест, так как во время его редактирования, содержащий тест категория была параллельно удалена другим пользователем или системой.");
                     }
 
                     await context.SaveChangesAsync();
