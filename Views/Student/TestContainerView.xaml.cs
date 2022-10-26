@@ -36,7 +36,7 @@ namespace TestingSystem.Views.Student
             testPassingViewModel.CriticalErrorMessageOccured += (exception) =>
                 DefaultMessageHandlers.HandleCriticalError(this, exception);
 
-            testResultsViewModel = new(navigationManager, null);
+            testResultsViewModel = new(navigationManager);
             testResultsViewModel.Closed += (_) =>
             {
                 if (containerViewModel?.IsClosed == false)
