@@ -9,7 +9,6 @@
              xmlns:ap="http://schemas.nishy-software.com/xaml/attached-properties"
              xmlns:st="http://schemas.spicytaco.io/"
              xmlns:converters="clr-namespace:TestingSystem.Views.Converters"
-             xmlns:system="clr-namespace:System;assembly=mscorlib"
              TextElement.Foreground="{DynamicResource MaterialDesignBody}"
              TextElement.FontWeight="Regular"
              TextElement.FontSize="{StaticResource MainFontSize}"
@@ -37,40 +36,39 @@
             <Run Text="{Binding CurrentQuestion.Content}"/>
             <Run Text="("/><Run Text="{Binding DoesCurrentQuestionOnlyHaveOneCorrectAnswer, 
                 Converter={StaticResource boolByDoesQuestionOnlyHaveOneCorrectAnswerToStringConverter}, Mode=OneWay}"/><Run Text=")"/>
-            </TextBlock>
-        </Viewbox>
+                </TextBlock>
+            </Viewbox>
 
-        <Grid>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition/>
-                <ColumnDefinition/>
-            </Grid.ColumnDefinitions>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition/>
+                </Grid.ColumnDefinitions>
 
-            <TextBlock Grid.Column="0" Visibility="{Binding CurrentQuestionTimeLeft, Converter={StaticResource NullableToVisibilityConverter}, Mode=OneWay}"
+                <TextBlock Grid.Column="0" Visibility="{Binding CurrentQuestionTimeLeft, Converter={StaticResource NullableToVisibilityConverter}, Mode=OneWay}"
                    Text="{Binding CurrentQuestionTimeLeft, Converter={StaticResource nullableDateTimeToNullableShortTimeStringConverter}, Mode=OneWay}"
                    Foreground="{Binding CurrentQuestionTimeLeft, Converter={StaticResource oneWayNullableDateTimeToBrushConverter}, Mode=OneWay}"
                    TextAlignment="Left" VerticalAlignment="Center" FontSize="20" FontWeight="Medium"/>
-            <TextBlock Grid.Column="1" Visibility="{Binding TestTimeLeft, Converter={StaticResource NullableToVisibilityConverter}, Mode=OneWay}"
+                <TextBlock Grid.Column="1" Visibility="{Binding TestTimeLeft, Converter={StaticResource NullableToVisibilityConverter}, Mode=OneWay}"
                    Text="{Binding TestTimeLeft, Converter={StaticResource nullableDateTimeToNullableShortTimeStringConverter}, Mode=OneWay}"
                    Foreground="{Binding TestTimeLeft, Converter={StaticResource oneWayNullableDateTimeToBrushConverter}, Mode=OneWay}"
                    TextAlignment="Right" VerticalAlignment="Center" FontSize="20" FontWeight="Medium"/>
-        </Grid>
+            </Grid>
 
         <ListView ItemsSource="{Binding CurrentQuestionAnswerOptions}" ap:ScrollViewerProperties.MouseWheelHandlingMode="OnlyScrollable"
                   ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto"
                   md:ScrollViewerAssist.IsAutoHideEnabled="False" md:ScrollViewerAssist.SupportHorizontalScroll="False">
             <ListView.ItemContainerStyle>
-                <Style TargetType="ListViewItem" BasedOn="{StaticResource ListViewCardPanelItemStyle}">
+                    <Style TargetType="ListViewItem" BasedOn="{StaticResource ListViewCardPanelItemStyle}">
                     <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
                     <Setter Property="VerticalContentAlignment" Value="Stretch"/>
                     <Setter Property="st:StackPanel.Fill" Value="Fill"/>
                 </Style>
-            </ListView.ItemContainerStyle>
-            <ListView.ItemTemplate>
-                <DataTemplate>
-                    <Button Command="{Binding RelativeSource={RelativeSource AncestorType=UserControl}, Path=DataContext.ChooseAnswerOptionCommand}" 
-                            CommandParameter="{Binding}"
-                            Click="OnAnswerOptionClick" Style="{StaticResource AnswerOptionButtonStyle}">
+                </ListView.ItemContainerStyle>
+                <ListView.ItemTemplate>
+                    <DataTemplate>
+                    <Button Click="OnAnswerOptionButtonClick" Style="{StaticResource AnswerOptionButtonStyle}"
+                            Tag="{Binding SerialNumberInQuestion, Mode=OneWay}">
                         <Viewbox StretchDirection="DownOnly">
                             <TextBlock TextWrapping="Wrap">
                             <Run Text="{Binding SerialNumberInQuestion, Mode=OneWay}"/><Run Text="."/>
@@ -78,17 +76,17 @@
                             </TextBlock>
                         </Viewbox>
                     </Button>
-                </DataTemplate>
-            </ListView.ItemTemplate>
-            <ListView.ItemsPanel>
-                <ItemsPanelTemplate>
-                    <st:StackPanel IsItemsHost="True" Orientation="Vertical"/>
-                </ItemsPanelTemplate>
-            </ListView.ItemsPanel>
-        </ListView>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+                <ListView.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <st:StackPanel IsItemsHost="True" Orientation="Vertical"/>
+                    </ItemsPanelTemplate>
+                </ListView.ItemsPanel>
+            </ListView>
 
-        <Button Command="{Binding ConfirmSelectedAnswerOptionsCommand}" Style="{StaticResource ConfirmButtonStyle}" Margin="50 10">
-            <TextBlock Text="Подтвердить ответ"/>
-        </Button>
-    </ag:AutoGrid>
+            <Button Command="{Binding ConfirmSelectedAnswerOptionsCommand}" Style="{StaticResource ConfirmButtonStyle}" Margin="50 10">
+                <TextBlock Text="Подтвердить ответ"/>
+            </Button>
+        </ag:AutoGrid>
 </UserControl>

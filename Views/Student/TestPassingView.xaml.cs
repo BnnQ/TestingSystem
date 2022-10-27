@@ -1,6 +1,8 @@
 ﻿using System.Linq;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using TestingSystem.Models;
 using TestingSystem.ViewModels.Student;
 
 namespace TestingSystem.Views.Student
@@ -10,32 +12,39 @@ namespace TestingSystem.Views.Student
     /// </summary>
     public partial class TestPassingView : UserControl
     {
+        private Brush primaryColor;
+        private Brush secondaryColor;
         public TestPassingView()
         {
             InitializeComponent();
+            
+            primaryColor = (Application.Current?.FindResource("PrimaryHueMidBrush") as Brush)!;
+            secondaryColor = (Application.Current?.FindResource("SecondaryHueMidBrush") as Brush)!;
         }
 
-        private Brush initialButtonBackground = Brushes.RoyalBlue;
-        private void OnAnswerOptionClick(object sender, System.Windows.RoutedEventArgs e)
+
+        private void OnAnswerOptionButtonClick(object sender, System.Windows.RoutedEventArgs e)
         {
-            if (sender is Button buttonSender)
+            if (sender is Button senderButton)
             {
-                TestPassingViewModel dataContext = (DataContext as TestPassingViewModel)!;
-
-                if (buttonSender.Background != Brushes.Orange)
+                if (senderButton.Tag is ushort serialNumberInQuestion)
                 {
-                    if (dataContext.DoesCurrentQuestionOnlyHaveOneCorrectAnswer && dataContext.SelectedAnswerOptions.Any())
-                        return;
+                    if (DataContext is TestPassingViewModel viewModel)
+                    {
+                        AnswerOption answerOption = viewModel.CurrentQuestionAnswerOptions.First(answerOption => answerOption.SerialNumberInQuestion == serialNumberInQuestion);
+                        
+                        if (viewModel.ChooseAnswerOptionCommand.CanExecute(answerOption))
+                        {
+                            viewModel.ChooseAnswerOptionCommand.Execute(answerOption);
 
-                    initialButtonBackground = buttonSender.Background;
-                    buttonSender.Background = Brushes.Orange;
-                }
-                else
-                {
-                    buttonSender.Background = initialButtonBackground;
+                            if (viewModel.SelectedAnswerOptions.Contains(answerOption))
+                                Application.Current?.Dispatcher.Invoke(() => senderButton.Background = secondaryColor);
+                            else
+                                Application.Current?.Dispatcher.Invoke(() => senderButton.Background = primaryColor);
+                        }
+                    }
                 }
             }
         }
-
     }
 }
