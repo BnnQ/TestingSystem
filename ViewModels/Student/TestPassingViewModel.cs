@@ -22,13 +22,15 @@ namespace TestingSystem.ViewModels.Student
         private readonly Models.Student student = null!;
 
         #region Test
-        public ImmutableSortedSet<Question> Questions { get; init; } = null!;
+        public ImmutableSortedSet<Question> Questions { get; private set; } = null!;
         private IEnumerator<Question> questionsEnumerator = null!;
 
         private DateTime? testStartTime = null;
         private DateTime? testCompletionTime = null;
         private List<TimeSpan> questionAnswerTimes = null!;
+
         private ushort correctAnswersCounter;
+        private double scoreAccumulator;
 
         private readonly BackgroundWorker<ushort> testTimerBackgroundWorker = new();
         private DateTime? testTimeLeft;
@@ -115,48 +117,59 @@ namespace TestingSystem.ViewModels.Student
         public List<AnswerOption> SelectedAnswerOptions { get; private set; } = null!;
         #endregion
 
+        public BackgroundWorker<Test> InitialLoaderBackgroundWorker { get; init; } = new();
+
         public TestPassingViewModel(INavigationManager navigationManager, Test test, Models.Student student) : base(navigationManager)
         {
-            try
-            {
-                using (TestingSystemStudentContext context = new())
-                {
-                    Test? testEntity = context.Find<Test>(test.Id);
-                    if (testEntity is null)
-                        throw new NullReferenceException("Test entity missing from the database (most likely, a problem on the DB side)");
-
-                    EntityEntry<Test> testEntry = context.Entry(testEntity);
-
-                    testEntry.Collection(test => test.Questions).Load();
-                    foreach (Question question in testEntity.Questions)
-                        context.Entry(question).Collection(question => question.AnswerOptions).Load();
-
-                    this.test = testEntity;
-                    Questions = this.test.Questions.ToImmutableSortedSet(new QuestionBySerialNumberComparer());
-                    questionsEnumerator = Questions.GetEnumerator();
-                    questionAnswerTimes = new(Questions.Count);
-                    SelectedAnswerOptions = new();
-
-                    SetupBackgroundWorkers();
-                    testStartTime = DateTime.Now;
-                    if (test.NumberOfSecondsToComplete.HasValue)
-                        _ = testTimerBackgroundWorker.RunWorkerAsync(test.NumberOfSecondsToComplete.Value);
-
-                    lock (currentQuestionLocker)
-                        MoveToNextQuestion();
-                }
-            }
-            catch (Exception exception)
-            {
-                OccurCriticalErrorMessage(exception);
-                return;
-            }
-
             this.student = student;
+            
+            SetupBackgroundWorkers();
+            _ = InitialLoaderBackgroundWorker.RunWorkerAsync(test);
         }
 
         private void SetupBackgroundWorkers()
         {
+            InitialLoaderBackgroundWorker.DoWork = async (parameters) =>
+            {
+                if (parameters?.Length < 1)
+                    return;
+
+                Test test = parameters!.First();
+                try
+                {
+                    using (TestingSystemStudentContext context = new())
+                    {
+                        Test? testEntity = await context.FindAsync<Test>(test.Id);
+                        if (testEntity is null)
+                            throw new NullReferenceException("Test entity missing from the database (most likely, a problem on the DB side)");
+
+                        EntityEntry<Test> testEntry = context.Entry(testEntity);
+
+                        await testEntry.Collection(test => test.Questions).LoadAsync();
+                        foreach (Question question in testEntity.Questions)
+                            await context.Entry(question).Collection(question => question.AnswerOptions).LoadAsync();
+
+                        this.test = testEntity;
+                        Questions = this.test.Questions.ToImmutableSortedSet(new QuestionBySerialNumberComparer());
+                        questionsEnumerator = Questions.GetEnumerator();
+                        questionAnswerTimes = new(Questions.Count);
+                        SelectedAnswerOptions = new List<AnswerOption>();
+
+                        testStartTime = DateTime.Now;
+                        if (test.NumberOfSecondsToComplete.HasValue)
+                            _ = testTimerBackgroundWorker.RunWorkerAsync(test.NumberOfSecondsToComplete.Value);
+
+                        lock (currentQuestionLocker)
+                            MoveToNextQuestion();
+                    }
+                }
+                catch (Exception exception)
+                {
+                    OccurCriticalErrorMessage(exception);
+                    return;
+                }
+            };
+
             testTimerBackgroundWorker.DoWork = async (parameters) =>
             {
                 if (parameters?.Length < 1)
@@ -207,24 +220,75 @@ namespace TestingSystem.ViewModels.Student
             };
         }
 
+        private void MoveToNextQuestion()
+        {
+            if (CurrentQuestion is not null)
+            {
+                IEnumerable<AnswerOption> correctAnswerOptions = currentQuestionAnswerOptions.Where(answerOption => answerOption.IsCorrect);
+                if (SelectedAnswerOptions.SequenceEqual(correctAnswerOptions))
+                {
+                    scoreAccumulator += CurrentQuestion.PointsCost;
+                    correctAnswersCounter++;
+                }
+                else if (test.IsAccountingForIncompleteAnswersEnabled)
+                {
+                    double oneAnswerOptionCost = CurrentQuestion.PointsCost / CurrentQuestion.NumberOfAnswerOptions;
+                    foreach (AnswerOption selectedAnswerOption in SelectedAnswerOptions)
+                    {
+                        if (correctAnswerOptions.Contains(selectedAnswerOption))
+                            scoreAccumulator += oneAnswerOptionCost;
+                    }
+                    correctAnswersCounter++;
+                }
+            }
+
+            currentQuestionCompletionTime = DateTime.Now;
+            if (CurrentQuestion is not null)
+            {
+                questionAnswerTimes.Add(currentQuestionCompletionTime - currentQuestionStartTime);
+                SelectedAnswerOptions.Clear();
+            }
+
+            if (questionsEnumerator.MoveNext())
+            {
+                CurrentQuestion = questionsEnumerator.Current;
+                var sortedAnswerOptions = CurrentQuestion.AnswerOptions.ToImmutableSortedSet(new AnswerOptionBySerialNumberComparer());
+                CurrentQuestionAnswerOptions = sortedAnswerOptions;
+                if (CurrentQuestion.NumberOfSecondsToAnswer.HasValue)
+                    _ = currentQuestionTimerBackgroundWorker.RunWorkerAsync(CurrentQuestion.NumberOfSecondsToAnswer.Value);
+                currentQuestionStartTime = DateTime.Now;
+            }
+            else
+            {
+                TestResults testResults = FinishTest();
+                MoveToTestResults(new TestCompletedNavigationArgs(lastViewModelNavigatedFrom, testResults));
+            }
+        }
+
         private TestResults FinishTest()
         {
             testCompletionTime = DateTime.Now;
 
-            ushort score = (ushort) (correctAnswersCounter * (test.MaximumPoints / test.NumberOfQuestions));
+            ushort score = Convert.ToUInt16(scoreAccumulator);
             ushort numberOfIncorrectAnswers = (ushort) (test.NumberOfQuestions - correctAnswersCounter);
             TimeSpan averageAnswerTime = TimeSpan.FromSeconds(questionAnswerTimes.Average(timeSpan => timeSpan.TotalSeconds));
 
              return new TestResults(test, score, correctAnswersCounter, numberOfIncorrectAnswers,
                 testCompletionTime.Value - testStartTime!.Value, averageAnswerTime);
         }
+        private void MoveToTestResults(TestCompletedNavigationArgs navigationArgs)
+        {
+            navigationManager.Navigate(NavigationKeys.TestResults, navigationArgs);
+        }
 
         #region Commands
+        private bool isChooseAnswerOptionCommandLocked = false;
         private RelayCommand<AnswerOption> chooseAnswerOptionCommand = null!;
         public RelayCommand<AnswerOption> ChooseAnswerOptionCommand
         {
             get => chooseAnswerOptionCommand ??= new((answerOption) =>
             {
+                isChooseAnswerOptionCommandLocked = true;
                 if (DoesCurrentQuestionOnlyHaveOneCorrectAnswer)
                 {
                     if (SelectedAnswerOptions.Any())
@@ -244,48 +308,14 @@ namespace TestingSystem.ViewModels.Student
                     else
                         SelectedAnswerOptions.Add(answerOption!);
                 }
-            }, answerOption => answerOption is not null);
-        }
-
-        private void MoveToNextQuestion()
-        {
-            if (CurrentQuestion is not null)
-            {
-                if (SelectedAnswerOptions.SequenceEqual(currentQuestionAnswerOptions.Where(answerOption => answerOption.IsCorrect)))
-                    correctAnswersCounter++;
-            }
-
-            currentQuestionCompletionTime = DateTime.Now;
-            if (CurrentQuestion is not null)
-            {
-                questionAnswerTimes.Add(currentQuestionCompletionTime - currentQuestionStartTime);
-                SelectedAnswerOptions.Clear();
-            }
-
-            if (questionsEnumerator.MoveNext())
-            {
-                CurrentQuestion = questionsEnumerator.Current;
-                CurrentQuestionAnswerOptions = CurrentQuestion.AnswerOptions.ToImmutableSortedSet(new AnswerOptionBySerialNumberComparer());
-                if (CurrentQuestion.NumberOfSecondsToAnswer.HasValue)
-                    _ = currentQuestionTimerBackgroundWorker.RunWorkerAsync(CurrentQuestion.NumberOfSecondsToAnswer.Value);
-                currentQuestionStartTime = DateTime.Now;
-            }
-            else
-            {
-                TestResults testResults = FinishTest();
-                MoveToTestResults(new TestCompletedNavigationArgs(lastViewModelNavigatedFrom, testResults));
-            }
+                isChooseAnswerOptionCommandLocked = false;
+            }, answerOption => answerOption is not null && !isChooseAnswerOptionCommandLocked);
         }
 
         private RelayCommand confirmSelectedAnswerOptionsCommand = null!;
         public RelayCommand ConfirmSelectedAnswerOptionsCommand
         {
             get => confirmSelectedAnswerOptionsCommand ??= new(MoveToNextQuestion, () => SelectedAnswerOptions.Any());
-        }
-
-        private void MoveToTestResults(TestCompletedNavigationArgs navigationArgs)
-        {
-            navigationManager.Navigate(NavigationKeys.TestResults, navigationArgs);
         }
         #endregion
 
