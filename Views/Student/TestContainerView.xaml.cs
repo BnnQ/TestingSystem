@@ -21,6 +21,7 @@ namespace TestingSystem.Views.Student
         public TestContainerView(Test test, Models.Student student)
         {
             InitializeComponent();
+            Tag = ConstantStringKeys.NotLoadedState;
 
             navigationManager = new(FrameContent);
 
@@ -45,8 +46,12 @@ namespace TestingSystem.Views.Student
             testResultsViewModel.CriticalErrorMessageOccured += (exception) =>
                 DefaultMessageHandlers.HandleCriticalError(this, exception);
 
-            DataContext = containerViewModel;
-            ConfigureNavigation();
+            testPassingViewModel.InitialLoaderBackgroundWorker.WorkCompleted += () =>
+            {
+                DataContext = containerViewModel;
+                ConfigureNavigation();
+                Tag = ConstantStringKeys.LoadedState;
+            };
 
             Dispatcher.ShutdownStarted += (_, _) =>
             {

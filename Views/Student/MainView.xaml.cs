@@ -14,13 +14,21 @@ namespace TestingSystem.Views.Student
         public MainView(Models.Student student)
         {
             InitializeComponent();
+            IsEnabled = false;
+            Mouse.OverrideCursor = Cursors.Wait;
 
             viewModel = new MainViewModel(student);
             viewModel.Closed += (_) => Close();
             viewModel.CriticalErrorMessageOccured += (exception) =>
                 DefaultMessageHandlers.HandleCriticalError(this, exception);
 
-            DataContext = viewModel;
+            viewModel.InitialLoaderBackgroundWorker.WorkCompleted += () =>
+            {
+                DataContext = viewModel;
+                IsEnabled = true;
+                Mouse.OverrideCursor = Cursors.Arrow;
+            };
+
             Dispatcher.ShutdownStarted += (_, _) =>
             {
                 if (viewModel?.IsClosed == false)

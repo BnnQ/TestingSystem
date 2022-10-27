@@ -3,6 +3,7 @@ using HappyStudio.Mvvm.Input.Wpf;
 using Microsoft.EntityFrameworkCore;
 using MvvmBaseViewModels.Common;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
@@ -31,12 +32,13 @@ namespace TestingSystem.ViewModels.Student
         }
 
         public BackgroundWorker CategoriesUpdaterFromDatabaseBackgroundWorker { get; init; } = new();
+        public BackgroundWorker<Models.Student> InitialLoaderBackgroundWorker { get; init; } = new();
 
         public MainViewModel(Models.Student student)
         {
-            _ = InitialLoadAsync(student);
             SetupBackgroundWorkers();
-            UpdateCategoriesFromDatabaseAsyncCommand.Execute(null);
+            _ = InitialLoaderBackgroundWorker.RunWorkerAsync(student);
+            _ = UpdateCategoriesFromDatabaseAsyncCommand.ExecuteAsync(null);
         }
 
         private void SetupBackgroundWorkers()
@@ -44,26 +46,30 @@ namespace TestingSystem.ViewModels.Student
             CategoriesUpdaterFromDatabaseBackgroundWorker.MinimumWorkExecutionTime = 500;
             CategoriesUpdaterFromDatabaseBackgroundWorker.DoWork = async () => await UpdateCategoriesFromDatabaseAsync();
             CategoriesUpdaterFromDatabaseBackgroundWorker.OnWorkCompleted = () => CommandManager.InvalidateRequerySuggested();
-        }
 
-        private async Task InitialLoadAsync(Models.Student student)
-        {
-            try
+            InitialLoaderBackgroundWorker.DoWork = async (parameters) =>
             {
-                using (TestingSystemStudentContext context = new())
+                if (parameters?.Length < 1)
+                    return;
+
+                Models.Student student = parameters!.First();
+                try
                 {
-                    Models.Student? studentEntity = await context.FindAsync<Models.Student>(student.Id);
-                    if (studentEntity is null)
-                        throw new NullReferenceException("Student entity missing from the database (most likely, a problem on the DB side)");
-                    else
-                        this.student = studentEntity;
+                    using (TestingSystemStudentContext context = new())
+                    {
+                        Models.Student? studentEntity = await context.FindAsync<Models.Student>(student.Id);
+                        if (studentEntity is null)
+                            throw new NullReferenceException("Student entity missing from the database (most likely, a problem on the DB side)");
+                        else
+                            this.student = studentEntity;
+                    }
                 }
-            }
-            catch (Exception exception)
-            {
-                OccurCriticalErrorMessage(exception);
-                return;
-            }
+                catch (Exception exception)
+                {
+                    OccurCriticalErrorMessage(exception);
+                    return;
+                }
+            };
         }
 
         private async Task UpdateCategoriesFromDatabaseAsync()

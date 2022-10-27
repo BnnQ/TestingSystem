@@ -28,24 +28,22 @@ namespace TestingSystem.ViewModels.Student
         }
 
         private readonly Models.Student student = null!;
-        private readonly BackgroundWorkerLibrary.BackgroundWorker testUpdaterFromDatabaseBackgroundWorker = new();
+        public BackgroundWorkerLibrary.BackgroundWorker TestUpdaterFromDatabaseBackgroundWorker { get; init; } = new();
 
         public TestInfoViewModel(Test test, Models.Student student)
         {
-            SetupBackgroundWorkers();
-
             Test = test;
-            _ = UpdateTestFromDatabaseAsyncCommand.ExecuteAsync(null);
-            
-
             this.student = student;
+
+            SetupBackgroundWorkers();
+            _ = UpdateTestFromDatabaseAsyncCommand.ExecuteAsync(null);
         }
 
         private void SetupBackgroundWorkers()
         {
-            testUpdaterFromDatabaseBackgroundWorker.OnWorkStarting = () => Mouse.OverrideCursor = Cursors.Wait;
-            testUpdaterFromDatabaseBackgroundWorker.DoWork = async () => await UpdateTestFromDatabaseAsync();
-            testUpdaterFromDatabaseBackgroundWorker.OnWorkCompleted = () =>
+            TestUpdaterFromDatabaseBackgroundWorker.OnWorkStarting = () => Mouse.OverrideCursor = Cursors.Wait;
+            TestUpdaterFromDatabaseBackgroundWorker.DoWork = async () => await UpdateTestFromDatabaseAsync();
+            TestUpdaterFromDatabaseBackgroundWorker.OnWorkCompleted = () =>
             {
                 Mouse.OverrideCursor = Cursors.Arrow;
                 CommandManager.InvalidateRequerySuggested();
@@ -82,8 +80,8 @@ namespace TestingSystem.ViewModels.Student
         {
             get => updateTestFromDatabaseAsyncCommand ??= new(async () =>
             {
-                if (!testUpdaterFromDatabaseBackgroundWorker.IsBusy)
-                    await testUpdaterFromDatabaseBackgroundWorker.RunWorkerAsync();
+                if (!TestUpdaterFromDatabaseBackgroundWorker.IsBusy)
+                    await TestUpdaterFromDatabaseBackgroundWorker.RunWorkerAsync();
             });
         }
 
@@ -97,7 +95,7 @@ namespace TestingSystem.ViewModels.Student
                     TestContainerView testContainerView = new(Test, student);
                     testContainerView.ShowDialog();
                 });
-            }, () => !testUpdaterFromDatabaseBackgroundWorker.IsBusy);
+            }, () => !TestUpdaterFromDatabaseBackgroundWorker.IsBusy);
         }
         #endregion
     }
