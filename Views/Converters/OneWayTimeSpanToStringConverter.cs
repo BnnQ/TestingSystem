@@ -25,11 +25,11 @@ namespace TestingSystem.Views.Converters
 
                 StringBuilder resultStringBuilder = new();
                 if (hours > 0)
-                    resultStringBuilder.Append($"{hours} час.");
+                    resultStringBuilder.Append($"{hours} час. ");
                 if (minutes > 0)
-                    resultStringBuilder.Append($"{minutes} мин.");
+                    resultStringBuilder.Append($"{minutes} мин. ");
                 if (seconds > 0)
-                    resultStringBuilder.Append($"{seconds} сек.");
+                    resultStringBuilder.Append($"{seconds} сек. ");
 
                 return resultStringBuilder.ToString();
             }
