@@ -31,6 +31,19 @@ namespace TestingSystem.ViewModels.Teacher
                 }
             }
         }
+        private Test[] tests = null!;
+        public Test[] Tests
+        {
+            get => tests;
+            set
+            {
+                if (tests != value)
+                {
+                    tests = value;
+                    OnPropertyChanged(nameof(Tests));
+                }
+            }
+        }
         private Models.Teacher[] teachers = null!;
         public Models.Teacher[] Teachers
         {
@@ -110,8 +123,10 @@ namespace TestingSystem.ViewModels.Teacher
                         .Include(category => category.Tests)
                             .ThenInclude(test => test.Questions)
                         .LoadAsync();
-
                     Categories = await context.Categories.ToArrayAsync();
+                    
+                    await context.Tests.LoadAsync();
+                    Tests = await context.Tests.ToArrayAsync();
                 }
             }
             catch (Exception exception)
