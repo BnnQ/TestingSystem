@@ -30,19 +30,20 @@
             </Style>
         </Grid.Resources>
 
-        <Button Grid.ColumnSpan="2" Style="{StaticResource FlatButtonWithoutHighlightStyle}"
-                Command="{Binding SwitchToRegistrationNavigationCommand}">
+        <Button Command="{Binding SwitchToRegistrationNavigationCommand}" Style="{StaticResource FlatButtonWithoutHighlightStyle}" 
+                TabIndex="4">
             <TextBlock Text="Зарегистрироваться"/>
         </Button>
 
-        <busyIndicator:BusyMask IsBusy="{Binding AuthenticationBackgroundWorker.IsBusy}" IndicatorType="ThreeDots"
-                                BusyContent="Аутентификация...">
-            <ag:AutoGrid Rows="1*, 1*, 1*" Columns="1*"
-                         IsEnabled="{Binding AuthenticationBackgroundWorker.IsBusy, Converter={StaticResource InvertBooleanConverter}}">
-                <TextBox Text="{Binding Username}" md:HintAssist.Hint="Имя пользователя"/>
-                <PasswordBox md:PasswordBoxAssist.Password="{Binding Password, TargetNullValue=''}"/>
+        <busyIndicator:BusyMask IsBusy="{Binding AuthenticationBackgroundWorker.IsBusy}" BusyContent="Аутентификация..."
+                                IndicatorType="{StaticResource BusyMaskDefaultIndicatorType}" Background="{StaticResource BusyMaskDefaultBackground}">
+            <ag:AutoGrid Rows="1*, 1*, 1*" Columns="1*">
+                <TextBox Text="{Binding Username}" md:HintAssist.Hint="Имя пользователя"
+                         TabIndex="1"/>
+                <PasswordBox md:PasswordBoxAssist.Password="{Binding Password, TargetNullValue=''}"
+                             TabIndex="2"/>
 
-                <Button Command="{Binding AuthenticateAsyncCommand}">
+                <Button Command="{Binding AuthenticateAsyncCommand}" IsDefault="True" TabIndex="3">
                     <TextBlock Text="Войти"/>
                 </Button>
             </ag:AutoGrid>
