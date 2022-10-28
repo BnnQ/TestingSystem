@@ -18,8 +18,8 @@
         Background="{DynamicResource MaterialDesignPaper}"
         Title="Просмотр и управление тестом" Width="1000" Height="800" MinWidth="550" MinHeight="600" Loaded="OnWindowLoaded">
     <busyIndicator:BusyMask IsBusy="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Tag, Mode=OneWay,
-                                     Converter={StaticResource stringIsLoadedToBoolIsBusyConverter}}"
-                            IndicatorType="ThreeDots" BusyContent="Загрузка...">
+                                     Converter={StaticResource stringIsLoadedToBoolIsBusyConverter}}" BusyContent="Загрузка..." 
+                            IndicatorType="{StaticResource BusyMaskDefaultIndicatorType}" Background="{StaticResource BusyMaskDefaultBackground}">
         <ag:AutoGrid Rows="1*, 1*, 1*, 1*, 1*, 1*, 1*, 4*, 1*" Columns="1*, 1*" ChildMargin="{StaticResource MarginOfEditControl}">
             <Grid.Resources>
                 <converters:UshortNumberOfSecondsToTimeHoursMinutesStringConverter x:Key="ushortNumberOfSecondsToTimeHoursMinutesStringConverter"/>
@@ -43,7 +43,9 @@
                         </Button>
                     </StackPanel>
                 </md:PopupBox>
-                <TextBlock FontSize="30" Text="{Binding Test.Name}"/>
+                <Viewbox StretchDirection="DownOnly">
+                    <TextBlock FontSize="30" Text="{Binding Test.Name}"/>
+                </Viewbox>
             </DockPanel>
 
             <TextBlock Text="Максимальное количество баллов:"/>
@@ -102,7 +104,7 @@
             </GroupBox>
 
             <busyIndicator:BusyMask IsBusy="{Binding TestUpdaterFromDatabaseBackgroundWorker.IsBusy}" Grid.ColumnSpan="2"
-                                    IndicatorType="ThreeDots" BusyContent="">
+                                    BusyContent="" IndicatorType="{StaticResource BusyMaskDefaultIndicatorType}" Background="{StaticResource BusyMaskDefaultBackground}">
                 <ag:AutoGrid Rows="1*" Columns="1*, 1*">
                     <Button Style="{StaticResource EditButtonStyle}" Command="{Binding EditTestAsyncCommand}" Margin="50 0">
                         <TextBlock Text="Редактировать тест"/>

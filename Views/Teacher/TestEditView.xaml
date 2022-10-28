@@ -19,10 +19,11 @@
         Background="{DynamicResource MaterialDesignPaper}"
         Title="Редактор теста" Width="1000" Height="950" MinWidth="750" MinHeight="850">
     <busyIndicator:BusyMask IsBusy="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Tag, Mode=OneWay,
-                                     Converter={StaticResource stringIsLoadedToBoolIsBusyConverter}}"
-                            IndicatorType="ThreeDots" BusyContent="Загрузка...">
-        <busyIndicator:BusyMask IsBusy="{Binding ConfirmerBackgroundWorker.IsBusy}" IndicatorType="ThreeDots"
-                            BusyContent="Проверка и подтверждение...">
+                                     Converter={StaticResource stringIsLoadedToBoolIsBusyConverter}}" BusyContent="Загрузка..." 
+                            IndicatorType="{StaticResource BusyMaskDefaultIndicatorType}" Background="{StaticResource BusyMaskDefaultBackground}">
+        <busyIndicator:BusyMask IsBusy="{Binding ConfirmerBackgroundWorker.IsBusy}"
+                                BusyContent="Проверка и подтверждение..."
+                                IndicatorType="{StaticResource BusyMaskDefaultIndicatorType}" Background="{StaticResource BusyMaskDefaultBackground}">
             <ag:AutoGrid Rows="1*, 1*, 1*, 1*, 1*, 1*, 1*, 1*, 4*, 3*, 1*" Columns="1*, 1*" ChildMargin="{StaticResource MarginOfEditControl}">
                 <Grid.Resources>
                     <converters:UshortNumberOfSecondsToTimeHoursMinutesStringConverter x:Key="ushortNumberOfSecondsToTimeHoursMinutesStringConverter"/>

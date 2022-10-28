@@ -4,7 +4,8 @@
                     xmlns:accb="clr-namespace:DotNetKit.Windows.Controls;assembly=DotNetKit.Wpf.AutoCompleteComboBox"
                     xmlns:wpf="http://materialdesigninxaml.net/winfx/xaml/themes"
                     xmlns:converters="clr-namespace:TestingSystem.Views.Converters"
-                    xmlns:system="clr-namespace:System;assembly=mscorlib">
+                    xmlns:system="clr-namespace:System;assembly=mscorlib"
+                    xmlns:busyIndicator="https://github.com/Peoky/BusyIndicator">
 
     <converters:ObjectToBoolByHasValueConverter x:Key="objectToBoolByHasValueConverter"/>
     <converters:ObjectToBoolByHasNotValueConverter x:Key="objectToBoolByHasNotValueConverter"/>
@@ -19,6 +20,9 @@
 
     <system:String x:Key="ConfirmButtonText">Подтвердить</system:String>
     <system:String x:Key="CancelButtonText">Отмена</system:String>
+
+    <Brush x:Key="BusyMaskDefaultBackground">#90FAFAFA</Brush>
+    <busyIndicator:IndicatorType x:Key="BusyMaskDefaultIndicatorType">ThreeDots</busyIndicator:IndicatorType>
 
     <Style x:Key="MainTextBlockStyle" TargetType="TextBlock" BasedOn="{StaticResource MaterialDesignTextBlock}">
         <Setter Property="VerticalAlignment" Value="Center"/>
