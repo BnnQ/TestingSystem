@@ -22,6 +22,7 @@ namespace TestingSystem.Views.Teacher
 
             viewModel = new MainViewModel(teacher);
             viewModel.Closed += (_) => Close();
+            viewModel.ErrorMessageOccurred += (exception) => DefaultMessageHandlers.HandleError(this, exception);
             viewModel.CriticalErrorMessageOccured += (exception) =>
                 DefaultMessageHandlers.HandleCriticalError(this, exception);
 

@@ -71,9 +71,6 @@ namespace TestingSystem.ViewModels.Teacher
 
         private void SetupBackgroundWorkers()
         {
-            CategoriesUpdaterFromDatabaseBackgroundWorker.MinimumWorkExecutionTime = 500;
-            CategoriesUpdaterFromDatabaseBackgroundWorker.DoWork = async () => await UpdateCategoriesFromDatabaseAsync();
-            CategoriesUpdaterFromDatabaseBackgroundWorker.OnWorkCompleted = () => CommandManager.InvalidateRequerySuggested();
             InitialLoaderBackgroundWorker.DoWork = async (parameters) =>
             {
                 if (parameters?.Length < 1)
@@ -97,6 +94,10 @@ namespace TestingSystem.ViewModels.Teacher
                     return;
                 }
             };
+
+            CategoriesUpdaterFromDatabaseBackgroundWorker.MinimumWorkExecutionTime = 500;
+            CategoriesUpdaterFromDatabaseBackgroundWorker.DoWork = async () => await UpdateCategoriesFromDatabaseAsync();
+            CategoriesUpdaterFromDatabaseBackgroundWorker.OnWorkCompleted = () => CommandManager.InvalidateRequerySuggested();
         }
 
         private async Task UpdateCategoriesFromDatabaseAsync()
@@ -137,6 +138,7 @@ namespace TestingSystem.ViewModels.Teacher
             get => openAddMenuCommand ??= new(() => IsAddMenuOpen = !IsAddMenuOpen);
         }
 
+        #region Popup (AddMenu)
         private AsyncRelayCommand addCategoryAsyncCommand = null!;
         public AsyncRelayCommand AddCategoryAsyncCommand
         {
@@ -172,6 +174,7 @@ namespace TestingSystem.ViewModels.Teacher
                     await UpdateCategoriesFromDatabaseAsyncCommand.ExecuteAsync(null);
             });
         }
+        #endregion
 
         private AsyncRelayCommand<Category> manageCategoryAsyncCommand = null!;
         public AsyncRelayCommand<Category> ManageCategoryAsyncCommand

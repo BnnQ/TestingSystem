@@ -93,14 +93,14 @@
             </Button>
 
             <md:PopupBox Grid.Column="1" Visibility="Hidden" IsPopupOpen="{Binding IsAddMenuOpen, Mode=TwoWay}">
-                <ag:AutoGrid Rows="1*, 1*" Columns="1*">
+                <StackPanel Orientation="Vertical">
                     <Button Command="{Binding AddCategoryAsyncCommand}">
                         <TextBlock Text="Добавить категорию"/>
                     </Button>
                     <Button Command="{Binding AddTestAsyncCommand}">
                         <TextBlock Text="Добавить тест"/>
                     </Button>
-                </ag:AutoGrid>
+                </StackPanel>
             </md:PopupBox>
             <Button Grid.Column="1" Style="{StaticResource CircleButtonStyle}"
                     Command="{Binding OpenAddMenuCommand}">
