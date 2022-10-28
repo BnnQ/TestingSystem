@@ -34,28 +34,28 @@
         </Grid.Resources>
 
         <Button Grid.ColumnSpan="2" Style="{StaticResource FlatButtonWithoutHighlightStyle}"
-                Command="{Binding SwitchToAuthenticationNavigationCommand}">
+                Command="{Binding SwitchToAuthenticationNavigationCommand}" TabIndex="7">
             <TextBlock Text="Войти в существующий аккаунт"/>
         </Button>
 
-        <busyIndicator:BusyMask IsBusy="{Binding RegistrationBackgroundWorker.IsBusy}" IndicatorType="ThreeDots"
-                                BusyContent="Регистрация...">
+        <busyIndicator:BusyMask IsBusy="{Binding RegistrationBackgroundWorker.IsBusy}" BusyContent="Регистрация..."
+                                IndicatorType="{StaticResource BusyMaskDefaultIndicatorType}" Background="{StaticResource BusyMaskDefaultBackground}">
             <ag:AutoGrid Rows="1*, 1*, 1*, 1*, 1*" Columns="1*" IsEnabled="{Binding RegistrationBackgroundWorker.IsBusy, Converter={StaticResource InvertBooleanConverter}}">
-                <TextBox Text="{Binding Username}" md:HintAssist.Hint="Имя пользователя"/>
+                <TextBox Text="{Binding Username}" md:HintAssist.Hint="Имя пользователя" TabIndex="1"/>
 
-                <PasswordBox md:PasswordBoxAssist.Password="{Binding Password, TargetNullValue=''}"/>
+                <PasswordBox md:PasswordBoxAssist.Password="{Binding Password, TargetNullValue=''}" TabIndex="2"/>
 
-                <TextBox Text="{Binding FullName}" md:HintAssist.Hint="ФИО"/>
+                <TextBox Text="{Binding FullName}" md:HintAssist.Hint="ФИО" TabIndex="3"/>
 
                 <GroupBox Header="Тип аккаунта">
                     <ag:AutoGrid Rows="1*" Columns="1*, 1*">
-                        <RadioButton Content="Студент" IsThreeState="False" IsChecked="{Binding IsStudent}"/>
-                        <RadioButton Content="Учитель" IsThreeState="False" 
+                        <RadioButton Content="Студент" IsThreeState="False" IsChecked="{Binding IsStudent}" TabIndex="4"/>
+                        <RadioButton Content="Учитель" IsThreeState="False" TabIndex="5"
                                  IsChecked="{Binding IsStudent, Converter={StaticResource InvertBooleanConverter}}"/>
                     </ag:AutoGrid>
                 </GroupBox>
 
-                <Button Command="{Binding RegisterAsyncCommand}">
+                <Button Command="{Binding RegisterAsyncCommand}" IsDefault="True" TabIndex="6">
                     <TextBlock Text="Зарегистрироваться"/>
                 </Button>
             </ag:AutoGrid>
