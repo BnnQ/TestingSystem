@@ -32,7 +32,19 @@
                 <Style TargetType="ComboBox" BasedOn="{StaticResource MainComboBoxStyle}"/>
             </Grid.Resources>
 
-            <TextBlock Grid.ColumnSpan="2" FontSize="30" Text="{Binding Test.Name}"/>
+            <DockPanel Grid.ColumnSpan="2">
+                <md:PopupBox DockPanel.Dock="Right" Margin="0 5">
+                    <StackPanel Orientation="Vertical">
+                        <Button Command="{Binding SaveTestToTextFileCommand}">
+                            <TextBlock Text="Сохранить тест в текстовый файл"/>
+                        </Button>
+                        <Button Command="{Binding SaveTestWithAnswersToTextFileCommand}">
+                            <TextBlock Text="Сохранить тест в текстовый файл (включая правильные ответы)"/>
+                        </Button>
+                    </StackPanel>
+                </md:PopupBox>
+                <TextBlock FontSize="30" Text="{Binding Test.Name}"/>
+            </DockPanel>
 
             <TextBlock Text="Максимальное количество баллов:"/>
             <TextBlock Text="{Binding Test.MaximumPoints}"/>
