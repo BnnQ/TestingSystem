@@ -26,13 +26,13 @@ namespace TestingSystem.Models
             }
         }
 
-        private double pointsCost;
+        private double pointsCost = 1;
         public double PointsCost
         {
             get => pointsCost;
             set
             {
-                if (pointsCost != value)
+                if (pointsCost != value && value > 0)
                 {
                     pointsCost = value;
                     OnPropertyChanged(nameof(PointsCost));
