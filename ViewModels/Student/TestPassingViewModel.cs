@@ -117,57 +117,35 @@ namespace TestingSystem.ViewModels.Student
         public List<AnswerOption> SelectedAnswerOptions { get; private set; } = null!;
         #endregion
 
-        public BackgroundWorker<Test> InitialLoaderBackgroundWorker { get; init; } = new();
+        public BackgroundWorker InitialLoaderBackgroundWorker { get; init; } = new();
 
         public TestPassingViewModel(INavigationManager navigationManager, Test test, Models.Student student) : base(navigationManager)
         {
+            this.test = test;
             this.student = student;
             
             SetupBackgroundWorkers();
-            _ = InitialLoaderBackgroundWorker.RunWorkerAsync(test);
+            _ = InitialLoaderBackgroundWorker.RunWorkerAsync();
         }
 
         private void SetupBackgroundWorkers()
         {
-            InitialLoaderBackgroundWorker.DoWork = async (parameters) =>
+            InitialLoaderBackgroundWorker.DoWork = () =>
             {
-                if (parameters?.Length < 1)
-                    return;
-
-                Test test = parameters!.First();
-                try
+                return Task.Run(() =>
                 {
-                    using (TestingSystemStudentContext context = new())
-                    {
-                        Test? testEntity = await context.FindAsync<Test>(test.Id);
-                        if (testEntity is null)
-                            throw new NullReferenceException("Test entity missing from the database (most likely, a problem on the DB side)");
+                    Questions = test.Questions.ToImmutableSortedSet(new QuestionBySerialNumberComparer());
+                    questionsEnumerator = Questions.GetEnumerator();
+                    questionAnswerTimes = new(Questions.Count);
+                    SelectedAnswerOptions = new List<AnswerOption>();
 
-                        EntityEntry<Test> testEntry = context.Entry(testEntity);
+                    testStartTime = DateTime.Now;
+                    if (test.NumberOfSecondsToComplete.HasValue)
+                        _ = testTimerBackgroundWorker.RunWorkerAsync(test.NumberOfSecondsToComplete.Value);
 
-                        await testEntry.Collection(test => test.Questions).LoadAsync();
-                        foreach (Question question in testEntity.Questions)
-                            await context.Entry(question).Collection(question => question.AnswerOptions).LoadAsync();
-
-                        this.test = testEntity;
-                        Questions = this.test.Questions.ToImmutableSortedSet(new QuestionBySerialNumberComparer());
-                        questionsEnumerator = Questions.GetEnumerator();
-                        questionAnswerTimes = new(Questions.Count);
-                        SelectedAnswerOptions = new List<AnswerOption>();
-
-                        testStartTime = DateTime.Now;
-                        if (test.NumberOfSecondsToComplete.HasValue)
-                            _ = testTimerBackgroundWorker.RunWorkerAsync(test.NumberOfSecondsToComplete.Value);
-
-                        lock (currentQuestionLocker)
-                            MoveToNextQuestion();
-                    }
-                }
-                catch (Exception exception)
-                {
-                    OccurCriticalErrorMessage(exception);
-                    return;
-                }
+                    lock (currentQuestionLocker)
+                        MoveToNextQuestion();
+                });
             };
 
             testTimerBackgroundWorker.DoWork = async (parameters) =>
