@@ -32,7 +32,9 @@
                 <Style TargetType="ComboBox" BasedOn="{StaticResource MainComboBoxStyle}"/>
             </Grid.Resources>
 
-            <TextBlock Grid.ColumnSpan="2" FontSize="30" Text="{Binding Test.Name}"/>
+            <Viewbox Grid.ColumnSpan="2" StretchDirection="DownOnly">
+                <TextBlock Text="{Binding Test.Name}" FontSize="30"/>
+            </Viewbox>
 
             <TextBlock Text="Максимальное количество баллов:"/>
             <TextBlock Text="{Binding Test.MaximumPoints}"/>
