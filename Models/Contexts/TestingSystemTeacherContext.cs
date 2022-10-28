@@ -180,6 +180,11 @@ namespace TestingSystem.Models.Contexts
                 .HasMany(test => test.OwnerTeachers)
                 .WithMany(teacher => teacher.OwnedTests)
                 .UsingEntity("TestsTeacherOwners");
+            modelBuilder.Entity<Test>()
+                .HasMany(test => test.TestResults)
+                .WithOne(testResult => testResult.Test)
+                .HasForeignKey(testResult => testResult.TestId)
+                .OnDelete(DeleteBehavior.Cascade);
             modelBuilder.Entity<Test>(testModel =>
             {
                 testModel
@@ -215,8 +220,6 @@ namespace TestingSystem.Models.Contexts
                 testModel.Property(test => test.CategoryId)
                 .IsRequired();
             });
-            modelBuilder.Entity<Test>()
-                .ToTable("Tests");
 
             modelBuilder.Entity<Category>()
                 .HasMany(category => category.Tests)
@@ -238,8 +241,40 @@ namespace TestingSystem.Models.Contexts
                 .HasMaxLength(128)
                 .IsRequired();
             });
-            modelBuilder.Entity<Category>()
-                .ToTable("Categories");
+
+            modelBuilder.Entity<Student>()
+                .HasMany(student => student.TestResults)
+                .WithOne(testResult => testResult.Student)
+                .HasForeignKey(testResult => testResult.StudentId)
+                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<Student>(studentModel =>
+            {
+                studentModel
+                .HasCheckConstraint("CK_Students_Name", "[Name] != ''")
+                .HasCheckConstraint("CK_Students_HashedPassword", "[HashedPassword] != ''")
+                .HasKey(student => student.Id);
+
+                studentModel.Property(student => student.Id)
+                .HasColumnOrder(1)
+                .UseIdentityColumn()
+                .IsRequired();
+
+                studentModel.Property(student => student.Name)
+                .HasColumnOrder(2)
+                .HasColumnType("NVARCHAR(20)")
+                .IsRequired();
+
+                studentModel.Property(student => student.HashedPassword)
+                .HasColumnOrder(3)
+                .HasColumnType("VARCHAR(128)")
+                .IsRequired();
+
+                studentModel.Property(student => student.FullName)
+                .HasMaxLength(128)
+                .IsRequired();
+            });
+            modelBuilder.Entity<Student>()
+                .ToTable("Students");
 
             modelBuilder.Entity<Teacher>()
                 .HasMany(teacher => teacher.OwnedTests)
@@ -271,8 +306,43 @@ namespace TestingSystem.Models.Contexts
                 .HasMaxLength(128)
                 .IsRequired();
             });
-            modelBuilder.Entity<Teacher>()
-                .ToTable("Teachers");
+
+            modelBuilder.Entity<TestResult>()
+                .HasOne(testResult => testResult.Test)
+                .WithMany(test => test.TestResults)
+                .HasForeignKey(testResult => testResult.TestId)
+                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<TestResult>()
+                .HasOne(testResult => testResult.Student)
+                .WithMany(student => student.TestResults)
+                .HasForeignKey(testResult => testResult.StudentId)
+                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<TestResult>(testResultModel =>
+            {
+                testResultModel
+                .HasChangeTrackingStrategy(ChangeTrackingStrategy.Snapshot)
+                .HasCheckConstraint("CK_TestResults_CompletionDate", "[CompletionDate] > '2022-10-01'")
+                .HasKey(testResult => testResult.Id);
+
+                testResultModel.Property(testResult => testResult.Id)
+                .HasColumnOrder(1)
+                .UseIdentityColumn()
+                .IsRequired();
+
+                testResultModel.Property(testResult => testResult.TestId)
+                .HasColumnOrder(2)
+                .IsRequired();
+
+                testResultModel.Property(testResult => testResult.StudentId)
+                .HasColumnOrder(3)
+                .IsRequired();
+
+                testResultModel.Property(testResult => testResult.CompletionDate)
+                .HasDefaultValue(DateTime.Now)
+                .IsRequired();
+            });
+            modelBuilder.Entity<TestResult>()
+                .ToTable("TestResults");
 
             base.OnModelCreating(modelBuilder);
         }

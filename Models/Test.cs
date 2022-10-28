@@ -2,6 +2,7 @@
 using Meziantou.Framework.WPF.Builders;
 using Meziantou.Framework.WPF.Collections;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Linq;
@@ -272,11 +273,28 @@ namespace TestingSystem.Models
             }
         }
 
-        
+        private ICollection<TestResult> testResults = null!;
+        public virtual ICollection<TestResult> TestResults
+        {
+            get => testResults;
+            set
+            {
+                if (testResults != value)
+                {
+                    if (value is ImmutableHashSet<TestResult> immutableTestResults)
+                        testResults = immutableTestResults;
+                    else
+                        testResults = value.ToImmutableHashSet();
+                }
+            }
+        }
+
+
         public Test()
         {
             Questions = new ConcurrentObservableCollection<Question>();
             OwnerTeachers = new ConcurrentObservableCollection<Teacher>();
+            TestResults = new HashSet<TestResult>();
         }
         public Test(ICollection<Teacher> ownerTeachers, ushort numberOfQuestions = 1) : this()
         {
@@ -304,6 +322,28 @@ namespace TestingSystem.Models
             OwnerTeachers = ownerTeachers;
         }
         public Test(string name, ICollection<Question> questions, ushort maximumPoints, bool isAccountingForIncompleteAnswersEnabled,
+            Category category, ICollection<Teacher> ownerTeachers, ICollection<TestResult> testResults) : this()
+        {
+            Name = name;
+            Questions = questions;
+            MaximumPoints = maximumPoints;
+            IsAccountingForIncompleteAnswersEnabled = isAccountingForIncompleteAnswersEnabled;
+            Category = category;
+            OwnerTeachers = ownerTeachers;
+            TestResults = testResults;
+        }
+        public Test(string name, ushort numberOfQuestions, ushort maximumPoints, bool isAccountingForIncompleteAnswersEnabled,
+            Category category, ICollection<Teacher> ownerTeachers, ICollection<TestResult> testResults) : this()
+        {
+            Name = name;
+            NumberOfQuestions = numberOfQuestions;
+            MaximumPoints = maximumPoints;
+            IsAccountingForIncompleteAnswersEnabled = isAccountingForIncompleteAnswersEnabled;
+            Category = category;
+            OwnerTeachers = ownerTeachers;
+            TestResults = testResults;
+        }
+        public Test(string name, ICollection<Question> questions, ushort maximumPoints, bool isAccountingForIncompleteAnswersEnabled,
             Category category, ICollection<Teacher> ownerTeachers,
             ushort? numberOfSecondsToAnswerEachQuestion, ushort? numberOfSecondsToComplete)
             : this(name, questions, maximumPoints, isAccountingForIncompleteAnswersEnabled, category, ownerTeachers)
@@ -317,6 +357,26 @@ namespace TestingSystem.Models
             Category category, ICollection<Teacher> ownerTeachers,
             ushort? numberOfSecondsToAnswerEachQuestion, ushort? numberOfSecondsToComplete)
             : this(name, numberOfQuestions, maximumPoints, isAccountingForIncompleteAnswersEnabled, category, ownerTeachers)
+        {
+            if (numberOfSecondsToAnswerEachQuestion.HasValue)
+                NumberOfSecondsToAnswerEachQuestion = numberOfSecondsToAnswerEachQuestion;
+            else
+                NumberOfSecondsToComplete = numberOfSecondsToComplete;
+        }
+        public Test(string name, ICollection<Question> questions, ushort maximumPoints, bool isAccountingForIncompleteAnswersEnabled,
+            Category category, ICollection<Teacher> ownerTeachers, ICollection<TestResult> testResults,
+            ushort? numberOfSecondsToAnswerEachQuestion, ushort? numberOfSecondsToComplete)
+            : this(name, questions, maximumPoints, isAccountingForIncompleteAnswersEnabled, category, ownerTeachers, testResults)
+        {
+            if (numberOfSecondsToAnswerEachQuestion.HasValue)
+                NumberOfSecondsToAnswerEachQuestion = numberOfSecondsToAnswerEachQuestion;
+            else
+                NumberOfSecondsToComplete = numberOfSecondsToComplete;
+        }
+        public Test(string name, ushort numberOfQuestions, ushort maximumPoints, bool isAccountingForIncompleteAnswersEnabled,
+            Category category, ICollection<Teacher> ownerTeachers, ICollection<TestResult> testResults,
+            ushort? numberOfSecondsToAnswerEachQuestion, ushort? numberOfSecondsToComplete)
+            : this(name, numberOfQuestions, maximumPoints, isAccountingForIncompleteAnswersEnabled, category, ownerTeachers, testResults)
         {
             if (numberOfSecondsToAnswerEachQuestion.HasValue)
                 NumberOfSecondsToAnswerEachQuestion = numberOfSecondsToAnswerEachQuestion;

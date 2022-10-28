@@ -14,6 +14,7 @@ namespace TestingSystem.Models.Contexts
         public virtual DbSet<Question> Questions { get; set; } = null!;
         public virtual DbSet<Test> Tests { get; set; } = null!;
         public virtual DbSet<Category> Categories { get; set; } = null!;
+        public virtual DbSet<TestResult> TestResults { get; set; } = null!;
 
 
         public TestingSystemDatabaseBuilderContext()
@@ -87,6 +88,7 @@ namespace TestingSystem.Models.Contexts
                     .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
             }
         }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<AnswerOption>()
@@ -121,8 +123,6 @@ namespace TestingSystem.Models.Contexts
                 answerOptionModel.Property(answerOption => answerOption.QuestionId)
                 .IsRequired();
             });
-            modelBuilder.Entity<AnswerOption>()
-                .ToTable("AnswerOptions");
 
             modelBuilder.Entity<Question>()
                 .HasMany(question => question.AnswerOptions)
@@ -181,6 +181,11 @@ namespace TestingSystem.Models.Contexts
                 .HasMany(test => test.OwnerTeachers)
                 .WithMany(teacher => teacher.OwnedTests)
                 .UsingEntity("TestsTeacherOwners");
+            modelBuilder.Entity<Test>()
+                .HasMany(test => test.TestResults)
+                .WithOne(testResult => testResult.Test)
+                .HasForeignKey(testResult => testResult.TestId)
+                .OnDelete(DeleteBehavior.Cascade);
             modelBuilder.Entity<Test>(testModel =>
             {
                 testModel
@@ -238,6 +243,11 @@ namespace TestingSystem.Models.Contexts
                 .IsRequired();
             });
 
+            modelBuilder.Entity<Student>()
+                .HasMany(student => student.TestResults)
+                .WithOne(testResult => testResult.Student)
+                .HasForeignKey(testResult => testResult.StudentId)
+                .OnDelete(DeleteBehavior.Cascade);
             modelBuilder.Entity<Student>(studentModel =>
             {
                 studentModel
@@ -293,6 +303,41 @@ namespace TestingSystem.Models.Contexts
 
                 teacherModel.Property(teacher => teacher.FullName)
                 .HasMaxLength(128)
+                .IsRequired();
+            });
+
+            modelBuilder.Entity<TestResult>()
+                .HasOne(testResult => testResult.Test)
+                .WithMany(test => test.TestResults)
+                .HasForeignKey(testResult => testResult.TestId)
+                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<TestResult>()
+                .HasOne(testResult => testResult.Student)
+                .WithMany(student => student.TestResults)
+                .HasForeignKey(testResult => testResult.StudentId)
+                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<TestResult>(testResultModel =>
+            {
+                testResultModel
+                .HasChangeTrackingStrategy(ChangeTrackingStrategy.Snapshot)
+                .HasCheckConstraint("CK_TestResults_CompletionDate", "[CompletionDate] > '2022-10-01'")
+                .HasKey(testResult => testResult.Id);
+
+                testResultModel.Property(testResult => testResult.Id)
+                .HasColumnOrder(1)
+                .UseIdentityColumn()
+                .IsRequired();
+
+                testResultModel.Property(testResult => testResult.TestId)
+                .HasColumnOrder(2)
+                .IsRequired();
+
+                testResultModel.Property(testResult => testResult.StudentId)
+                .HasColumnOrder(3)
+                .IsRequired();
+
+                testResultModel.Property(testResult => testResult.CompletionDate)
+                .HasDefaultValue(DateTime.Now)
                 .IsRequired();
             });
 
