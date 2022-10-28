@@ -209,12 +209,18 @@ namespace TestingSystem.ViewModels.Student
                 else if (test.IsAccountingForIncompleteAnswersEnabled)
                 {
                     double oneAnswerOptionCost = CurrentQuestion.PointsCost / CurrentQuestion.NumberOfAnswerOptions;
+                    bool hasCorrectAnswerOptions = false;
                     foreach (AnswerOption selectedAnswerOption in SelectedAnswerOptions)
                     {
                         if (correctAnswerOptions.Contains(selectedAnswerOption))
+                        {
                             scoreAccumulator += oneAnswerOptionCost;
+                            hasCorrectAnswerOptions = true;
+                        }
                     }
-                    correctAnswersCounter++;
+                    
+                    if (hasCorrectAnswerOptions)
+                        correctAnswersCounter++;
                 }
             }
 
