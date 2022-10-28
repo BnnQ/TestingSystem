@@ -9,6 +9,7 @@ namespace TestingSystem.Models.Contexts
     public class TestingSystemStudentContext : DbContext
     {
         public virtual DbSet<Category> Categories { get; set; } = null!;
+        public virtual DbSet<Test> Tests { get; set; } = null!;
 
 
         public TestingSystemStudentContext() : base()
