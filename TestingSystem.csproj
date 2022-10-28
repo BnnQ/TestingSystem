@@ -43,6 +43,9 @@
     <Reference Include="ConcurrentObservableCollectionHelpersLibrary">
       <HintPath>Libraries\ConcurrentObservableCollectionHelpersLibrary\ConcurrentObservableCollectionHelpersLibrary.dll</HintPath>
     </Reference>
+    <Reference Include="HelperDialogsLibrary">
+      <HintPath>Libraries\HelperDialogsLibrary\HelperDialogsLibrary.dll</HintPath>
+    </Reference>
     <Reference Include="MvvmBaseViewModelsLibrary">
       <HintPath>Libraries\MvvmBaseViewModelsLibrary\MvvmBaseViewModelsLibrary.dll</HintPath>
     </Reference>
