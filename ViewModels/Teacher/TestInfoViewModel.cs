@@ -1,11 +1,16 @@
-﻿using HappyStudio.Mvvm.Input.Wpf;
+﻿using BackgroundWorkerLibrary;
+using HappyStudio.Mvvm.Input.Wpf;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using MvvmBaseViewModels.Common;
+using Ookii.Dialogs.Wpf;
 using System;
+using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using TestingSystem.Helpers;
 using TestingSystem.Models;
 using TestingSystem.Models.Contexts;
 using TestingSystem.Views.Teacher;
@@ -29,7 +34,7 @@ namespace TestingSystem.ViewModels.Teacher
         }
         
         private readonly Models.Teacher teacher = null!;
-        public BackgroundWorkerLibrary.BackgroundWorker TestUpdaterFromDatabaseBackgroundWorker { get; init; } = new();
+        public BackgroundWorker TestUpdaterFromDatabaseBackgroundWorker { get; init; } = new();
 
         public TestInfoViewModel(Test test, Models.Teacher teacher)
         {
@@ -45,6 +50,27 @@ namespace TestingSystem.ViewModels.Teacher
             TestUpdaterFromDatabaseBackgroundWorker.OnWorkStarting = () => CommandManager.InvalidateRequerySuggested();
             TestUpdaterFromDatabaseBackgroundWorker.DoWork = async () => await UpdateTestFromDatabaseAsync();
             TestUpdaterFromDatabaseBackgroundWorker.OnWorkCompleted = () => CommandManager.InvalidateRequerySuggested();
+
+            textToFileWriterBackgroundWorker.OnWorkStarting = () => Mouse.OverrideCursor = Cursors.AppStarting;
+            textToFileWriterBackgroundWorker.DoWork = async (parameters) =>
+            {
+                if (parameters is null || parameters.Length < 1)
+                    return;
+
+                string path = parameters.First().Item1;
+                bool includeCorrectAnswers = parameters.First().Item2;
+
+                try
+                {
+                    await TestFileWriter.WriteToTextFileAsync(Test, path, includeCorrectAnswers);
+                }
+                catch (Exception exception)
+                {
+                    OccurErrorMessage(exception);
+                    return;
+                }
+            };
+            textToFileWriterBackgroundWorker.OnWorkCompleted = () => Mouse.OverrideCursor = Cursors.Arrow;
         }
 
         private async Task UpdateTestFromDatabaseAsync()
@@ -62,7 +88,7 @@ namespace TestingSystem.ViewModels.Teacher
                     await testEntry.Collection(test => test.Questions).LoadAsync();
                     foreach (Question question in Test!.Questions)
                         await context.Entry(question).Collection(question => question.AnswerOptions).LoadAsync();
-
+                    
                     await testEntry.Collection(test => test.OwnerTeachers).LoadAsync();
                 }
             }
@@ -131,6 +157,41 @@ namespace TestingSystem.ViewModels.Teacher
                 }
             }, () => !isRemoveLocked && Test is not null && IsTeacherOwner());
         }
+
+        #region PopupBox
+        private readonly BackgroundWorker<Tuple<string, bool>> textToFileWriterBackgroundWorker = new();
+        private async Task SaveTestToTextFileAsync(bool includeCorrectAnswers = false)
+        {
+            VistaSaveFileDialog saveFileDialog = new();
+            saveFileDialog.DefaultExt = "txt";
+            saveFileDialog.AddExtension = true;
+            saveFileDialog.CheckPathExists = true;
+            saveFileDialog.OverwritePrompt = true;
+            saveFileDialog.Title = "Сохранение теста в текстовый файл";
+
+            bool? saveFileDialogResult = default;
+            Application.Current?.Dispatcher.Invoke(() => saveFileDialogResult = saveFileDialog.ShowDialog());
+
+            if (saveFileDialogResult == true)
+            {
+                string path = saveFileDialog.FileName;
+                await textToFileWriterBackgroundWorker.RunWorkerAsync(new Tuple<string, bool>(path, includeCorrectAnswers));
+            }
+        }
+        private AsyncRelayCommand saveTestToTextFileCommand = null!;
+        public AsyncRelayCommand SaveTestToTextFileCommand
+        {
+            get => saveTestToTextFileCommand ??= new(async () => await SaveTestToTextFileAsync());
+        }
+
+        private AsyncRelayCommand saveTestWithAnswersToTextFileCommand = null!;
+        public AsyncRelayCommand SaveTestWithAnswersToTextFileCommand
+        {
+            get => saveTestWithAnswersToTextFileCommand ??= new(
+                async () => await SaveTestToTextFileAsync(true),
+                () => IsTeacherOwner());
+        }
+        #endregion
         #endregion
 
 
