@@ -1,5 +1,6 @@
 ﻿using MvvmBaseViewModels.Helpers;
 using System.Windows;
+using TestingSystem.Constants;
 using TestingSystem.Models;
 using TestingSystem.ViewModels.Student;
 
@@ -23,7 +24,7 @@ namespace TestingSystem.Views.Student
         public void OnViewModelLoaded()
         {
             DataContext = viewModel;
-            Tag = ConstantStringKeys.LoadedState;
+            Tag = LoadStates.Loaded;
             viewModel.TestUpdaterFromDatabaseBackgroundWorker.WorkCompleted -= OnViewModelLoaded;
         }
 
@@ -31,7 +32,7 @@ namespace TestingSystem.Views.Student
         {
             Application.Current?.Dispatcher.Invoke(() =>
             {
-                Tag = ConstantStringKeys.NotLoadedState;
+                Tag = LoadStates.NotLoaded;
                 viewModel = new TestInfoViewModel(test, student);
                 viewModel.Closed += (_) => Application.Current?.Dispatcher.Invoke(Close);
                 viewModel.ErrorMessageOccurred += (exception) => DefaultMessageHandlers.HandleError(this, exception);

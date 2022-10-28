@@ -1,5 +1,6 @@
 ﻿using MvvmBaseViewModels.Helpers;
 using System.Windows;
+using TestingSystem.Constants;
 using TestingSystem.Models;
 using TestingSystem.ViewModels.Teacher;
 
@@ -23,7 +24,7 @@ namespace TestingSystem.Views.Teacher
         public void OnViewModelLoaded()
         {
             DataContext = viewModel;
-            Tag = ConstantStringKeys.LoadedState;
+            Tag = LoadStates.Loaded;
             viewModel.CategoryUpdaterFromDatabaseBackgroundWorker.WorkCompleted -= OnViewModelLoaded;
         }
 
@@ -31,7 +32,7 @@ namespace TestingSystem.Views.Teacher
         {
             Application.Current?.Dispatcher.Invoke(() =>
             {
-                Tag = ConstantStringKeys.NotLoadedState;
+                Tag = LoadStates.NotLoaded;
                 viewModel = new CategoryInfoViewModel(category, teacher);
                 viewModel.Closed += (_) => Application.Current?.Dispatcher.Invoke(Close);
                 viewModel.CriticalErrorMessageOccured += (exception) =>

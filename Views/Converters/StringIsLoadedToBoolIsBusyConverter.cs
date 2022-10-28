@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Globalization;
 using System.Windows.Data;
+using TestingSystem.Constants;
 
 namespace TestingSystem.Views.Converters
 {
@@ -9,7 +10,7 @@ namespace TestingSystem.Views.Converters
         public object? Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
             if (value is string stringIsLoaded)
-                return stringIsLoaded.Equals(ConstantStringKeys.NotLoadedState) ? true : stringIsLoaded.Equals(ConstantStringKeys.LoadedState) ? false : null;
+                return stringIsLoaded.Equals(LoadStates.NotLoaded) ? true : stringIsLoaded.Equals(LoadStates.Loaded) ? false : null;
 
             return null;
         }
@@ -17,7 +18,7 @@ namespace TestingSystem.Views.Converters
         public object? ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
             if (value is bool isBusy)
-                return isBusy ? ConstantStringKeys.NotLoadedState : ConstantStringKeys.LoadedState;
+                return isBusy ? LoadStates.NotLoaded : LoadStates.Loaded;
 
             return null;
         }

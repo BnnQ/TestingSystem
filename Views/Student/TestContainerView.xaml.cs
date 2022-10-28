@@ -2,6 +2,7 @@
 using MvvmBaseViewModels.Helpers;
 using MvvmBaseViewModels.Navigation;
 using System.Windows;
+using TestingSystem.Constants;
 using TestingSystem.Constants.Student;
 using TestingSystem.Models;
 using TestingSystem.ViewModels.Student;
@@ -21,7 +22,7 @@ namespace TestingSystem.Views.Student
         public TestContainerView(Test test, Models.Student student)
         {
             InitializeComponent();
-            Tag = ConstantStringKeys.NotLoadedState;
+            Tag = LoadStates.NotLoaded;
 
             navigationManager = new(FrameContent);
 
@@ -50,7 +51,7 @@ namespace TestingSystem.Views.Student
             {
                 DataContext = containerViewModel;
                 ConfigureNavigation();
-                Tag = ConstantStringKeys.LoadedState;
+                Tag = LoadStates.Loaded;
             };
 
             Dispatcher.ShutdownStarted += (_, _) =>
