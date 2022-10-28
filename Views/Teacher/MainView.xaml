@@ -9,6 +9,7 @@
         xmlns:ap="http://schemas.nishy-software.com/xaml/attached-properties"
         xmlns:vwp="clr-namespace:WpfToolkit.Controls;assembly=VirtualizingWrapPanel"
         xmlns:busyIndicator="https://github.com/Peoky/BusyIndicator"
+        xmlns:converters="clr-namespace:TestingSystem.Views.Converters"
         WindowStartupLocation="CenterScreen"
         TextElement.Foreground="{DynamicResource MaterialDesignBody}"
         TextElement.FontWeight="Regular"
@@ -20,15 +21,16 @@
         Title="Система тестирования" Width="800" Height="600" MinWidth="360" MinHeight="350">
     <ag:AutoGrid Rows="8*, 2*" Columns="1*">
         <Grid.Resources>
+            <converters:IntIdToStringConverter x:Key="intIdToStringConverter"/>
+
             <Style TargetType="TextBlock" BasedOn="{StaticResource MainTextBlockStyle}">
                 <Setter Property="TextAlignment" Value="Left"/>
             </Style>
             <Style TargetType="ListView" BasedOn="{StaticResource ListViewCardPanelStyle}"/>
             <Style TargetType="ScrollViewer" BasedOn="{StaticResource MainScrollViewerStyle}"/>
         </Grid.Resources>
-
-        <busyIndicator:BusyMask IsBusy="{Binding CategoriesUpdaterFromDatabaseBackgroundWorker.IsBusy}" IndicatorType="ThreeDots"
-                                BusyContent="Обновление...">
+        <busyIndicator:BusyMask IsBusy="{Binding CategoriesUpdaterFromDatabaseBackgroundWorker.IsBusy}" BusyContent="Обновление..."
+                                IndicatorType="{StaticResource BusyMaskDefaultIndicatorType}" Background="{StaticResource BusyMaskDefaultBackground}">
             <ScrollViewer>
                 <ListView ItemsSource="{Binding Categories, IsAsync=True}" 
                   ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto"
@@ -41,6 +43,7 @@
                                 CommandParameter="{Binding}">
                                     <TextBlock Text="{Binding Name}" Style="{StaticResource ReferenceTextBlockStyle}"
                                        FontSize="23" FontWeight="Medium" TextAlignment="Left" Foreground="Black" Padding="5"
+                                       TextTrimming="CharacterEllipsis" ToolTip="{Binding Name}" ToolTipService.InitialShowDelay="1500"
                                        MouseEnter="OnReferenceElementMouseEnter" MouseLeave="OnReferenceElementMouseLeave"/>
                                 </Button>
                                 <ListView ItemsSource="{Binding Tests}"
@@ -50,7 +53,14 @@
                                         <DataTemplate>
                                             <md:Card Width="300">
                                                 <ag:AutoGrid Rows="1*, 1*" Columns="1*">
-                                                    <TextBlock Text="{Binding Name}" FontSize="20" Margin="5"/>
+                                                    <DockPanel>
+                                                        <TextBlock DockPanel.Dock="Right" 
+                                                                   Text="{Binding Id, Converter={StaticResource intIdToStringConverter}, Mode=OneWay}"
+                                                                   FontSize="14" Foreground="{StaticResource MaterialDesignToolBackground}"/>
+                                                        <TextBlock Text="{Binding Name}" FontSize="20" Margin="5" 
+                                                                   TextTrimming="CharacterEllipsis" 
+                                                                   ToolTip="{Binding Name}" ToolTipService.InitialShowDelay="1500"/>
+                                                    </DockPanel>
 
                                                     <Button Style="{StaticResource FlatButtonWithoutHighlightStyle}" 
                                                     Command="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.ManageTestAsyncCommand}"
