@@ -165,13 +165,13 @@ namespace TestingSystem.Models
             }
         }
 
-        private ushort maximumPoints;
+        private ushort maximumPoints = 1;
         public ushort MaximumPoints
         {
             get => maximumPoints;
             set
             {
-                if (maximumPoints != value)
+                if (maximumPoints != value && value > 0)
                 {
                     maximumPoints = value;
                     OnPropertyChanged(nameof(MaximumPoints));
@@ -278,10 +278,10 @@ namespace TestingSystem.Models
             Questions = new ConcurrentObservableCollection<Question>();
             OwnerTeachers = new ConcurrentObservableCollection<Teacher>();
         }
-        public Test(ICollection<Teacher> ownerTeachers) : this()
+        public Test(ICollection<Teacher> ownerTeachers, ushort numberOfQuestions = 1) : this()
         {
-            Questions = new ConcurrentObservableCollection<Question>();
             OwnerTeachers = ownerTeachers;
+            NumberOfQuestions = numberOfQuestions;
         }
         public Test(string name, ICollection<Question> questions, ushort maximumPoints, bool isAccountingForIncompleteAnswersEnabled,
             Category category, ICollection<Teacher> ownerTeachers) : this()
