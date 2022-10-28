@@ -1,5 +1,6 @@
 ﻿using BackgroundWorkerLibrary;
 using CommunityToolkit.Mvvm.Input;
+using HelperDialogs.Views;
 using Meziantou.Framework.WPF.Extensions;
 using MvvmBaseViewModels.Common;
 using System;
@@ -156,21 +157,32 @@ namespace TestingSystem.ViewModels.Teacher
         {
             get => removeCategoryAsyncCommand ??= new(async () =>
             {
-                isRemoveLocked = true;
-                try
+                ConfirmationDialogView confirmationDialog = new(
+                    warningMessage: "Вы уверены что хотите удалить категорию?",
+                    descriptionMessage: "Это действие нельзя будет отменить.",
+                    cancelText: "Оставить категорию",
+                    confirmText: "Удалить категорию");
+                
+                bool? confirmationDialogResult = default;
+                Application.Current?.Dispatcher.Invoke(() => confirmationDialogResult = confirmationDialog.ShowDialog());
+                if (confirmationDialogResult == true)
                 {
-                    using (TestingSystemTeacherContext context = new())
+                    isRemoveLocked = true;
+                    try
                     {
-                        context.Categories.Remove(Category!);
-                        await context.SaveChangesAsync();
+                        using (TestingSystemTeacherContext context = new())
+                        {
+                            context.Categories.Remove(Category!);
+                            await context.SaveChangesAsync();
 
-                        Close();
+                            Close();
+                        }
                     }
-                }
-                catch (Exception exception)
-                {
-                    OccurCriticalErrorMessage(exception);
-                    return;
+                    catch (Exception exception)
+                    {
+                        OccurCriticalErrorMessage(exception);
+                        return;
+                    }
                 }
 
             }, 
