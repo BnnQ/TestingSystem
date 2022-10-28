@@ -6,9 +6,9 @@ namespace TestingSystem.Helpers.CustomNavigationArgs
 {
     public class TestCompletedNavigationArgs : NavigationArgs
     {
-        public TestResults TestResults { get; init; }
+        public TestResult TestResults { get; init; }
 
-        public TestCompletedNavigationArgs(ICloseable? viewModelNavigatedFrom, TestResults testResults) : base(viewModelNavigatedFrom)
+        public TestCompletedNavigationArgs(ICloseable? viewModelNavigatedFrom, TestResult testResults) : base(viewModelNavigatedFrom)
         {
             TestResults = testResults;
         }

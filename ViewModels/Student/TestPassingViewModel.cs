@@ -1,7 +1,6 @@
 ﻿using BackgroundWorkerLibrary;
 using Egor92.MvvmNavigation.Abstractions;
 using HappyStudio.Mvvm.Input.Wpf;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
 using MvvmBaseViewModels.Navigation;
 using System;
 using System.Collections.Generic;
@@ -12,13 +11,12 @@ using TestingSystem.Constants.Student;
 using TestingSystem.Helpers.Comparers;
 using TestingSystem.Helpers.CustomNavigationArgs;
 using TestingSystem.Models;
-using TestingSystem.Models.Contexts;
 
 namespace TestingSystem.ViewModels.Student
 {
     public class TestPassingViewModel : NavigationViewModelBase
     {
-        private Test test = null!;
+        private readonly Test test = null!;
         private readonly Models.Student student = null!;
 
         #region Test
@@ -86,7 +84,7 @@ namespace TestingSystem.ViewModels.Student
                 try
                 {
                     lock (currentQuestionLocker)
-                        CurrentQuestion.AnswerOptions.Single(answerOption => answerOption.IsCorrect);
+                        _ = CurrentQuestion.AnswerOptions.Single(answerOption => answerOption.IsCorrect);
 
                     return true;
                 }
@@ -166,7 +164,7 @@ namespace TestingSystem.ViewModels.Student
                     TestTimeLeft = TestTimeLeft.Value.AddSeconds(-1);
                 }
 
-                TestResults testResults = FinishTest();
+                TestResult testResults = FinishTest();
                 MoveToTestResults(new TestCompletedNavigationArgs(lastViewModelNavigatedFrom, testResults));
             };
 
@@ -238,12 +236,12 @@ namespace TestingSystem.ViewModels.Student
             }
             else
             {
-                TestResults testResults = FinishTest();
+                TestResult testResults = FinishTest();
                 MoveToTestResults(new TestCompletedNavigationArgs(lastViewModelNavigatedFrom, testResults));
             }
         }
 
-        private TestResults FinishTest()
+        private TestResult FinishTest()
         {
             testCompletionTime = DateTime.Now;
 
@@ -251,8 +249,8 @@ namespace TestingSystem.ViewModels.Student
             ushort numberOfIncorrectAnswers = (ushort) (test.NumberOfQuestions - correctAnswersCounter);
             TimeSpan averageAnswerTime = TimeSpan.FromSeconds(questionAnswerTimes.Average(timeSpan => timeSpan.TotalSeconds));
 
-             return new TestResults(test, score, correctAnswersCounter, numberOfIncorrectAnswers,
-                testCompletionTime.Value - testStartTime!.Value, averageAnswerTime);
+             return new TestResult(test, student, score, correctAnswersCounter, numberOfIncorrectAnswers,
+                testCompletionTime.Value - testStartTime!.Value, averageAnswerTime, DateTime.Now);
         }
         private void MoveToTestResults(TestCompletedNavigationArgs navigationArgs)
         {
