@@ -27,8 +27,8 @@
             <Style TargetType="ScrollViewer" BasedOn="{StaticResource MainScrollViewerStyle}"/>
         </Grid.Resources>
 
-        <busyIndicator:BusyMask IsBusy="{Binding CategoriesUpdaterFromDatabaseBackgroundWorker.IsBusy}" IndicatorType="ThreeDots"
-                                BusyContent="Обновление...">
+        <busyIndicator:BusyMask IsBusy="{Binding CategoriesUpdaterFromDatabaseBackgroundWorker.IsBusy}" BusyContent="Обновление..."
+                                IndicatorType="{StaticResource BusyMaskDefaultIndicatorType}" Background="{StaticResource BusyMaskDefaultBackground}">
             <ScrollViewer>
                 <ListView ItemsSource="{Binding Categories, IsAsync=True}" 
                   ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto"
