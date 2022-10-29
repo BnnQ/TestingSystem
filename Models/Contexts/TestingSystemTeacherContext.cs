@@ -11,6 +11,8 @@ namespace TestingSystem.Models.Contexts
         public virtual DbSet<Category> Categories { get; set; } = null!;
         public virtual DbSet<Test> Tests { get; set; } = null!;
         public virtual DbSet<Teacher> Teachers { get; set; } = null!;
+        public virtual DbSet<Student> Students { get; set; } = null!;
+        public virtual DbSet<TestResult> TestResults { get; set; } = null!;
 
 
         public TestingSystemTeacherContext() : base()
@@ -273,8 +275,6 @@ namespace TestingSystem.Models.Contexts
                 .HasMaxLength(128)
                 .IsRequired();
             });
-            modelBuilder.Entity<Student>()
-                .ToTable("Students");
 
             modelBuilder.Entity<Teacher>()
                 .HasMany(teacher => teacher.OwnedTests)
@@ -341,8 +341,6 @@ namespace TestingSystem.Models.Contexts
                 .HasDefaultValue(DateTime.Now)
                 .IsRequired();
             });
-            modelBuilder.Entity<TestResult>()
-                .ToTable("TestResults");
 
             base.OnModelCreating(modelBuilder);
         }
