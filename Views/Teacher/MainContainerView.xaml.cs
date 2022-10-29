@@ -1,8 +1,6 @@
 ﻿using Egor92.MvvmNavigation;
 using MvvmBaseViewModels.Helpers;
 using MvvmBaseViewModels.Navigation;
-using System;
-using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Input;
 using TestingSystem.Constants.Teacher;
@@ -21,6 +19,9 @@ namespace TestingSystem.Views.Teacher
         private readonly StatisticsViewModel statisticsViewModel;
         private readonly AboutViewModel aboutViewModel;
         private readonly NavigationManager navigationManager;
+
+        private bool statisticsLoaded = false;
+        private bool mainLoaded = false;
 
         public MainContainerView(Models.Teacher teacher)
         {
@@ -46,7 +47,7 @@ namespace TestingSystem.Views.Teacher
             mainViewModel.CriticalErrorMessageOccured += (exception) => 
                 DefaultMessageHandlers.HandleCriticalError(this, exception);
 
-            statisticsViewModel = new(navigationManager);
+            statisticsViewModel = new(navigationManager, teacher);
             statisticsViewModel.Closed += (_) =>
             {
                 if (containerViewModel?.IsClosed == false)
@@ -62,13 +63,8 @@ namespace TestingSystem.Views.Teacher
                     containerViewModel.Close();
             };
 
-            mainViewModel.InitialLoaderBackgroundWorker.WorkCompleted += () =>
-            {
-                ConfigureNavigation();
-                DataContext = containerViewModel;
-                IsEnabled = true;
-                Mouse.OverrideCursor = Cursors.Arrow;
-            };
+            mainViewModel.InitialLoaderBackgroundWorker.WorkCompleted += OnMainLoaded;
+            statisticsViewModel.DataUpdaterFromDatabaseBackgroundWorker.WorkCompleted += OnStatisticsLoaded;
             Dispatcher.ShutdownStarted += (_, _) =>
             {
                 if (mainViewModel?.IsClosed == false)
@@ -83,6 +79,36 @@ namespace TestingSystem.Views.Teacher
                 if (containerViewModel?.IsClosed == false)
                     containerViewModel?.Close();
             };
+        }
+
+        private void CompleteInitialization()
+        {
+            ConfigureNavigation();
+            Application.Current?.Dispatcher.Invoke(() =>
+            {
+                DataContext = containerViewModel;
+                IsEnabled = true;
+                Mouse.OverrideCursor = Cursors.Arrow;
+            });
+        }
+
+        private void OnMainLoaded()
+        {
+            mainLoaded = true;
+            if (!statisticsLoaded)
+                return;
+            else
+                CompleteInitialization();
+        }
+
+        private void OnStatisticsLoaded()
+        {
+            statisticsLoaded = true;
+            statisticsViewModel.DataUpdaterFromDatabaseBackgroundWorker.WorkCompleted -= OnStatisticsLoaded;
+            if (!mainLoaded)
+                return;
+            else
+                CompleteInitialization();
         }
 
         private void ConfigureNavigation()

@@ -6,6 +6,7 @@
         mc:Ignorable="d"
         xmlns:ag="clr-namespace:WpfAutoGrid;assembly=WpfAutoGrid.Core"
         xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
         WindowStartupLocation="CenterScreen"
         TextElement.Foreground="{DynamicResource MaterialDesignBody}"
         TextElement.FontWeight="Regular"
@@ -14,7 +15,20 @@
         TextOptions.TextRenderingMode="Auto"
         FontFamily="{DynamicResource MaterialDesignFont}"
         Background="{DynamicResource MaterialDesignPaper}"
-        Title="Система тестирования" Width="800" Height="600" MinWidth="360" MinHeight="350">
+        Title="Система тестирования" Width="950" Height="700" MinWidth="360" MinHeight="350">
+    <Window.Icon>
+        <BitmapImage UriSource="https://img.icons8.com/external-vitaliy-gorbachev-lineal-color-vitaly-gorbachev/100/000000/external-test-online-learning-vitaliy-gorbachev-lineal-color-vitaly-gorbachev.pnghttps://img.icons8.com/external-vitaliy-gorbachev-lineal-color-vitaly-gorbachev/100/000000/external-test-online-learning-vitaliy-gorbachev-lineal-color-vitaly-gorbachev.png">
+            <b:Interaction.Triggers>
+                <b:EventTrigger EventName="DownloadFailed">
+                    <b:ChangePropertyAction TargetObject="{Binding RelativeSource={RelativeSource AncestorType=Window}}" PropertyName="Icon" Value="{x:Null}"/>
+                </b:EventTrigger>
+                <b:EventTrigger EventName="DecodeFailed">
+                    <b:ChangePropertyAction TargetObject="{Binding RelativeSource={RelativeSource AncestorType=Window}}" PropertyName="Icon" Value="{x:Null}"/>
+                </b:EventTrigger>
+            </b:Interaction.Triggers>
+        </BitmapImage>
+    </Window.Icon>
+    
     <Grid>
         <Grid.Resources>
             <Style TargetType="Button" BasedOn="{StaticResource NavigationDrawerElementButtonStyle}"/>
