@@ -9,6 +9,8 @@
         xmlns:ap="http://schemas.nishy-software.com/xaml/attached-properties"
         xmlns:vwp="clr-namespace:WpfToolkit.Controls;assembly=VirtualizingWrapPanel"
         xmlns:busyIndicator="https://github.com/Peoky/BusyIndicator"
+        xmlns:converters="clr-namespace:TestingSystem.Views.Converters"
+        xmlns:accb="clr-namespace:DotNetKit.Windows.Controls;assembly=DotNetKit.Wpf.AutoCompleteComboBox"
         WindowStartupLocation="CenterScreen"
         TextElement.Foreground="{DynamicResource MaterialDesignBody}"
         TextElement.FontWeight="Regular"
@@ -20,57 +22,88 @@
         Title="Система тестирования" Width="800" Height="600" MinWidth="360" MinHeight="350">
     <ag:AutoGrid Rows="8*, 2*" Columns="1*">
         <Grid.Resources>
+            <converters:IntIdToStringConverter x:Key="intIdToStringConverter"/>
+
             <Style TargetType="TextBlock" BasedOn="{StaticResource MainTextBlockStyle}">
                 <Setter Property="TextAlignment" Value="Left"/>
             </Style>
             <Style TargetType="ListView" BasedOn="{StaticResource ListViewCardPanelStyle}"/>
             <Style TargetType="ScrollViewer" BasedOn="{StaticResource MainScrollViewerStyle}"/>
+            <Style TargetType="accb:AutoCompleteComboBox" BasedOn="{StaticResource MainAutoCompleteComboBoxStyle}"/>
         </Grid.Resources>
 
-        <busyIndicator:BusyMask IsBusy="{Binding CategoriesUpdaterFromDatabaseBackgroundWorker.IsBusy}" IndicatorType="ThreeDots"
-                                BusyContent="Обновление...">
+        <busyIndicator:BusyMask IsBusy="{Binding CategoriesUpdaterFromDatabaseBackgroundWorker.IsBusy}" BusyContent="Обновление..."
+                                IndicatorType="{StaticResource BusyMaskDefaultIndicatorType}" Background="{StaticResource BusyMaskDefaultBackground}">
             <ScrollViewer>
-                <ListView ItemsSource="{Binding Categories, IsAsync=True}" 
+                <StackPanel Orientation="Vertical">
+                    <ag:AutoGrid Rows="1*" Columns="4*, 1*">
+                        <accb:AutoCompleteComboBox x:Name="searchTestComboBox" ItemsSource="{Binding Tests, Mode=OneWay}"
+                                                       TextSearch.TextPath="Name" md:HintAssist.Hint="Поиск теста..." md:HintAssist.IsFloating="False">
+                            <accb:AutoCompleteComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock>
+                                        <Run Text="{Binding Name,Mode=OneWay}"/>
+                                        <Run Text="("/><Run Text="{Binding Id, Converter={StaticResource intIdToStringConverter},Mode=OneWay}"/><Run Text=")"/>
+                                    </TextBlock>
+                                </DataTemplate>
+                            </accb:AutoCompleteComboBox.ItemTemplate>
+                        </accb:AutoCompleteComboBox>
+                        <Button Command="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.OpenTestCommand}"
+                                CommandParameter="{Binding ElementName=searchTestComboBox, Path=SelectedItem}">
+                            <TextBlock Text="Найти" FontSize="14" TextTrimming="CharacterEllipsis" TextWrapping="Wrap"/>
+                        </Button>
+                    </ag:AutoGrid>
+                    <ListView ItemsSource="{Binding Categories, IsAsync=True}" 
                   ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto"
                   ap:ScrollViewerProperties.MouseWheelHandlingMode="OnlyScrollable">
-                    <ListView.ItemTemplate>
-                        <DataTemplate>
-                            <StackPanel Orientation="Vertical">
-                                <TextBlock Text="{Binding Name}" FontSize="23" FontWeight="Medium" TextAlignment="Left" Padding="5"/>
-                                <ListView ItemsSource="{Binding Tests}"
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Vertical">
+                                    <TextBlock Text="{Binding Name}" FontSize="23" FontWeight="Medium" TextAlignment="Left" Padding="5"
+                                           TextTrimming="CharacterEllipsis" ToolTip="{Binding Name}" ToolTipService.InitialShowDelay="1500"/>
+                                    <ListView ItemsSource="{Binding Tests}"
                                   ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto"
                                   ap:ScrollViewerProperties.MouseWheelHandlingMode="OnlyScrollable">
-                                    <ListView.ItemTemplate>
-                                        <DataTemplate>
-                                            <md:Card Width="300">
-                                                <ag:AutoGrid Rows="1*, 1*" Columns="1*">
-                                                    <TextBlock Text="{Binding Name}" FontSize="20" Margin="5"/>
+                                        <ListView.ItemTemplate>
+                                            <DataTemplate>
+                                                <md:Card Width="300">
+                                                    <ag:AutoGrid Rows="1*, 1*" Columns="1*">
+                                                        <DockPanel>
+                                                            <TextBlock DockPanel.Dock="Right" 
+                                                                   Text="{Binding Id, Converter={StaticResource intIdToStringConverter}, Mode=OneWay}"
+                                                                   FontSize="14" Foreground="{StaticResource MaterialDesignToolBackground}"/>
+                                                            <TextBlock Text="{Binding Name}" FontSize="20" Margin="5"
+                                                                   TextTrimming="CharacterEllipsis" 
+                                                                   ToolTip="{Binding Name}" ToolTipService.InitialShowDelay="1500"/>
+                                                        </DockPanel>
 
-                                                    <Button Style="{StaticResource FlatButtonWithoutHighlightStyle}" 
+
+                                                        <Button Style="{StaticResource FlatButtonWithoutHighlightStyle}" 
                                                     Command="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.OpenTestCommand}"
                                                     CommandParameter="{Binding}" Margin="5">
-                                                        <TextBlock Text="Открыть" Style="{StaticResource ReferenceTextBlockStyle}"
+                                                            <TextBlock Text="Открыть" Style="{StaticResource ReferenceTextBlockStyle}"
                                                                    MouseEnter="OnReferenceElementMouseEnter" MouseLeave="OnReferenceElementMouseLeave"/>
-                                                    </Button>
-                                                </ag:AutoGrid>
-                                            </md:Card>
-                                        </DataTemplate>
-                                    </ListView.ItemTemplate>
-                                    <ListView.ItemsPanel>
-                                        <ItemsPanelTemplate>
-                                            <vwp:VirtualizingWrapPanel StretchItems="True" SpacingEnabled="False" Orientation="Vertical" IsItemsHost="True"/>
-                                        </ItemsPanelTemplate>
-                                    </ListView.ItemsPanel>
-                                </ListView>
-                            </StackPanel>
-                        </DataTemplate>
-                    </ListView.ItemTemplate>
-                    <ListView.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <VirtualizingStackPanel Orientation="Vertical" IsItemsHost="True"/>
-                        </ItemsPanelTemplate>
-                    </ListView.ItemsPanel>
-                </ListView>
+                                                        </Button>
+                                                    </ag:AutoGrid>
+                                                </md:Card>
+                                            </DataTemplate>
+                                        </ListView.ItemTemplate>
+                                        <ListView.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <vwp:VirtualizingWrapPanel StretchItems="True" SpacingEnabled="False" Orientation="Vertical" IsItemsHost="True"/>
+                                            </ItemsPanelTemplate>
+                                        </ListView.ItemsPanel>
+                                    </ListView>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                        <ListView.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <VirtualizingStackPanel Orientation="Vertical" IsItemsHost="True"/>
+                            </ItemsPanelTemplate>
+                        </ListView.ItemsPanel>
+                    </ListView>
+                </StackPanel>
             </ScrollViewer>
         </busyIndicator:BusyMask>
 

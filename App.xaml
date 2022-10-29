@@ -12,8 +12,8 @@
                 <ResourceDictionary Source="pack://application:,,,/MaterialDesignColors;component/Themes/Recommended/Accent/MaterialDesignColor.Amber.xaml"/>
                 <ResourceDictionary Source="pack://application:,,,/BusyIndicator;component/Theme/Default.xaml"/>
                 
-                <ResourceDictionary Source="pack://application:,,,/Resources/MainResourceDictionary.xaml"/>
-                <ResourceDictionary Source="pack://application:,,,/Resources/NumericConvertersDictionary.xaml"/>
+                <ResourceDictionary Source="pack://application:,,,/Resources/Dictionaries/MainResourceDictionary.xaml"/>
+                <ResourceDictionary Source="pack://application:,,,/Resources/Dictionaries/NumericConvertersDictionary.xaml"/>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>

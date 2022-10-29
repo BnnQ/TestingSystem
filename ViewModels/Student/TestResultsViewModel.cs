@@ -8,8 +8,8 @@ namespace TestingSystem.ViewModels.Student
 {
     public class TestResultsViewModel : NavigationViewModelBase
     {
-        private TestResults? testResults;
-        public TestResults? TestResults
+        private TestResult? testResults;
+        public TestResult? TestResults
         {
             get => testResults;
             set

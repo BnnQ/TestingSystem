@@ -1,5 +1,6 @@
 ﻿using MvvmBaseViewModels.Helpers;
 using System.Windows;
+using TestingSystem.Constants;
 using TestingSystem.Models;
 using TestingSystem.ViewModels.Teacher;
 
@@ -14,7 +15,7 @@ namespace TestingSystem.Views.Teacher
         public TestEditView(Test test)
         {
             InitializeComponent();
-            Tag = ConstantStringKeys.NotLoadedState;
+            Tag = LoadStates.NotLoaded;
 
             viewModel = new TestEditViewModel(test);
             viewModel.Closed += (dialogResult) =>
@@ -35,7 +36,7 @@ namespace TestingSystem.Views.Teacher
             viewModel.InitialLoaderBackgroundWorker.WorkCompleted += () =>
             {
                 DataContext = viewModel;
-                Tag = ConstantStringKeys.LoadedState;
+                Tag = LoadStates.Loaded;
             };
             Dispatcher.ShutdownStarted += (_, _) =>
             {

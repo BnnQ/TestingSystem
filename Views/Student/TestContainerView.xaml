@@ -8,8 +8,8 @@
         WindowStartupLocation="CenterScreen"
         Title="Тест" Width="900" Height="600" MinWidth="900" MinHeight="600">
     <busyIndicator:BusyMask IsBusy="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Tag, Mode=OneWay,
-                                     Converter={StaticResource stringIsLoadedToBoolIsBusyConverter}}"
-                            IndicatorType="ThreeDots" BusyContent="Загрузка...">
+                                     Converter={StaticResource stringIsLoadedToBoolIsBusyConverter}}" BusyContent="Загрузка..."
+                            IndicatorType="{StaticResource BusyMaskDefaultIndicatorType}" Background="{StaticResource BusyMaskDefaultBackground}">
         <Grid>
             <ContentControl x:Name="FrameContent" x:FieldModifier="public"/>
         </Grid>

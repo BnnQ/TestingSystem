@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Configuration;
 using System.IO;
-using System.Windows;
 
 namespace TestingSystem.Models.Contexts
 {
@@ -89,6 +88,171 @@ namespace TestingSystem.Models.Contexts
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<AnswerOption>()
+                .HasOne(answerOption => answerOption.Question)
+                .WithMany(question => question.AnswerOptions)
+                .HasForeignKey(answerOption => answerOption.QuestionId)
+                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<AnswerOption>(answerOptionModel =>
+            {
+                answerOptionModel
+                .HasCheckConstraint("CK_AnswerOptions_Content", "[Content] != ''")
+                .HasCheckConstraint("CK_AnswerOptions_SerialNumberInQuestion", "[SerialNumberInQuestion] > 0")
+                .HasKey(answerOption => answerOption.Id);
+
+                answerOptionModel.Property(answerOption => answerOption.Id)
+                .HasColumnOrder(1)
+                .UseIdentityColumn()
+                .IsRequired();
+
+                answerOptionModel.Property(answerOption => answerOption.SerialNumberInQuestion)
+                .HasColumnOrder(2)
+                .IsRequired();
+
+                answerOptionModel.Property(answerOption => answerOption.Content)
+                .HasMaxLength(255)
+                .IsRequired();
+
+                answerOptionModel.Property(answerOption => answerOption.IsCorrect)
+                .HasDefaultValue(false)
+                .IsRequired();
+
+                answerOptionModel.Property(answerOption => answerOption.QuestionId)
+                .IsRequired();
+            });
+            modelBuilder.Entity<AnswerOption>()
+                .ToTable("AnswerOptions");
+
+            modelBuilder.Entity<Question>()
+                .HasMany(question => question.AnswerOptions)
+                .WithOne(answerOption => answerOption.Question)
+                .HasForeignKey(answerOption => answerOption.QuestionId)
+                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<Question>()
+                .HasOne(question => question.Test)
+                .WithMany(test => test.Questions)
+                .HasForeignKey(question => question.TestId)
+                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<Question>(questionModel =>
+            {
+                questionModel
+                .HasCheckConstraint("CK_Questions_Content", "[Content] != ''")
+                .HasCheckConstraint("CK_Questions_PointsCost", "[PointsCost] > 0")
+                .Ignore(question => question.NumberOfAnswerOptions)
+                .Ignore(question => question.IsAutoAnswerOptionNumberingEnabled)
+                .HasKey(question => question.Id);
+
+                questionModel.Property(question => question.Id)
+                .HasColumnOrder(1)
+                .UseIdentityColumn()
+                .IsRequired();
+
+                questionModel.Property(question => question.TestId)
+                .HasColumnOrder(2)
+                .IsRequired();
+
+                questionModel.Property(question => question.SerialNumberInTest)
+                .HasColumnOrder(3)
+                .IsRequired();
+
+                questionModel.Property(question => question.Content)
+                .HasMaxLength(512)
+                .IsRequired();
+
+                questionModel.Property(question => question.NumberOfSecondsToAnswer)
+                .IsRequired(false);
+
+                questionModel.Property(question => question.TestId)
+                .IsRequired();
+            });
+            modelBuilder.Entity<Question>()
+                .ToTable("Questions");
+
+            modelBuilder.Entity<Test>()
+                .HasMany(test => test.Questions)
+                .WithOne(question => question.Test)
+                .HasForeignKey(question => question.TestId)
+                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<Test>()
+                .HasOne(test => test.Category)
+                .WithMany(category => category.Tests)
+                .HasForeignKey(test => test.CategoryId)
+                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<Test>()
+                .HasMany(test => test.OwnerTeachers)
+                .WithMany(teacher => teacher.OwnedTests)
+                .UsingEntity("TestsTeacherOwners");
+            modelBuilder.Entity<Test>()
+                .HasMany(test => test.TestResults)
+                .WithOne(testResult => testResult.Test)
+                .HasForeignKey(testResult => testResult.TestId)
+                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<Test>(testModel =>
+            {
+                testModel
+                .HasCheckConstraint("CK_Tests_Name", "[Name] != ''")
+                .HasCheckConstraint("CK_Tests_MaximumPoints", "[MaximumPoints] > 0")
+                .Ignore(test => test.NumberOfQuestions)
+                .Ignore(test => test.IsAutoCalculationOfQuestionsCostEnabled)
+                .Ignore(test => test.IsAutoQuestionNumberingEnabled)
+                .HasKey(test => test.Id);
+
+                testModel.Property(test => test.Id)
+                .HasColumnOrder(1)
+                .UseIdentityColumn()
+                .IsRequired();
+
+                testModel.Property(test => test.Name)
+                .HasMaxLength(255)
+                .IsRequired();
+
+                testModel.Property(test => test.MaximumPoints)
+                .IsRequired();
+
+                testModel.Property(test => test.NumberOfSecondsToAnswerEachQuestion)
+                .IsRequired(false);
+
+                testModel.Property(test => test.NumberOfSecondsToComplete)
+                .IsRequired(false);
+
+                testModel.Property(test => test.IsAccountingForIncompleteAnswersEnabled)
+                .HasDefaultValue(true)
+                .IsRequired();
+
+                testModel.Property(test => test.CategoryId)
+                .IsRequired();
+            });
+            modelBuilder.Entity<Test>()
+                .ToTable("Tests");
+
+            modelBuilder.Entity<Category>()
+                .HasMany(category => category.Tests)
+                .WithOne(test => test.Category)
+                .HasForeignKey(test => test.CategoryId)
+                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<Category>(categoryModel =>
+            {
+                categoryModel
+                .HasCheckConstraint("CK_Categories_Name", "[Name] != ''")
+                .HasKey(category => category.Id);
+
+                categoryModel.Property(category => category.Id)
+                .HasColumnOrder(1)
+                .UseIdentityColumn()
+                .IsRequired();
+
+                categoryModel.Property(category => category.Name)
+                .HasMaxLength(128)
+                .IsRequired();
+            });
+            modelBuilder.Entity<Category>()
+                .ToTable("Categories");
+
+            modelBuilder.Entity<Student>()
+                .HasMany(student => student.TestResults)
+                .WithOne(testResult => testResult.Student)
+                .HasForeignKey(testResult => testResult.StudentId)
+                .OnDelete(DeleteBehavior.Cascade);
             modelBuilder.Entity<Student>(studentModel =>
             {
                 studentModel
@@ -116,6 +280,10 @@ namespace TestingSystem.Models.Contexts
                 .IsRequired();
             });
 
+            modelBuilder.Entity<Teacher>()
+                .HasMany(teacher => teacher.OwnedTests)
+                .WithMany(test => test.OwnerTeachers)
+                .UsingEntity("TestsTeacherOwners");
             modelBuilder.Entity<Teacher>(teacherModel =>
             {
                 teacherModel
@@ -142,6 +310,43 @@ namespace TestingSystem.Models.Contexts
                 .HasMaxLength(128)
                 .IsRequired();
             });
+
+            modelBuilder.Entity<TestResult>()
+                .HasOne(testResult => testResult.Test)
+                .WithMany(test => test.TestResults)
+                .HasForeignKey(testResult => testResult.TestId)
+                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<TestResult>()
+                .HasOne(testResult => testResult.Student)
+                .WithMany(student => student.TestResults)
+                .HasForeignKey(testResult => testResult.StudentId)
+                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<TestResult>(testResultModel =>
+            {
+                testResultModel
+                .HasChangeTrackingStrategy(ChangeTrackingStrategy.Snapshot)
+                .HasCheckConstraint("CK_TestResults_CompletionDate", "[CompletionDate] > '2022-10-01'")
+                .HasKey(testResult => testResult.Id);
+
+                testResultModel.Property(testResult => testResult.Id)
+                .HasColumnOrder(1)
+                .UseIdentityColumn()
+                .IsRequired();
+
+                testResultModel.Property(testResult => testResult.TestId)
+                .HasColumnOrder(2)
+                .IsRequired();
+
+                testResultModel.Property(testResult => testResult.StudentId)
+                .HasColumnOrder(3)
+                .IsRequired();
+
+                testResultModel.Property(testResult => testResult.CompletionDate)
+                .HasDefaultValue(DateTime.Now)
+                .IsRequired();
+            });
+            modelBuilder.Entity<TestResult>()
+                .ToTable("TestResults");
 
             base.OnModelCreating(modelBuilder);
         }

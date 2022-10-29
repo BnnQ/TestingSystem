@@ -1,5 +1,6 @@
 ﻿using BackgroundWorkerLibrary;
 using HappyStudio.Mvvm.Input.Wpf;
+using HelperDialogs.Views;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using MvvmBaseViewModels.Common;
 using Ookii.Dialogs.Wpf;
@@ -139,22 +140,34 @@ namespace TestingSystem.ViewModels.Teacher
         {
             get => removeTestAsyncCommand ??= new(async () =>
             {
-                isRemoveLocked = true;
-                try
-                {
-                    using (TestingSystemTeacherContext context = new())
-                    {
-                        context.Tests.Remove(Test!);
-                        await context.SaveChangesAsync();
+                ConfirmationDialogView confirmationDialog = new(
+                    warningMessage: "Вы уверены что хотите удалить тест?",
+                    descriptionMessage: "Это действие нельзя будет отменить.",
+                    cancelText: "Оставить тест",
+                    confirmText: "Удалить тест");
 
-                        Close(true);
+                bool? confirmationDialogResult = default;
+                Application.Current?.Dispatcher.Invoke(() => confirmationDialogResult = confirmationDialog.ShowDialog());
+                if (confirmationDialogResult == true)
+                {
+                    isRemoveLocked = true;
+                    try
+                    {
+                        using (TestingSystemTeacherContext context = new())
+                        {
+                            context.Tests.Remove(Test!);
+                            await context.SaveChangesAsync();
+
+                            Close(true);
+                        }
+                    }
+                    catch (Exception exception)
+                    {
+                        OccurCriticalErrorMessage(exception);
+                        return;
                     }
                 }
-                catch (Exception exception)
-                {
-                    OccurCriticalErrorMessage(exception);
-                    return;
-                }
+
             }, () => !isRemoveLocked && Test is not null && IsTeacherOwner());
         }
 
