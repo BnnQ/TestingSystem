@@ -1,0 +1,77 @@
+﻿<Window x:Class="TestingSystem.Views.Teacher.MainContainerView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        xmlns:ag="clr-namespace:WpfAutoGrid;assembly=WpfAutoGrid.Core"
+        xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
+        WindowStartupLocation="CenterScreen"
+        TextElement.Foreground="{DynamicResource MaterialDesignBody}"
+        TextElement.FontWeight="Regular"
+        TextElement.FontSize="{StaticResource MainFontSize}"
+        TextOptions.TextFormattingMode="Ideal"
+        TextOptions.TextRenderingMode="Auto"
+        FontFamily="{DynamicResource MaterialDesignFont}"
+        Background="{DynamicResource MaterialDesignPaper}"
+        Title="Система тестирования" Width="800" Height="600" MinWidth="360" MinHeight="350">
+    <Grid>
+        <Grid.Resources>
+            <Style TargetType="Button" BasedOn="{StaticResource NavigationDrawerElementButtonStyle}"/>
+            <Style TargetType="md:PackIcon" BasedOn="{StaticResource NavigationDrawerElementPackIconStyle}"/>
+            <Style TargetType="TextBlock" BasedOn="{StaticResource NavigationDrawerTextBlockStyle}"/>
+            <Style TargetType="Separator" BasedOn="{StaticResource NavigationDrawerSeparatorStyle}"/>
+        </Grid.Resources>
+
+        <md:DrawerHost OpenMode="Modal">
+            <md:DrawerHost.LeftDrawerContent>
+                <StackPanel Orientation="Vertical" HorizontalAlignment="Stretch" Width="250">
+                    <Button Command="{Binding SwitchToMainNavigationCommand}">
+                        <DockPanel>
+                            <md:PackIcon Kind="Home"/>
+                            <TextBlock Text="Тесты и категории"/>
+                        </DockPanel>
+                    </Button>
+                    <Button Command="{Binding SwitchToStatisticsNavigationCommand}">
+                        <DockPanel>
+                            <md:PackIcon Kind="ChartBar"/>
+                            <TextBlock Text="Статистика"/>
+                        </DockPanel>
+                    </Button>
+                    <Separator/>
+                    <Button Command="{Binding SwitchToAboutNavigationCommand}">
+                        <DockPanel>
+                            <md:PackIcon Kind="About"/>
+                            <TextBlock Text="О программе"/>
+                        </DockPanel>
+                    </Button>
+                </StackPanel>
+            </md:DrawerHost.LeftDrawerContent>
+
+            <ag:AutoGrid Rows="1*, 10*" Columns="1*">
+                <DockPanel Background="{StaticResource PrimaryHueMidBrush}">
+                    <Button Style="{StaticResource NavigationDrawerOpenLeftDrawerButtonStyle}"/>
+                    <md:PopupBox DockPanel.Dock="Right" VerticalAlignment="Center" Foreground="{StaticResource PrimaryHueMidForegroundBrush}">
+                        <StackPanel Orientation="Vertical">
+                            <Button Command="{Binding ExitCommand}">
+                                <DockPanel>
+                                    <md:PackIcon Kind="Logout"/>
+                                    <TextBlock Text="Выход"/>
+                                </DockPanel>
+                            </Button>
+                        </StackPanel>
+                    </md:PopupBox>
+                    <TextBlock DockPanel.Dock="Right" HorizontalAlignment="Right" VerticalAlignment="Center"
+                               FontSize="17" Foreground="{StaticResource PrimaryHueMidForegroundBrush}"
+                               TextTrimming="WordEllipsis" ToolTip="{Binding Teacher.FullName, Mode=OneTime}">
+                        <Run Text="{Binding Teacher.Name, Mode=OneTime}"/>
+                        <Run Text="("/><Run Text="{Binding Teacher.FullName, Mode=OneTime}"/><Run Text=")"/>
+                    </TextBlock>
+                </DockPanel>
+
+                <ContentControl x:Name="FrameContent" x:FieldModifier="public"/>
+
+            </ag:AutoGrid>
+        </md:DrawerHost>
+    </Grid>
+</Window>
