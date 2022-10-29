@@ -1,42 +1,16 @@
-﻿using MvvmBaseViewModels.Helpers;
-using System.Windows;
+﻿using System.Windows.Controls;
 using System.Windows.Input;
-using TestingSystem.ViewModels.Teacher;
 
 namespace TestingSystem.Views.Teacher
 {
     /// <summary>
     /// Interaction logic for MainView.xaml
     /// </summary>
-    public partial class MainView : Window
+    public partial class MainView : UserControl
     {
-        private readonly MainViewModel viewModel;
-        public MainView(Models.Teacher teacher)
+        public MainView()
         {
             InitializeComponent();
-            Application.Current?.Dispatcher.Invoke(() =>
-            {
-                IsEnabled = false;
-                Mouse.OverrideCursor = Cursors.Wait;
-            });
-
-            viewModel = new MainViewModel(teacher);
-            viewModel.Closed += (_) => Close();
-            viewModel.ErrorMessageOccurred += (exception) => DefaultMessageHandlers.HandleError(this, exception);
-            viewModel.CriticalErrorMessageOccured += (exception) =>
-                DefaultMessageHandlers.HandleCriticalError(this, exception);
-
-            viewModel.InitialLoaderBackgroundWorker.WorkCompleted += () =>
-            {
-                DataContext = viewModel;
-                IsEnabled = true;
-                Mouse.OverrideCursor = Cursors.Arrow;
-            };
-            Dispatcher.ShutdownStarted += (_, _) =>
-            {
-                if (viewModel?.IsClosed == false)
-                    viewModel.Close();
-            };
         }
 
         private void OnReferenceElementMouseEnter(object sender, MouseEventArgs e)
@@ -48,5 +22,6 @@ namespace TestingSystem.Views.Teacher
         {
             Mouse.OverrideCursor = Cursors.Arrow;
         }
+
     }
 }

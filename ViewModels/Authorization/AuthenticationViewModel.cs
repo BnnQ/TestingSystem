@@ -154,7 +154,7 @@ namespace TestingSystem.ViewModels.Authorization
 
                 Application.Current.Dispatcher.Invoke(() =>
                 {
-                    Views.Teacher.MainView teacherView = new(foundTeacher);
+                    Views.Teacher.MainContainerView teacherView = new(foundTeacher);
                     teacherView.Show();
 
                     Close();

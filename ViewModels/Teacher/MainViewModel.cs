@@ -1,8 +1,9 @@
 ﻿using BackgroundWorkerLibrary;
+using Egor92.MvvmNavigation.Abstractions;
 using HappyStudio.Mvvm.Input.Wpf;
 using Meziantou.Framework.WPF.Collections;
 using Microsoft.EntityFrameworkCore;
-using MvvmBaseViewModels.Common;
+using MvvmBaseViewModels.Navigation;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -14,7 +15,7 @@ using TestingSystem.Views.Teacher;
 
 namespace TestingSystem.ViewModels.Teacher
 {
-    public class MainViewModel : ViewModelBase
+    public class MainViewModel : NavigationViewModelBase
     {
         private Models.Teacher teacher = null!;
 
@@ -75,7 +76,7 @@ namespace TestingSystem.ViewModels.Teacher
         public BackgroundWorker CategoriesUpdaterFromDatabaseBackgroundWorker { get; init; } = new();
         public BackgroundWorker<Models.Teacher> InitialLoaderBackgroundWorker { get; init; } = new();
 
-        public MainViewModel(Models.Teacher teacher)
+        public MainViewModel(INavigationManager navigationManager, Models.Teacher teacher) : base(navigationManager)
         {
             SetupBackgroundWorkers();
             _ = InitialLoaderBackgroundWorker.RunWorkerAsync(teacher);
