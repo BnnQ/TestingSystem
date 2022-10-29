@@ -6,6 +6,7 @@
         xmlns:ag="clr-namespace:WpfAutoGrid;assembly=WpfAutoGrid.Core"
         xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
         xmlns:converters="clr-namespace:TestingSystem.Views.Converters"
+        xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
         mc:Ignorable="d"
         WindowStartupLocation="CenterScreen"
         TextElement.Foreground="{DynamicResource MaterialDesignBody}"
@@ -16,6 +17,19 @@
         FontFamily="{DynamicResource MaterialDesignFont}"
         Background="{DynamicResource MaterialDesignPaper}"
         Title="Редактор вопроса" Width="650" Height="700" MinWidth="550" MinHeight="650">
+    <Window.Icon>
+        <BitmapImage UriSource="https://img.icons8.com/external-vitaliy-gorbachev-lineal-color-vitaly-gorbachev/100/000000/external-test-online-learning-vitaliy-gorbachev-lineal-color-vitaly-gorbachev.pnghttps://img.icons8.com/external-vitaliy-gorbachev-lineal-color-vitaly-gorbachev/100/000000/external-test-online-learning-vitaliy-gorbachev-lineal-color-vitaly-gorbachev.png">
+            <b:Interaction.Triggers>
+                <b:EventTrigger EventName="DownloadFailed">
+                    <b:ChangePropertyAction TargetObject="{Binding RelativeSource={RelativeSource AncestorType=Window}}" PropertyName="Icon" Value="{x:Null}"/>
+                </b:EventTrigger>
+                <b:EventTrigger EventName="DecodeFailed">
+                    <b:ChangePropertyAction TargetObject="{Binding RelativeSource={RelativeSource AncestorType=Window}}" PropertyName="Icon" Value="{x:Null}"/>
+                </b:EventTrigger>
+            </b:Interaction.Triggers>
+        </BitmapImage>
+    </Window.Icon>
+    
     <ag:AutoGrid Rows="1*, 1*, 1*, 1*, 1*, 1*, 4*, 1*" Columns="1*, 1*" ChildMargin="{StaticResource MarginOfEditControl}">
         <Grid.Resources>
             <converters:UshortNumberOfSecondsToTimeMinutesSecondsStringConverter x:Key="ushortNumberOfSecondsToTimeMinutesSecondsStringConverter"/>

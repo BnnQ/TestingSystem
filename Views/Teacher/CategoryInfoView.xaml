@@ -6,6 +6,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:ag="clr-namespace:WpfAutoGrid;assembly=WpfAutoGrid.Core"
         xmlns:busyIndicator="https://github.com/Peoky/BusyIndicator"
+        xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
         TextElement.Foreground="{DynamicResource MaterialDesignBody}"
         TextElement.FontWeight="Regular"
         TextElement.FontSize="{StaticResource MainFontSize}"
@@ -15,6 +16,19 @@
         FontFamily="{DynamicResource MaterialDesignFont}"
         Background="{DynamicResource MaterialDesignPaper}"
         Title="Просмотр и управление категорией" Width="800" Height="450" MinWidth="580" MinHeight="200" Loaded="OnWindowLoaded">
+    <Window.Icon>
+        <BitmapImage UriSource="https://img.icons8.com/external-vitaliy-gorbachev-lineal-color-vitaly-gorbachev/100/000000/external-test-online-learning-vitaliy-gorbachev-lineal-color-vitaly-gorbachev.pnghttps://img.icons8.com/external-vitaliy-gorbachev-lineal-color-vitaly-gorbachev/100/000000/external-test-online-learning-vitaliy-gorbachev-lineal-color-vitaly-gorbachev.png">
+            <b:Interaction.Triggers>
+                <b:EventTrigger EventName="DownloadFailed">
+                    <b:ChangePropertyAction TargetObject="{Binding RelativeSource={RelativeSource AncestorType=Window}}" PropertyName="Icon" Value="{x:Null}"/>
+                </b:EventTrigger>
+                <b:EventTrigger EventName="DecodeFailed">
+                    <b:ChangePropertyAction TargetObject="{Binding RelativeSource={RelativeSource AncestorType=Window}}" PropertyName="Icon" Value="{x:Null}"/>
+                </b:EventTrigger>
+            </b:Interaction.Triggers>
+        </BitmapImage>
+    </Window.Icon>
+    
     <busyIndicator:BusyMask IsBusy="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Tag, Mode=OneWay,
                                      Converter={StaticResource stringIsLoadedToBoolIsBusyConverter}}" BusyContent="Загрузка..." 
                             IndicatorType="{StaticResource BusyMaskDefaultIndicatorType}" Background="{StaticResource BusyMaskDefaultBackground}">
