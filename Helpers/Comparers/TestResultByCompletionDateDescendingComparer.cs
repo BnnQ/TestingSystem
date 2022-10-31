@@ -3,7 +3,7 @@ using TestingSystem.Models;
 
 namespace TestingSystem.Helpers.Comparers
 {
-    public class TestResultByCompletionDateComparer : IComparer<TestResult>
+    public class TestResultByCompletionDateDescendingComparer : IComparer<TestResult>
     {
         public int Compare(TestResult? x, TestResult? y)
         {
@@ -11,7 +11,7 @@ namespace TestingSystem.Helpers.Comparers
                 return 0;
 
             long timeSpanTicks = (x.CompletionDate - y.CompletionDate).Ticks;
-            return timeSpanTicks < 0 ? -1 : timeSpanTicks == 0 ? 0 : 1;
+            return timeSpanTicks > 0 ? -1 : timeSpanTicks == 0 ? 0 : 1;
         }
     }
 }
