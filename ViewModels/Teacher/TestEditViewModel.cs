@@ -409,19 +409,16 @@ namespace TestingSystem.ViewModels.Teacher
         private RelayCommand<Models.Teacher> addTestOwnerCommand = null!;
         public RelayCommand<Models.Teacher> AddTestOwnerCommand
         {
-            get => addTestOwnerCommand ??= new((teacherToBeAdded) =>
-            {
-                if (!teacherToBeAdded!.OwnedTests.Contains(Test))
-                    Test.OwnerTeachers.Add(teacherToBeAdded);
-            }, 
-            (teacherToBeAdded) => teacherToBeAdded is not null && !IsTeacherOwnerOfTest(teacherToBeAdded));
+            get => addTestOwnerCommand ??= new(
+                (teacherToBeAdded) => OwnerTeachers.Add(teacherToBeAdded!), 
+                (teacherToBeAdded) => teacherToBeAdded is not null && !IsTeacherOwnerOfTest(teacherToBeAdded));
         }
 
         private RelayCommand<Models.Teacher> removeTestOwnerCommand = null!;
         public RelayCommand<Models.Teacher> RemoveTestOwnerCommand
         {
             get => removeTestOwnerCommand ??= new(
-                (testOwner) => Test.OwnerTeachers.Remove(testOwner!),
+                (testOwner) => OwnerTeachers.Remove(testOwner!),
                 (testOwner) => testOwner is not null && AreOwnerTeachersMoreThanOne());
         }
 
