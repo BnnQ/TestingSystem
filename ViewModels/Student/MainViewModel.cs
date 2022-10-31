@@ -1,43 +1,56 @@
 ﻿using BackgroundWorkerLibrary;
+using Egor92.MvvmNavigation.Abstractions;
 using HappyStudio.Mvvm.Input.Wpf;
 using Microsoft.EntityFrameworkCore;
-using MvvmBaseViewModels.Common;
+using MvvmBaseViewModels.Navigation;
 using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using TestingSystem.Helpers.Comparers;
 using TestingSystem.Models;
 using TestingSystem.Models.Contexts;
 using TestingSystem.Views.Student;
 
 namespace TestingSystem.ViewModels.Student
 {
-    public class MainViewModel : ViewModelBase
+    public class MainViewModel : NavigationViewModelBase
     {
+        private readonly static IEqualityComparer<Category> categoryEqualityComparer = new CategoryByIdEqualityComparer();
+        private readonly static IEqualityComparer<Test> testEqualityComparer = new TestByIdEqualityComparer();
+
         private Models.Student student = null!;
 
-        private Category[] categories = null!;
-        public Category[] Categories
+        private ImmutableHashSet<Category> categories = null!;
+        public ImmutableHashSet<Category> Categories
         {
             get => categories;
             set
             {
                 if (categories != value)
                 {
+                    if (value.KeyComparer != categoryEqualityComparer)
+                        value = value.WithComparer(categoryEqualityComparer);
+
                     categories = value;
                     OnPropertyChanged(nameof(Categories));
                 }
             }
         }
-        private Test[] tests = null!;
-        public Test[] Tests
+        private ImmutableHashSet<Test> tests = null!;
+        public ImmutableHashSet<Test> Tests
         {
             get => tests;
             set
             {
                 if (tests != value)
                 {
+                    if (value.KeyComparer != testEqualityComparer)
+                        value = value.WithComparer(testEqualityComparer);
+
                     tests = value;
                     OnPropertyChanged(nameof(Tests));
                 }
@@ -47,7 +60,7 @@ namespace TestingSystem.ViewModels.Student
         public BackgroundWorker CategoriesUpdaterFromDatabaseBackgroundWorker { get; init; } = new();
         public BackgroundWorker<Models.Student> InitialLoaderBackgroundWorker { get; init; } = new();
 
-        public MainViewModel(Models.Student student)
+        public MainViewModel(INavigationManager navigationManager, Models.Student student) : base(navigationManager)
         {
             SetupBackgroundWorkers();
             _ = InitialLoaderBackgroundWorker.RunWorkerAsync(student);
@@ -95,10 +108,10 @@ namespace TestingSystem.ViewModels.Student
                         .Include(category => category.Tests)
                             .ThenInclude(test => test.Questions)
                         .LoadAsync();
-                    Categories = await context.Categories.ToArrayAsync();
+                    Categories = await Task.Run(() => context.Categories.ToImmutableHashSet(categoryEqualityComparer));
 
                     await context.Tests.LoadAsync();
-                    Tests = await context.Tests.ToArrayAsync();
+                    Tests = await Task.Run(() => context.Tests.ToImmutableHashSet(testEqualityComparer));
                 }
             }
             catch (Exception exception)
@@ -124,7 +137,7 @@ namespace TestingSystem.ViewModels.Student
         {
             get => openTestCommand ??= new((test) =>
             {
-                Application.Current.Dispatcher.Invoke(() =>
+                Application.Current?.Dispatcher.Invoke(() =>
                 {
                     TestInfoView infoView = new(test!, student);
                     infoView.ShowDialog();
