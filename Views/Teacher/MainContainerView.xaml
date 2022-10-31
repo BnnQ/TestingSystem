@@ -15,7 +15,7 @@
         TextOptions.TextRenderingMode="Auto"
         FontFamily="{DynamicResource MaterialDesignFont}"
         Background="{DynamicResource MaterialDesignPaper}"
-        Title="Система тестирования" Width="950" Height="700" MinWidth="360" MinHeight="350">
+        Title="Система тестирования" Width="1000" Height="700" MinWidth="360" MinHeight="350">
     <Window.Icon>
         <BitmapImage UriSource="https://img.icons8.com/external-vitaliy-gorbachev-lineal-color-vitaly-gorbachev/100/000000/external-test-online-learning-vitaliy-gorbachev-lineal-color-vitaly-gorbachev.pnghttps://img.icons8.com/external-vitaliy-gorbachev-lineal-color-vitaly-gorbachev/100/000000/external-test-online-learning-vitaliy-gorbachev-lineal-color-vitaly-gorbachev.png">
             <b:Interaction.Triggers>
@@ -65,7 +65,9 @@
             <ag:AutoGrid Rows="1*, 10*" Columns="1*">
                 <DockPanel Background="{StaticResource PrimaryHueMidBrush}">
                     <Button Style="{StaticResource NavigationDrawerOpenLeftDrawerButtonStyle}"/>
-                    <md:PopupBox DockPanel.Dock="Right" VerticalAlignment="Center" Foreground="{StaticResource PrimaryHueMidForegroundBrush}">
+                    <md:PopupBox DockPanel.Dock="Right" VerticalAlignment="Center"
+                                 Foreground="{StaticResource PrimaryHueMidForegroundBrush}" PlacementMode="BottomAndAlignCentres"
+                                 StaysOpen="False">
                         <StackPanel Orientation="Vertical">
                             <Button Command="{Binding ExitCommand}">
                                 <DockPanel>

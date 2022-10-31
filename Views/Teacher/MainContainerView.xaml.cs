@@ -4,6 +4,7 @@ using MvvmBaseViewModels.Navigation;
 using System.Windows;
 using System.Windows.Input;
 using TestingSystem.Constants.Teacher;
+using TestingSystem.Helpers;
 using TestingSystem.ViewModels;
 using TestingSystem.ViewModels.Teacher;
 
@@ -29,7 +30,7 @@ namespace TestingSystem.Views.Teacher
             Application.Current?.Dispatcher.Invoke(() =>
             {
                 IsEnabled = false;
-                Mouse.OverrideCursor = Cursors.Wait;
+                CursorOverrider.OverrideCursorCommand.Execute(Cursors.Wait);
             });
 
             navigationManager = new(FrameContent);
@@ -88,7 +89,7 @@ namespace TestingSystem.Views.Teacher
             {
                 DataContext = containerViewModel;
                 IsEnabled = true;
-                Mouse.OverrideCursor = Cursors.Arrow;
+                CursorOverrider.OverrideCursorCommand.Execute(Cursors.Arrow);
             });
         }
 
