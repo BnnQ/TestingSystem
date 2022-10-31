@@ -17,7 +17,7 @@
         WindowStartupLocation="CenterScreen"
         FontFamily="{DynamicResource MaterialDesignFont}"
         Background="{DynamicResource MaterialDesignPaper}"
-        Title="Просмотр и управление тестом" Width="1000" Height="800" MinWidth="550" MinHeight="600" Loaded="OnWindowLoaded">
+        Title="Просмотр и управление тестом" Width="1000" Height="850" MinWidth="550" MinHeight="650" Loaded="OnWindowLoaded">
     <Window.Icon>
         <BitmapImage UriSource="https://img.icons8.com/external-vitaliy-gorbachev-lineal-color-vitaly-gorbachev/100/000000/external-test-online-learning-vitaliy-gorbachev-lineal-color-vitaly-gorbachev.pnghttps://img.icons8.com/external-vitaliy-gorbachev-lineal-color-vitaly-gorbachev/100/000000/external-test-online-learning-vitaliy-gorbachev-lineal-color-vitaly-gorbachev.png">
             <b:Interaction.Triggers>
@@ -34,11 +34,12 @@
     <busyIndicator:BusyMask IsBusy="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Tag, Mode=OneWay,
                                      Converter={StaticResource stringIsLoadedToBoolIsBusyConverter}}" BusyContent="Загрузка..." 
                             IndicatorType="{StaticResource BusyMaskDefaultIndicatorType}" Background="{StaticResource BusyMaskDefaultBackground}">
-        <ag:AutoGrid Rows="1*, 1*, 1*, 1*, 1*, 1*, 1*, 4*, 1*" Columns="1*, 1*" ChildMargin="{StaticResource MarginOfEditControl}">
+        <ag:AutoGrid Rows="1*, 1*, 1*, 1*, 1*, 1*, 1*, 1*, 4*, 1*" Columns="1*, 1*" ChildMargin="{StaticResource MarginOfEditControl}">
             <Grid.Resources>
                 <converters:UshortNumberOfSecondsToTimeHoursMinutesStringConverter x:Key="ushortNumberOfSecondsToTimeHoursMinutesStringConverter"/>
                 <converters:UshortNumberOfSecondsToTimeMinutesSecondsStringConverter x:Key="ushortNumberOfSecondsToTimeMinutesSecondsStringConverter"/>
                 <converters:BoolToStateStringConverter x:Key="boolToStateStringConverter"/>
+                <converters:BoolByIsTeacherOwnerToStringAccessConverter x:Key="boolByIsTeacherOwnerToStringAccessConverter"/>
 
                 <Style TargetType="TextBlock" BasedOn="{StaticResource MainTextBlockStyle}"/>
                 <Style TargetType="DataGrid" BasedOn="{StaticResource OnlyReadDataGridStyle}"/>
@@ -91,6 +92,9 @@
 
             <TextBlock Text="Количество вопросов:"/>
             <TextBlock Text="{Binding Test.NumberOfQuestions}"/>
+
+            <TextBlock Text="Права на управление тестом:"/>
+            <TextBlock Text="{Binding IsTeacherOwner, Mode=OneWay, Converter={StaticResource boolByIsTeacherOwnerToStringAccessConverter}}"/>
 
             <GroupBox Grid.ColumnSpan="2" Header="Вопросы" Margin="0">
                 <Grid>
