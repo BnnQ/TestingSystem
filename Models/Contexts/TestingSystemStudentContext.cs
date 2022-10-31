@@ -10,6 +10,7 @@ namespace TestingSystem.Models.Contexts
     {
         public virtual DbSet<Category> Categories { get; set; } = null!;
         public virtual DbSet<Test> Tests { get; set; } = null!;
+        public virtual DbSet<TestResult> TestResults { get; set; } = null!;
 
 
         public TestingSystemStudentContext() : base()
@@ -230,6 +231,9 @@ namespace TestingSystem.Models.Contexts
                 categoryModel
                 .HasCheckConstraint("CK_Categories_Name", "[Name] != ''")
                 .HasKey(category => category.Id);
+                categoryModel
+                .HasIndex(category => category.Name)
+                .IsUnique();
 
                 categoryModel.Property(category => category.Id)
                 .HasColumnOrder(1)
@@ -342,8 +346,6 @@ namespace TestingSystem.Models.Contexts
                 .HasDefaultValue(DateTime.Now)
                 .IsRequired();
             });
-            modelBuilder.Entity<TestResult>()
-                .ToTable("TestResults");
 
             base.OnModelCreating(modelBuilder);
         }

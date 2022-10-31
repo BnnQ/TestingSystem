@@ -235,6 +235,9 @@ namespace TestingSystem.Models.Contexts
                 categoryModel
                 .HasCheckConstraint("CK_Categories_Name", "[Name] != ''")
                 .HasKey(category => category.Id);
+                categoryModel
+                .HasIndex(category => category.Name)
+                .IsUnique();
 
                 categoryModel.Property(category => category.Id)
                 .HasColumnOrder(1)

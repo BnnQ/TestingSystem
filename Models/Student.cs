@@ -1,12 +1,15 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using System.Collections.Generic;
-using System.Collections.Immutable;
+using System.Linq;
+using TestingSystem.Helpers.Comparers;
 
 namespace TestingSystem.Models
 {
     [ObservableObject]
     public partial class Student : User
     {
+        private readonly static IEqualityComparer<TestResult> testResultComparer = new TestResultByIdEqualityComparer();
+
         public int Id { get; set; }
 
         private string fullName = null!;
@@ -31,10 +34,10 @@ namespace TestingSystem.Models
             {
                 if (testResults != value)
                 {
-                    if (value is ImmutableHashSet<TestResult> immutableTestResults)
-                        testResults = immutableTestResults;
+                    if (value is HashSet<TestResult> hashSetTestResults)
+                        testResults = hashSetTestResults;
                     else
-                        testResults = value.ToImmutableHashSet();
+                        testResults = value.ToHashSet(testResultComparer);
                 }
             }
         }
@@ -42,7 +45,7 @@ namespace TestingSystem.Models
 
         public Student(string name, string hashedPassword) : base(name, hashedPassword)
         {
-            TestResults = new HashSet<TestResult>();
+            TestResults = new HashSet<TestResult>(testResultComparer);
         }
         public Student(string name, string hashedPassword, string fullName) : this(name, hashedPassword)
         {
