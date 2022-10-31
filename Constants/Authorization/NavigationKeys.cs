@@ -2,7 +2,7 @@
 {
     public static class NavigationKeys
     {
-        public const string Authentication = "Authentication";
-        public const string Registration = "Registration";
+        public const string Authentication = nameof(Authentication);
+        public const string Registration = nameof(Registration);
     }
 }

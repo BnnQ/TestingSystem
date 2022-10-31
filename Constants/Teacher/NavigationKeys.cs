@@ -2,8 +2,8 @@
 {
     public static class NavigationKeys
     {
-        public const string Main = "Main";
-        public const string Statistics = "Statistics";
-        public const string About = "About";
+        public const string Main = nameof(Main);
+        public const string Statistics = nameof(Statistics);
+        public const string About = nameof(About);
     }
 }
