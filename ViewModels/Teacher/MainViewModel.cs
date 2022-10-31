@@ -5,10 +5,13 @@ using Meziantou.Framework.WPF.Collections;
 using Microsoft.EntityFrameworkCore;
 using MvvmBaseViewModels.Navigation;
 using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using TestingSystem.Helpers.Comparers;
 using TestingSystem.Models;
 using TestingSystem.Models.Contexts;
 using TestingSystem.Views.Teacher;
@@ -17,58 +20,40 @@ namespace TestingSystem.ViewModels.Teacher
 {
     public class MainViewModel : NavigationViewModelBase
     {
+        private readonly static IEqualityComparer<Category> categoryEqualityComparer = new CategoryByIdEqualityComparer();
+        private readonly static IEqualityComparer<Test> testEqualityComparer = new TestByIdEqualityComparer();
+
         private Models.Teacher teacher = null!;
 
-        private Category[] categories = null!;
-        public Category[] Categories
+        private ImmutableHashSet<Category> categories = null!;
+        public ImmutableHashSet<Category> Categories
         {
             get => categories;
             set
             {
                 if (categories != value)
                 {
+                    if (value.KeyComparer != categoryEqualityComparer)
+                        value = value.WithComparer(categoryEqualityComparer);
+
                     categories = value;
                     OnPropertyChanged(nameof(Categories));
                 }
             }
         }
-        private Test[] tests = null!;
-        public Test[] Tests
+        private ImmutableHashSet<Test> tests = null!;
+        public ImmutableHashSet<Test> Tests
         {
             get => tests;
             set
             {
                 if (tests != value)
                 {
+                    if (value.KeyComparer != testEqualityComparer)
+                        value = value.WithComparer(testEqualityComparer);
+
                     tests = value;
                     OnPropertyChanged(nameof(Tests));
-                }
-            }
-        }
-        private Models.Teacher[] teachers = null!;
-        public Models.Teacher[] Teachers
-        {
-            get => teachers;
-            set
-            {
-                if (teachers != value)
-                {
-                    teachers = value;
-                    OnPropertyChanged(nameof(Teachers));
-                }
-            }
-        }
-
-        private bool isAddMenuOpen = false;
-        public bool IsAddMenuOpen
-        {
-            get => isAddMenuOpen;
-            set
-            {
-                if (isAddMenuOpen != value)
-                {
-                    isAddMenuOpen = value;
-                    OnPropertyChanged(nameof(IsAddMenuOpen));
                 }
             }
         }
@@ -80,7 +65,7 @@ namespace TestingSystem.ViewModels.Teacher
         {
             SetupBackgroundWorkers();
             _ = InitialLoaderBackgroundWorker.RunWorkerAsync(teacher);
-            UpdateCategoriesFromDatabaseAsyncCommand.Execute(null);
+            _ = UpdateCategoriesFromDatabaseAsyncCommand.ExecuteAsync(null);
         }
 
         private void SetupBackgroundWorkers()
@@ -124,10 +109,10 @@ namespace TestingSystem.ViewModels.Teacher
                         .Include(category => category.Tests)
                             .ThenInclude(test => test.Questions)
                         .LoadAsync();
-                    Categories = await context.Categories.ToArrayAsync();
+                    Categories = await Task.Run(() => context.Categories.ToImmutableHashSet(categoryEqualityComparer));
                     
                     await context.Tests.LoadAsync();
-                    Tests = await context.Tests.ToArrayAsync();
+                    Tests = await Task.Run(() => context.Tests.ToImmutableHashSet(testEqualityComparer));
                 }
             }
             catch (Exception exception)
@@ -148,12 +133,6 @@ namespace TestingSystem.ViewModels.Teacher
             });
         }
 
-        private RelayCommand openAddMenuCommand = null!;
-        public RelayCommand OpenAddMenuCommand
-        {
-            get => openAddMenuCommand ??= new(() => IsAddMenuOpen = !IsAddMenuOpen);
-        }
-
         #region Popup (AddMenu)
         private AsyncRelayCommand addCategoryAsyncCommand = null!;
         public AsyncRelayCommand AddCategoryAsyncCommand
@@ -162,7 +141,7 @@ namespace TestingSystem.ViewModels.Teacher
             {
                 Category categoryToBeAdded = new();
                 bool? editViewDialogResult = default;
-                Application.Current.Dispatcher.Invoke(() =>
+                Application.Current?.Dispatcher.Invoke(() =>
                 {
                     CategoryEditView categoryEditView = new(categoryToBeAdded);
                     editViewDialogResult = categoryEditView.ShowDialog();
@@ -180,7 +159,7 @@ namespace TestingSystem.ViewModels.Teacher
             {
                 Test testToBeAdded = new(new ConcurrentObservableCollection<Models.Teacher>() { teacher });
                 bool? editViewDialogResult = default;
-                Application.Current.Dispatcher.Invoke(() =>
+                Application.Current?.Dispatcher.Invoke(() =>
                 {
                     TestEditView testEditView = new(testToBeAdded);
                     editViewDialogResult = testEditView.ShowDialog();
@@ -197,7 +176,7 @@ namespace TestingSystem.ViewModels.Teacher
         {
             get => manageCategoryAsyncCommand ??= new(async (category) =>
             {
-                    Application.Current.Dispatcher.Invoke(() =>
+                    Application.Current?.Dispatcher.Invoke(() =>
                     {
                         CategoryInfoView categoryInfoView = new(category!, teacher);
                         categoryInfoView.ShowDialog();
@@ -212,7 +191,7 @@ namespace TestingSystem.ViewModels.Teacher
         {
             get => manageTestAsyncCommand ??= new(async (test) =>
             {
-                    Application.Current.Dispatcher.Invoke(() =>
+                    Application.Current?.Dispatcher.Invoke(() =>
                     {
                         TestInfoView testInfoView = new(test!, teacher);
                         testInfoView.ShowDialog();

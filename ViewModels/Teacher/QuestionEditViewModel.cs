@@ -175,7 +175,7 @@ namespace TestingSystem.ViewModels.Teacher
                 AnswerOption answerOptionToBeAdded = new(question, question.GetSerialNumberForNewAnswerOption());
                 
                 bool? editViewDialogResult = default;
-                Application.Current.Dispatcher.Invoke(() =>
+                Application.Current?.Dispatcher.Invoke(() =>
                 {
                     AnswerOptionEditView editView = new(answerOptionToBeAdded);
                     editViewDialogResult = editView.ShowDialog();
@@ -191,7 +191,7 @@ namespace TestingSystem.ViewModels.Teacher
         {
             get => editAnswerOptionCommand ??= new((answerOption) =>
             {
-                Application.Current.Dispatcher.Invoke(() =>
+                Application.Current?.Dispatcher.Invoke(() =>
                 {
                     AnswerOptionEditView editView = new(answerOption!);
                     editView.ShowDialog();
