@@ -3,12 +3,12 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Windows.Data;
+using TestingSystem.Constants;
 
 namespace TestingSystem.Views.Converters
 {
     public class OneWayTimeSpanToStringConverter : IValueConverter
     {
-        private const string NullValue = "0 сек.";
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
             if (value is TimeSpan timeSpan)
@@ -21,7 +21,7 @@ namespace TestingSystem.Views.Converters
                 byte.TryParse(splittedLongTime.Last(), out byte seconds);
 
                 if (hours == 0 && minutes == 0 && seconds == 0)
-                    return NullValue;
+                    return CustomNullValues.TimeSpanNull;
 
                 StringBuilder resultStringBuilder = new();
                 if (hours > 0)
@@ -34,7 +34,7 @@ namespace TestingSystem.Views.Converters
                 return resultStringBuilder.ToString();
             }
 
-            return NullValue;
+            return CustomNullValues.TimeSpanNull;
         }
 
         public object? ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
