@@ -16,6 +16,11 @@ namespace TestingSystem.ViewModels.Teacher
 {
     public class StatisticsViewModel : NavigationViewModelBase
     {
+        private readonly static IComparer<TestResult> testResultComparer = new TestResultByCompletionDateDescendingComparer();
+
+        private readonly static IEqualityComparer<Models.Student> studentEqualityComparer = new StudentByIdEqualityComparer();
+        private readonly static IEqualityComparer<Test> testEqualityComparer = new TestByIdEqualityComparer();
+
         private readonly Models.Teacher teacher;
 
         private ImmutableHashSet<Models.Student> students = null!;
@@ -26,6 +31,9 @@ namespace TestingSystem.ViewModels.Teacher
             {
                 if (students != value)
                 {
+                    if (value.KeyComparer != studentEqualityComparer)
+                        value = value.WithComparer(studentEqualityComparer);
+
                     students = value;
                     OnPropertyChanged(nameof(Students));
                 }
@@ -56,6 +64,9 @@ namespace TestingSystem.ViewModels.Teacher
             {
                 if (tests != value)
                 {
+                    if (value.KeyComparer != testEqualityComparer)
+                        value = value.WithComparer(testEqualityComparer);
+
                     tests = value;
                     OnPropertyChanged(nameof(Tests));
                 }
@@ -116,6 +127,9 @@ namespace TestingSystem.ViewModels.Teacher
             {
                 if (statistics != value)
                 {
+                    if (value.KeyComparer != testResultComparer)
+                        value = value.WithComparer(testResultComparer);
+                        
                     statistics = value;
                     OnPropertyChanged(nameof(Statistics));
                 }
@@ -131,8 +145,7 @@ namespace TestingSystem.ViewModels.Teacher
             this.teacher = teacher;
 
             SetupBackgroundWorkers();
-            Task initialUpdatingTask = UpdateDataFromDatabaseAsyncCommand.ExecuteAsync(null);
-            initialUpdatingTask.ContinueWith((_) => UpdateStatisticsAsyncCommand.ExecuteAsync(null));
+            _ = UpdateDataFromDatabaseAsyncCommand.ExecuteAsync(null);
         }
 
         private void SetupBackgroundWorkers()
@@ -144,10 +157,10 @@ namespace TestingSystem.ViewModels.Teacher
                     try
                     {
                         await context.Students.LoadAsync();
-                        Students = context.Students.ToImmutableHashSet();
+                        Students = await Task.Run(() => context.Students.ToImmutableHashSet(studentEqualityComparer));
 
                         await context.Tests.LoadAsync();
-                        Tests = context.Tests.ToImmutableHashSet();
+                        Tests = await Task.Run(() => context.Tests.ToImmutableHashSet(testEqualityComparer));
 
                         NumberOfTestsCreated = context.Tests
                                                       .Where(test => test.OwnerTeachers.Contains(teacher))
@@ -159,13 +172,15 @@ namespace TestingSystem.ViewModels.Teacher
                         return;
                     }
                 }
+
+                await UpdateStatisticsAsyncCommand.ExecuteAsync(null);
             };
 
             StatisticsUpdaterBackgroundWorker.DoWork = async () =>
             {
                 try
                 {
-                    Statistics = await GetStatisticsAsync(new TestResultByCompletionDateComparer());
+                    Statistics = await GetStatisticsAsync(new TestResultByCompletionDateDescendingComparer());
                 }
                 catch (Exception exception)
                 {
@@ -179,14 +194,14 @@ namespace TestingSystem.ViewModels.Teacher
         #region Getting statistics
         private Task<ImmutableSortedSet<TestResult>> GetStatisticsAsync(IComparer<TestResult> statisticsSortComparer)
         {
-            if (SelectedStudent is null && SelectedTest is null)
-                return GetAllStatisticsAsync(statisticsSortComparer);
+            if (SelectedStudent is not null && SelectedTest is not null)
+                return GetStatisticsByStudentAndTestAsync(SelectedStudent, SelectedTest!, statisticsSortComparer);
             else if (SelectedStudent is not null)
                 return GetStatisticsByStudentAsync(SelectedStudent, statisticsSortComparer);
             else if (SelectedTest is not null)
                 return GetStatisticsByTestAsync(SelectedTest, statisticsSortComparer);
             else
-                return GetStatisticsByStudentAndTestAsync(SelectedStudent!, SelectedTest!, statisticsSortComparer);
+                return GetAllStatisticsAsync(statisticsSortComparer);
         }
 
         private async Task<ImmutableSortedSet<TestResult>> GetAllStatisticsAsync(IComparer<TestResult> statisticsSortComparer)
@@ -210,7 +225,7 @@ namespace TestingSystem.ViewModels.Teacher
 
                 }
 
-                return context.TestResults.ToImmutableSortedSet(statisticsSortComparer);
+                return await Task.Run(() => context.TestResults.Local.ToImmutableSortedSet(statisticsSortComparer));
             }
         }
 
@@ -235,7 +250,7 @@ namespace TestingSystem.ViewModels.Teacher
                                  .LoadAsync();
                 }
 
-                return context.TestResults.ToImmutableSortedSet(statisticsSortComparer);
+                return await Task.Run(() => context.TestResults.Local.ToImmutableSortedSet(statisticsSortComparer));
             }
         }
 
@@ -260,7 +275,7 @@ namespace TestingSystem.ViewModels.Teacher
                                  .LoadAsync();
                 }
 
-                return context.TestResults.ToImmutableSortedSet(statisticsSortComparer);
+                return await Task.Run(() => context.TestResults.Local.ToImmutableSortedSet(statisticsSortComparer));
             }
         }
 
@@ -287,7 +302,7 @@ namespace TestingSystem.ViewModels.Teacher
                                  .LoadAsync();
                 }
 
-                return context.TestResults.ToImmutableSortedSet(statisticsSortComparer);
+                return await Task.Run(() => context.TestResults.Local.ToImmutableSortedSet(statisticsSortComparer));
             }
         }
         #endregion
