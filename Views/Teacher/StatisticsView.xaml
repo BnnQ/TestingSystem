@@ -9,6 +9,7 @@
              xmlns:converters="clr-namespace:TestingSystem.Views.Converters"
              xmlns:accb="clr-namespace:DotNetKit.Windows.Controls;assembly=DotNetKit.Wpf.AutoCompleteComboBox"
              xmlns:busyIndicator="https://github.com/Peoky/BusyIndicator"
+             xmlns:h="clr-namespace:TestingSystem.Helpers"
              TextElement.Foreground="{DynamicResource MaterialDesignBody}"
              TextElement.FontWeight="Regular"
              TextElement.FontSize="{StaticResource MainFontSize}"
@@ -23,6 +24,7 @@
             <Grid.Resources>
                 <converters:IntIdToStringConverter x:Key="intIdToStringConverter"/>
                 <converters:OneWayTimeSpanToStringConverter x:Key="timeSpanToStringConverter"/>
+                <converters:DateTimeToStringConverter x:Key="dateTimeToStringConverter"/>
 
                 <Style TargetType="GroupBox" BasedOn="{StaticResource MainGroupBoxStyle}"/>
                 <Style TargetType="TextBlock" BasedOn="{StaticResource MainTextBlockStyle}"/>
@@ -43,7 +45,7 @@
             <GroupBox Header="Статистика студентов">
                 <busyIndicator:BusyMask IsBusy="{Binding StatisticsUpdaterBackgroundWorker.IsBusy}" BusyContent="Получение статистики"
                                         IndicatorType="{StaticResource BusyMaskDefaultIndicatorType}" Background="{StaticResource BusyMaskDefaultBackground}">
-                    <ag:AutoGrid Rows="2*, 2*, 2*, 8*" Columns="1*" ChildMargin="5">
+                    <ag:AutoGrid Rows="2*, 2*, 2*, 8*" Columns="1*" ChildMargin="5" h:EnterKeyTraversal.IsEnabled="True">
                         <accb:AutoCompleteComboBox ItemsSource="{Binding Students, Mode=OneWay}" TextSearch.TextPath="Name"
                                        SelectedItem="{Binding SelectedStudent, Mode=OneWayToSource}"
                                        md:HintAssist.Hint="Студент... (опционально)">
@@ -70,7 +72,8 @@
                             </accb:AutoCompleteComboBox.ItemTemplate>
                         </accb:AutoCompleteComboBox>
 
-                        <TextBox Text="{Binding MinimumDate}" md:HintAssist.Hint="Показать результаты не позднее чем... (опционально)"
+                        <TextBox Text="{Binding MinimumDate, Converter={StaticResource dateTimeToStringConverter}}"
+                                 md:HintAssist.Hint="Показать результаты не раньше чем... (опционально)" 
                                  md:HintAssist.IsFloating="False" Padding="5"/>
 
                         <DataGrid ItemsSource="{Binding Statistics, Mode=OneWay, IsAsync=True}">
@@ -96,15 +99,17 @@
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
                                 <md:DataGridTextColumn Header="Оценка" Binding="{Binding Score}"/>
-                                <md:DataGridTextColumn Header="Количество правильных ответов" Binding="{Binding NumberOfCorrectAnswers}"
+                                <md:DataGridTextColumn Header="Правильные ответы (количество)" Binding="{Binding NumberOfCorrectAnswers}"
                                                Width="SizeToCells"/>
-                                <md:DataGridTextColumn Header="Количество неправильных ответов" Binding="{Binding NumberOfIncorrectAnswers}"
+                                <md:DataGridTextColumn Header="Неправильные ответы (количество)" Binding="{Binding NumberOfIncorrectAnswers}"
                                                Width="SizeToCells"/>
                                 <md:DataGridTextColumn Header="Время прохождения" Binding="{Binding TestCompletionTime, 
                             Converter={StaticResource timeSpanToStringConverter}}"/>
                                 <md:DataGridTextColumn Header="Среднее время ответа на вопрос" Binding="{Binding AverageAnswerTime,
                             Converter={StaticResource timeSpanToStringConverter}}" Width="SizeToCells"/>
-                                <md:DataGridTextColumn Header="Дата прохождения" Binding="{Binding CompletionDate}"/>
+                                <md:DataGridTextColumn Header="Дата и время прохождения" Binding="{Binding CompletionDate,
+                                                                                                   Converter={StaticResource dateTimeToStringConverter}}"
+                                                       Width="SizeToCells"/>
                             </DataGrid.Columns>
                         </DataGrid>
 
