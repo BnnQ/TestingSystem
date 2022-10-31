@@ -52,7 +52,7 @@ namespace TestingSystem.Migrations
 
                     b.HasIndex("QuestionId");
 
-                    b.ToTable("AnswerOptions", (string)null);
+                    b.ToTable("AnswerOptions");
 
                     b.HasCheckConstraint("CK_AnswerOptions_Content", "[Content] != ''");
 
@@ -74,6 +74,9 @@ namespace TestingSystem.Migrations
                         .HasColumnType("nvarchar(128)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
 
                     b.ToTable("Categories");
 
@@ -242,7 +245,7 @@ namespace TestingSystem.Migrations
                     b.Property<DateTime>("CompletionDate")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime2")
-                        .HasDefaultValue(new DateTime(2022, 10, 28, 20, 43, 22, 542, DateTimeKind.Local).AddTicks(4597));
+                        .HasDefaultValue(new DateTime(2022, 10, 31, 3, 20, 3, 148, DateTimeKind.Local).AddTicks(2287));
 
                     b.Property<int>("NumberOfCorrectAnswers")
                         .HasColumnType("int");

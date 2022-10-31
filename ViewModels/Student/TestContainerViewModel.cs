@@ -1,6 +1,5 @@
 ﻿using Egor92.MvvmNavigation.Abstractions;
 using MvvmBaseViewModels.Common;
-using TestingSystem.Models;
 
 namespace TestingSystem.ViewModels.Student
 {

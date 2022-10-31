@@ -9,6 +9,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using TestingSystem.Constants.Teacher;
+using TestingSystem.Helpers;
 using TestingSystem.Models;
 using TestingSystem.Models.Contexts;
 using TestingSystem.Views.Teacher;
@@ -44,6 +46,19 @@ namespace TestingSystem.ViewModels.Teacher
         }
         public int NumberOfTests => Category?.Tests.Count ?? 0;
 
+        public string AccessMode
+        {
+            get
+            {
+                if (AreTestsEmpty() || DoesTeacherOwnAllTests())
+                    return AccessModes.ReadAndWrite;
+                else if (DoesTeacherOwnAtLeastOneTest())
+                    return AccessModes.WriteOnly;
+                else
+                    return AccessModes.ReadOnly;
+            }
+        }
+
         private readonly Models.Teacher teacher = null!;
         public BackgroundWorker CategoryUpdaterFromDatabaseBackgroundWorker { get; init; } = new();
 
@@ -61,39 +76,41 @@ namespace TestingSystem.ViewModels.Teacher
         {
             CategoryUpdaterFromDatabaseBackgroundWorker.OnWorkStarting = () =>
             {
-                Mouse.OverrideCursor = Cursors.Wait;
+                CursorOverrider.OverrideCursorCommand.Execute(Cursors.Wait);
                 CommandManager.InvalidateRequerySuggested();
             };
             CategoryUpdaterFromDatabaseBackgroundWorker.DoWork = async () => await UpdateCategoryFromDatabaseAsync();
             CategoryUpdaterFromDatabaseBackgroundWorker.OnWorkCompleted = () =>
             {
-                Mouse.OverrideCursor = Cursors.Arrow;
+                CursorOverrider.OverrideCursorCommand.Execute(Cursors.Arrow);
                 CommandManager.InvalidateRequerySuggested();
             };
         }
-        
+
         #region Commands
         private async Task UpdateCategoryFromDatabaseAsync()
         {
-                try
+            try
+            {
+                using (TestingSystemTeacherContext context = new())
                 {
-                    using (TestingSystemTeacherContext context = new())
-                    {
-                        Category = (await context.FindAsync<Category>(Category.Id))!;
+                    Category = (await context.FindAsync<Category>(Category.Id))!;
 
-                        await context.Entry(Category)
-                            .Collection(category => category.Tests)
-                            .LoadAsync();
+                    await context.Entry(Category)
+                        .Collection(category => category.Tests)
+                        .LoadAsync();
 
-                        foreach (Test test in Category.Tests)
-                            await context.Entry(test).Collection(test => test.OwnerTeachers).LoadAsync();
-                    }
+                    foreach (Test test in Category.Tests)
+                        await context.Entry(test).Collection(test => test.OwnerTeachers).LoadAsync();
+
+                    OnPropertyChanged(nameof(AccessMode));
                 }
-                catch (Exception exception)
-                {
-                    OccurCriticalErrorMessage(exception);
-                    return;
-                }
+            }
+            catch (Exception exception)
+            {
+                OccurCriticalErrorMessage(exception);
+                return;
+            }
         }
 
         private AsyncRelayCommand updateCategoryFromDatabaseAsyncCommand = null!;
@@ -138,7 +155,7 @@ namespace TestingSystem.ViewModels.Teacher
             get => editCategoryAsyncCommand ??= new(async () =>
             {
                 bool? editViewDialogResult = default;
-                Application.Current.Dispatcher.Invoke(() =>
+                Application.Current?.Dispatcher.Invoke(() =>
                 {
                     CategoryEditView categoryEditView = new(Category!);
                     editViewDialogResult = categoryEditView.ShowDialog();
@@ -148,7 +165,7 @@ namespace TestingSystem.ViewModels.Teacher
                     await UpdateCategoryFromDatabaseAsyncCommand.ExecuteAsync(null);
             },
             () => Category is not null && !CategoryUpdaterFromDatabaseBackgroundWorker.IsBusy && 
-            (AreTestsEmpty() || DoesTeacherOwnAtLeastOneTest()));
+            (AccessMode.Equals(AccessModes.WriteOnly) || AccessMode.Equals(AccessModes.ReadAndWrite)));
         }
 
         private bool isRemoveLocked = false;
@@ -187,7 +204,7 @@ namespace TestingSystem.ViewModels.Teacher
 
             }, 
             () => !isRemoveLocked && Category is not null && !CategoryUpdaterFromDatabaseBackgroundWorker.IsBusy &&
-            (AreTestsEmpty() || DoesTeacherOwnAllTests()));
+            AccessMode.Equals(AccessModes.ReadAndWrite));
         }
         #endregion
 

@@ -5,6 +5,7 @@ using System;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using TestingSystem.Helpers;
 using TestingSystem.Models;
 using TestingSystem.Models.Contexts;
 using TestingSystem.Views.Student;
@@ -41,11 +42,11 @@ namespace TestingSystem.ViewModels.Student
 
         private void SetupBackgroundWorkers()
         {
-            TestUpdaterFromDatabaseBackgroundWorker.OnWorkStarting = () => Mouse.OverrideCursor = Cursors.Wait;
+            TestUpdaterFromDatabaseBackgroundWorker.OnWorkStarting = () => CursorOverrider.OverrideCursorCommand.Execute(Cursors.Wait);
             TestUpdaterFromDatabaseBackgroundWorker.DoWork = async () => await UpdateTestFromDatabaseAsync();
             TestUpdaterFromDatabaseBackgroundWorker.OnWorkCompleted = () =>
             {
-                Mouse.OverrideCursor = Cursors.Arrow;
+                CursorOverrider.OverrideCursorCommand.Execute(Cursors.Arrow);
                 CommandManager.InvalidateRequerySuggested();
             };
         }

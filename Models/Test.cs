@@ -2,15 +2,17 @@
 using Meziantou.Framework.WPF.Builders;
 using Meziantou.Framework.WPF.Collections;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Linq;
+using TestingSystem.Helpers.Comparers;
 
 namespace TestingSystem.Models
 {
     public class Test : ObservableObject
     {
+        private readonly static IEqualityComparer<TestResult> testResultComparer = new TestResultByIdEqualityComparer();
+
         public int Id { get; set; }
 
         private string name = null!;
@@ -281,10 +283,10 @@ namespace TestingSystem.Models
             {
                 if (testResults != value)
                 {
-                    if (value is ImmutableHashSet<TestResult> immutableTestResults)
-                        testResults = immutableTestResults;
+                    if (value is HashSet<TestResult> hashSetTestResults)
+                        testResults = hashSetTestResults;
                     else
-                        testResults = value.ToImmutableHashSet();
+                        testResults = value.ToHashSet(testResultComparer);
                 }
             }
         }
@@ -294,7 +296,7 @@ namespace TestingSystem.Models
         {
             Questions = new ConcurrentObservableCollection<Question>();
             OwnerTeachers = new ConcurrentObservableCollection<Teacher>();
-            TestResults = new HashSet<TestResult>();
+            TestResults = new HashSet<TestResult>(testResultComparer);
         }
         public Test(ICollection<Teacher> ownerTeachers, ushort numberOfQuestions = 1) : this()
         {

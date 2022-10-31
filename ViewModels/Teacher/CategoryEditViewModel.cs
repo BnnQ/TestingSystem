@@ -1,5 +1,6 @@
 ﻿using BackgroundWorkerLibrary;
 using HappyStudio.Mvvm.Input.Wpf;
+using Microsoft.EntityFrameworkCore;
 using MvvmBaseViewModels.Common.Validatable;
 using MvvmBaseViewModels.Enums;
 using ReactiveValidation;
@@ -9,6 +10,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using TestingSystem.Helpers;
 using TestingSystem.Models;
 using TestingSystem.Models.Contexts;
 
@@ -58,7 +60,7 @@ namespace TestingSystem.ViewModels.Teacher
 
         public void SetupBackgroundWorkers()
         {
-            InitialLoaderBackgroundWorker.OnWorkStarting = () => Mouse.OverrideCursor = Cursors.Wait;
+            InitialLoaderBackgroundWorker.OnWorkStarting = () => CursorOverrider.OverrideCursorCommand.Execute(Cursors.Wait);
             InitialLoaderBackgroundWorker.DoWork = async (parameters) =>
             {
                 if (parameters?.Length < 1)
@@ -89,7 +91,7 @@ namespace TestingSystem.ViewModels.Teacher
 
                 SetupValidator();
             };
-            InitialLoaderBackgroundWorker.OnWorkStarting = () => Mouse.OverrideCursor = Cursors.Arrow;
+            InitialLoaderBackgroundWorker.OnWorkStarting = () => CursorOverrider.OverrideCursorCommand.Execute(Cursors.Arrow);
         }
 
         #region Validation setup
@@ -107,8 +109,30 @@ namespace TestingSystem.ViewModels.Teacher
                 .MaxLength(128)
                 .When(viewModel => viewModel.nameValidationState == ValidationState.Enabled)
                 .WithMessage("Название не может быть длиннее 128 символов");
+            builder.RuleFor(viewModel => viewModel.Name)
+                .Must(async (name) => name.Equals(name) && !await IsCategoryExistsAsync(Category))
+                .When(viewModel => viewModel.nameValidationState == ValidationState.Enabled)
+                .WithMessage("Категория с таким названием уже существует");
 
             Validator = builder.Build(this);
+        }
+
+        private async Task<bool> IsCategoryExistsAsync(Category category)
+        {
+            try
+            {
+                await context.Categories.LoadAsync();
+
+                if (context.Categories.FirstOrDefault(c => c.Name.Equals(category.Name)) is not null)
+                    return true;
+                else
+                    return false;
+            }
+            catch (Exception exception)
+            {
+                OccurCriticalErrorMessage(exception);
+                return false;
+            }
         }
 
         private async Task<bool> IsNameValidAsync()
@@ -133,6 +157,7 @@ namespace TestingSystem.ViewModels.Teacher
                 if (!await IsNameValidAsync())
                 {
                     isConfirmLocked = false;
+                    CommandManager.InvalidateRequerySuggested();
                     return;
                 }
 

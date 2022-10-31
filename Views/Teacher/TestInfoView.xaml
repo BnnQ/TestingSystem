@@ -8,6 +8,7 @@
         xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
         xmlns:busyIndicator="https://github.com/Peoky/BusyIndicator"
         xmlns:converters="clr-namespace:TestingSystem.Views.Converters"
+        xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
         TextElement.Foreground="{DynamicResource MaterialDesignBody}"
         TextElement.FontWeight="Regular"
         TextElement.FontSize="{StaticResource MainFontSize}"
@@ -16,15 +17,29 @@
         WindowStartupLocation="CenterScreen"
         FontFamily="{DynamicResource MaterialDesignFont}"
         Background="{DynamicResource MaterialDesignPaper}"
-        Title="Просмотр и управление тестом" Width="1000" Height="800" MinWidth="550" MinHeight="600" Loaded="OnWindowLoaded">
+        Title="Просмотр и управление тестом" Width="1000" Height="850" MinWidth="550" MinHeight="650" Loaded="OnWindowLoaded">
+    <Window.Icon>
+        <BitmapImage UriSource="https://img.icons8.com/external-vitaliy-gorbachev-lineal-color-vitaly-gorbachev/100/000000/external-test-online-learning-vitaliy-gorbachev-lineal-color-vitaly-gorbachev.pnghttps://img.icons8.com/external-vitaliy-gorbachev-lineal-color-vitaly-gorbachev/100/000000/external-test-online-learning-vitaliy-gorbachev-lineal-color-vitaly-gorbachev.png">
+            <b:Interaction.Triggers>
+                <b:EventTrigger EventName="DownloadFailed">
+                    <b:ChangePropertyAction TargetObject="{Binding RelativeSource={RelativeSource AncestorType=Window}}" PropertyName="Icon" Value="{x:Null}"/>
+                </b:EventTrigger>
+                <b:EventTrigger EventName="DecodeFailed">
+                    <b:ChangePropertyAction TargetObject="{Binding RelativeSource={RelativeSource AncestorType=Window}}" PropertyName="Icon" Value="{x:Null}"/>
+                </b:EventTrigger>
+            </b:Interaction.Triggers>
+        </BitmapImage>
+    </Window.Icon>
+    
     <busyIndicator:BusyMask IsBusy="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Tag, Mode=OneWay,
                                      Converter={StaticResource stringIsLoadedToBoolIsBusyConverter}}" BusyContent="Загрузка..." 
                             IndicatorType="{StaticResource BusyMaskDefaultIndicatorType}" Background="{StaticResource BusyMaskDefaultBackground}">
-        <ag:AutoGrid Rows="1*, 1*, 1*, 1*, 1*, 1*, 1*, 4*, 1*" Columns="1*, 1*" ChildMargin="{StaticResource MarginOfEditControl}">
+        <ag:AutoGrid Rows="1*, 1*, 1*, 1*, 1*, 1*, 1*, 1*, 4*, 1*" Columns="1*, 1*" ChildMargin="{StaticResource MarginOfEditControl}">
             <Grid.Resources>
                 <converters:UshortNumberOfSecondsToTimeHoursMinutesStringConverter x:Key="ushortNumberOfSecondsToTimeHoursMinutesStringConverter"/>
                 <converters:UshortNumberOfSecondsToTimeMinutesSecondsStringConverter x:Key="ushortNumberOfSecondsToTimeMinutesSecondsStringConverter"/>
                 <converters:BoolToStateStringConverter x:Key="boolToStateStringConverter"/>
+                <converters:BoolByIsTeacherOwnerToStringAccessConverter x:Key="boolByIsTeacherOwnerToStringAccessConverter"/>
 
                 <Style TargetType="TextBlock" BasedOn="{StaticResource MainTextBlockStyle}"/>
                 <Style TargetType="DataGrid" BasedOn="{StaticResource OnlyReadDataGridStyle}"/>
@@ -77,6 +92,9 @@
 
             <TextBlock Text="Количество вопросов:"/>
             <TextBlock Text="{Binding Test.NumberOfQuestions}"/>
+
+            <TextBlock Text="Права на управление тестом:"/>
+            <TextBlock Text="{Binding IsTeacherOwner, Mode=OneWay, Converter={StaticResource boolByIsTeacherOwnerToStringAccessConverter}}"/>
 
             <GroupBox Grid.ColumnSpan="2" Header="Вопросы" Margin="0">
                 <Grid>

@@ -6,6 +6,8 @@
              mc:Ignorable="d" 
              xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:ag="clr-namespace:WpfAutoGrid;assembly=WpfAutoGrid.Core"
+             xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
+             xmlns:h="clr-namespace:TestingSystem.Helpers"
              xmlns:busyIndicator="https://github.com/Peoky/BusyIndicator"
              TextElement.Foreground="{DynamicResource MaterialDesignBody}"
              TextElement.FontWeight="Regular"
@@ -32,7 +34,25 @@
 
         <Button Command="{Binding SwitchToRegistrationNavigationCommand}" Style="{StaticResource FlatButtonWithoutHighlightStyle}" 
                 TabIndex="4">
-            <TextBlock Text="Зарегистрироваться"/>
+            <TextBlock Text="Зарегистрироваться">
+                <b:Interaction.Triggers>
+                <b:EventTrigger EventName="MouseEnter">
+                    <b:EventTrigger.Actions>
+                        <b:InvokeCommandAction Command="{x:Static h:CursorOverrider.OverrideCursorCommand}" 
+                                           CommandParameter="{x:Static Cursors.Hand}"/>
+                        <b:ChangePropertyAction PropertyName="TextDecorations" Value="Underline"/>
+                    </b:EventTrigger.Actions>
+                </b:EventTrigger>
+                
+                <b:EventTrigger EventName="MouseLeave">
+                    <b:EventTrigger.Actions>
+                        <b:InvokeCommandAction Command="{x:Static h:CursorOverrider.OverrideCursorCommand}"
+                                               CommandParameter="{x:Static Cursors.Arrow}"/>
+                        <b:ChangePropertyAction PropertyName="TextDecorations" Value="None"/>
+                    </b:EventTrigger.Actions>
+                </b:EventTrigger>
+            </b:Interaction.Triggers>
+            </TextBlock>
         </Button>
 
         <busyIndicator:BusyMask IsBusy="{Binding AuthenticationBackgroundWorker.IsBusy}" BusyContent="Аутентификация..."

@@ -13,13 +13,13 @@
              TextOptions.TextRenderingMode="Auto"
              FontFamily="{DynamicResource MaterialDesignFont}"
              d:DesignWidth="900" d:DesignHeight="600" Background="White">
-    <ag:AutoGrid Rows="1*, 1*, 1*, 1*, 1*" Columns="1*, 1*">
+    <ag:AutoGrid Rows="1*, 1*, 1*, 1*, 1*, 1*" Columns="1*, 1*">
         <Grid.Resources>
             <converters:OneWayTimeSpanToStringConverter x:Key="oneWayTimeSpanToStringConverter"/>
+            <converters:IntIdToStringConverter x:Key="intIdToStringConverter"/>
 
             <Style TargetType="TextBlock" BasedOn="{StaticResource MainTextBlockStyle}">
                 <Setter Property="FontSize" Value="18"/>
-                <Setter Property="Background" Value="{StaticResource IndicatorBackground}"/>
                 <Setter Property="Padding" Value="10"/>
             </Style>
 
@@ -31,12 +31,19 @@
         <Viewbox Grid.ColumnSpan="2" StretchDirection="DownOnly">
             <TextBlock FontSize="20" FontWeight="Medium" Background="{StaticResource MaterialDesignPaper}">
                 <Run Text="{Binding TestResults.Test.Name, Mode=OneTime}"/>
-                <Run Text="("/><Run Text="{Binding TestResults.Test.NumberOfQuestions, Mode=OneTime}"/><Run Text=" вопросов)"/>
+                <Run Text="("/><Run Text="{Binding TestResults.Test.Id, Mode=OneTime, Converter={StaticResource intIdToStringConverter}}"/><Run Text=";"/>
+                <Run Text="{Binding TestResults.Test.NumberOfQuestions, Mode=OneTime}"/><Run Text=" вопросов)"/>
             </TextBlock>
         </Viewbox>
 
+        <TextBlock Grid.ColumnSpan="2" TextTrimming="WordEllipsis" ToolTip="{Binding TestResults.Student.FullName, Mode=OneTime}">
+            <Run Text="Студент:"/>
+            <Run Text="{Binding TestResults.Student.Name, Mode=OneTime}"/>
+            <Run Text="("/><Run Text="{Binding TestResults.Student.FullName, Mode=OneTime}"/><Run Text=")"/>
+        </TextBlock>
+
         <TextBlock Grid.ColumnSpan="2">
-            <Run Text="ОЦЕНКА:"/>
+            <Run Text="Оценка:"/>
             <Run Text="{Binding TestResults.Score, Mode=OneTime}" Style="{StaticResource RunValueStyle}"/>
             <Run Text="/"/>
             <Run Text="{Binding TestResults.Test.MaximumPoints, Mode=OneTime}" Style="{StaticResource RunValueStyle}"/>

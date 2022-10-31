@@ -1,0 +1,138 @@
+﻿<UserControl x:Class="TestingSystem.Views.AboutView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
+             xmlns:ag="clr-namespace:WpfAutoGrid;assembly=WpfAutoGrid.Core"
+             xmlns:h="clr-namespace:TestingSystem.Helpers"
+             TextElement.Foreground="{DynamicResource MaterialDesignBody}"
+             TextElement.FontWeight="Regular"
+             TextElement.FontSize="{StaticResource MainFontSize}"
+             TextOptions.TextFormattingMode="Ideal"
+             TextOptions.TextRenderingMode="Auto"
+             FontFamily="{DynamicResource MaterialDesignFont}"
+             Background="{DynamicResource MaterialDesignPaper}"
+             d:DesignWidth="900" d:DesignHeight="600" MinWidth="600" MinHeight="600">
+    <ag:AutoGrid Rows="3*, 1*, 1*, 1*, 1*, 1*, 1*" Columns="1*" Margin="50">
+        <Grid.Resources>
+            <Style TargetType="TextBlock" BasedOn="{StaticResource MainTextBlockStyle}">
+                <Setter Property="FontSize" Value="23"/>
+            </Style>
+        </Grid.Resources>
+        <Image Source="https://img.icons8.com/external-vitaliy-gorbachev-lineal-color-vitaly-gorbachev/100/000000/external-test-online-learning-vitaliy-gorbachev-lineal-color-vitaly-gorbachev.png"
+               Margin="10">
+            <b:Interaction.Triggers>
+                <b:EventTrigger EventName="ImageFailed">
+                    <b:ChangePropertyAction PropertyName="Source" Value="pack://application:,,,/Resources/Vectors/spareIcon.ico"/>
+                </b:EventTrigger>
+            </b:Interaction.Triggers>
+            <Image.Triggers>
+                <EventTrigger RoutedEvent="Loaded">
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation BeginTime="0" Duration="0:0:2" Storyboard.TargetProperty="Opacity"
+                                                     From="0" To="1"/>
+                        </Storyboard>
+                    </BeginStoryboard>
+                </EventTrigger>
+            </Image.Triggers>
+        </Image>
+
+        <TextBlock Text="Testing System" FontWeight="Medium" FontSize="30"/>
+        <TextBlock Text="1.0.0" FontSize="25"/>
+
+        <TextBlock Text="Developed by Zaporozhets Y. I. (BnnQ)"/>
+        <TextBlock>
+            <Run Text="GitHub:"/>
+            <Hyperlink NavigateUri="{Binding GithubUrl, Mode=OneTime}">
+            <b:Interaction.Triggers>
+                    <b:EventTrigger EventName="RequestNavigate">
+                        <b:InvokeCommandAction Command="{Binding OpenUrlInBrowserCommand}"
+                                               CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Hyperlink},
+                                                                  Path=NavigateUri}"/>
+                    </b:EventTrigger>
+                <b:EventTrigger EventName="MouseEnter">
+                    <b:EventTrigger.Actions>
+                        <b:InvokeCommandAction Command="{x:Static h:CursorOverrider.OverrideCursorCommand}" 
+                                           CommandParameter="{x:Static Cursors.Hand}"/>
+                        <b:ChangePropertyAction PropertyName="TextDecorations" Value="Underline"/>
+                    </b:EventTrigger.Actions>
+                </b:EventTrigger>
+                <b:EventTrigger EventName="MouseLeave">
+                    <b:EventTrigger.Actions>
+                        <b:InvokeCommandAction Command="{x:Static h:CursorOverrider.OverrideCursorCommand}"
+                                               CommandParameter="{x:Static Cursors.Arrow}"/>
+                        <b:ChangePropertyAction PropertyName="TextDecorations" Value="None"/>
+                    </b:EventTrigger.Actions>
+                </b:EventTrigger>
+            </b:Interaction.Triggers>
+                
+                <Run Text="{Binding GithubUrl.AbsoluteUri, Mode=OneTime}"/>
+            </Hyperlink>
+        </TextBlock>
+
+        <TextBlock>
+            <Run Text="Application icon:"/>
+            <Hyperlink NavigateUri="{Binding IconUrl, Mode=OneTime}">
+                <b:Interaction.Triggers>
+                    <b:EventTrigger EventName="RequestNavigate">
+                        <b:InvokeCommandAction Command="{Binding OpenUrlInBrowserCommand}"
+                                               CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Hyperlink},
+                                                                  Path=NavigateUri}"/>
+                    </b:EventTrigger>
+                    <b:EventTrigger EventName="MouseEnter">
+                    <b:EventTrigger.Actions>
+                        <b:InvokeCommandAction Command="{x:Static h:CursorOverrider.OverrideCursorCommand}" 
+                                           CommandParameter="{x:Static Cursors.Hand}"/>
+                        <b:ChangePropertyAction PropertyName="TextDecorations" Value="Underline"/>
+                    </b:EventTrigger.Actions>
+                </b:EventTrigger>
+                <b:EventTrigger EventName="MouseLeave">
+                    <b:EventTrigger.Actions>
+                        <b:InvokeCommandAction Command="{x:Static h:CursorOverrider.OverrideCursorCommand}"
+                                               CommandParameter="{x:Static Cursors.Arrow}"/>
+                        <b:ChangePropertyAction PropertyName="TextDecorations" Value="None"/>
+                    </b:EventTrigger.Actions>
+                </b:EventTrigger>
+            </b:Interaction.Triggers>
+                
+                <Hyperlink.Inlines>
+                    <Run Text="Test icon by Icons8"/>
+                </Hyperlink.Inlines>
+            </Hyperlink>
+        </TextBlock>
+
+        <TextBlock>
+            <Run Text="Design using:"/>
+            <Hyperlink NavigateUri="{Binding DesignLibraryUrl, Mode=OneTime}">
+                <b:Interaction.Triggers>
+                    <b:EventTrigger EventName="RequestNavigate">
+                        <b:InvokeCommandAction Command="{Binding OpenUrlInBrowserCommand}"
+                                               CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Hyperlink},
+                                                                  Path=NavigateUri}"/>
+                    </b:EventTrigger>
+                    <b:EventTrigger EventName="MouseEnter">
+                    <b:EventTrigger.Actions>
+                        <b:InvokeCommandAction Command="{x:Static h:CursorOverrider.OverrideCursorCommand}" 
+                                           CommandParameter="{x:Static Cursors.Hand}"/>
+                        <b:ChangePropertyAction PropertyName="TextDecorations" Value="Underline"/>
+                    </b:EventTrigger.Actions>
+                </b:EventTrigger>
+                <b:EventTrigger EventName="MouseLeave">
+                    <b:EventTrigger.Actions>
+                        <b:InvokeCommandAction Command="{x:Static h:CursorOverrider.OverrideCursorCommand}"
+                                               CommandParameter="{x:Static Cursors.Arrow}"/>
+                        <b:ChangePropertyAction PropertyName="TextDecorations" Value="None"/>
+                    </b:EventTrigger.Actions>
+                </b:EventTrigger>
+        </b:Interaction.Triggers>
+                
+                <Hyperlink.Inlines>
+                    <Run Text="Material Design in XAML Toolkit"/>
+                </Hyperlink.Inlines>
+            </Hyperlink>
+        </TextBlock>
+    </ag:AutoGrid>
+</UserControl>

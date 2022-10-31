@@ -165,9 +165,9 @@ namespace TestingSystem.ViewModels.Authorization
                     return;
                 }
 
-                Application.Current.Dispatcher.Invoke(() =>
+                Application.Current?.Dispatcher.Invoke(() =>
                 {
-                    Views.Student.MainView studentMainView = new(registeredStudent);
+                    Views.Student.MainContainerView studentMainView = new(registeredStudent);
                     studentMainView.Show();
 
                     Close();
@@ -190,9 +190,9 @@ namespace TestingSystem.ViewModels.Authorization
                     return;
                 }
 
-                Application.Current.Dispatcher.Invoke(() =>
+                Application.Current?.Dispatcher.Invoke(() =>
                 {
-                    Views.Teacher.MainView teacherMainView = new(registeredTeacher);
+                    Views.Teacher.MainContainerView teacherMainView = new(registeredTeacher);
                     teacherMainView.Show();
 
                     Close();

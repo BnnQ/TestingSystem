@@ -152,10 +152,10 @@ namespace TestingSystem.ViewModels.Authorization
                 if (!await IsPasswordValidAsync())
                     return;
 
-                Application.Current.Dispatcher.Invoke(() =>
+                Application.Current?.Dispatcher.Invoke(() =>
                 {
-                    Views.Teacher.MainView teacherView = new(foundTeacher);
-                    teacherView.Show();
+                    Views.Teacher.MainContainerView teacherMainView = new(foundTeacher);
+                    teacherMainView.Show();
 
                     Close();
                 });
@@ -173,10 +173,10 @@ namespace TestingSystem.ViewModels.Authorization
                 if (!await IsPasswordValidAsync())
                     return;
 
-                Application.Current.Dispatcher.Invoke(() =>
+                Application.Current?.Dispatcher.Invoke(() =>
                 {
-                    Views.Student.MainView studentView = new(foundStudent);
-                    studentView.Show();
+                    Views.Student.MainContainerView studentMainView = new(foundStudent);
+                    studentMainView.Show();
                     
                     Close();
                 });

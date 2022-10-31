@@ -1,6 +1,7 @@
 ﻿using MvvmBaseViewModels.Helpers;
 using System.Windows;
 using System.Windows.Input;
+using TestingSystem.Helpers;
 using TestingSystem.Models;
 using TestingSystem.ViewModels.Teacher;
 
@@ -18,7 +19,7 @@ namespace TestingSystem.Views.Teacher
             Application.Current?.Dispatcher.Invoke(() =>
             {
                 IsEnabled = false;
-                Mouse.OverrideCursor = Cursors.Wait;
+                CursorOverrider.OverrideCursorCommand.Execute(Cursors.Wait);
             });
 
             viewModel = new CategoryEditViewModel(category);
@@ -39,7 +40,7 @@ namespace TestingSystem.Views.Teacher
             {
                 DataContext = viewModel;
                 IsEnabled = true;
-                Mouse.OverrideCursor = Cursors.Arrow;
+                CursorOverrider.OverrideCursorCommand.Execute(Cursors.Arrow);
             };
             Dispatcher.ShutdownStarted += (_, _) =>
             {

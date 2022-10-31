@@ -8,10 +8,12 @@ using ReactiveValidation;
 using ReactiveValidation.Extensions;
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Collections.Specialized;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
+using TestingSystem.Helpers.Comparers;
 using TestingSystem.Models;
 using TestingSystem.Models.Contexts;
 using TestingSystem.Views.Teacher;
@@ -20,6 +22,9 @@ namespace TestingSystem.ViewModels.Teacher
 {
     public class TestEditViewModel : ValidatableViewModelBase
     {
+        private readonly static IEqualityComparer<Category> categoryEqualityComparer = new CategoryByIdEqualityComparer();
+        private readonly static IEqualityComparer<Models.Teacher> teacherEqualityComparer = new TeacherByIdEqualityComparer();
+
         public void OnTestChanged(object? _, System.ComponentModel.PropertyChangedEventArgs args) => OnPropertyChanged(args.PropertyName);
         private Test test = null!;
         public Test Test
@@ -118,9 +123,36 @@ namespace TestingSystem.ViewModels.Teacher
         public int NumberOfOwnerTeachers => OwnerTeachers.Count;
 
 
+        private ImmutableHashSet<Category> categories = null!;
+        public ImmutableHashSet<Category> Categories
+        {
+            get => categories;
+            set
+            {
+                if (value != categories)
+                {
+                    if (value.KeyComparer != categoryEqualityComparer)
+                        value = value.WithComparer(categoryEqualityComparer);
 
-        public Category[] Categories { get; private set; } = null!;
-        public Models.Teacher[] Teachers { get; private set; } = null!;
+                    categories = value;
+                }
+            }
+        }
+        private ImmutableHashSet<Models.Teacher> teachers = null!;
+        public ImmutableHashSet<Models.Teacher> Teachers 
+        {
+            get => teachers;
+            set
+            {
+                if (teachers != value)
+                {
+                    if (value.KeyComparer != teacherEqualityComparer)
+                        value = value.WithComparer(teacherEqualityComparer);
+
+                    teachers = value;
+                }
+            }
+        }
 
         
         private readonly TestingSystemTeacherContext context = null!;
@@ -149,12 +181,12 @@ namespace TestingSystem.ViewModels.Teacher
                     await context.Categories
                                  .Include(category => category.Tests)  
                                  .LoadAsync();
-                    Categories = await context.Categories.ToArrayAsync();
+                    Categories = await Task.Run(() => context.Categories.ToImmutableHashSet(categoryEqualityComparer));
 
                     await context.Teachers
                                  .Include(teacher => teacher.OwnedTests)
                                  .LoadAsync();
-                    Teachers = await context.Teachers.ToArrayAsync();
+                    Teachers = await Task.Run(() => context.Teachers.ToImmutableHashSet(teacherEqualityComparer));
 
                     await context.Tests
                                  .Include(t => t.Category)
@@ -342,7 +374,7 @@ namespace TestingSystem.ViewModels.Teacher
                 Question questionToBeAdded = new(Test, Test.GetSerialNumberForNewQuestion());
 
                 bool? editViewDialogResult = default;
-                Application.Current.Dispatcher.Invoke(() =>
+                Application.Current?.Dispatcher.Invoke(() =>
                 {
                     QuestionEditView editView = new(questionToBeAdded);
                     editViewDialogResult = editView.ShowDialog();
@@ -358,7 +390,7 @@ namespace TestingSystem.ViewModels.Teacher
         {
             get => editQuestionCommand ??= new((question) =>
             {
-                Application.Current.Dispatcher.Invoke(() =>
+                Application.Current?.Dispatcher.Invoke(() =>
                 {
                     QuestionEditView editView = new(question!);
                     editView.ShowDialog();
@@ -377,19 +409,16 @@ namespace TestingSystem.ViewModels.Teacher
         private RelayCommand<Models.Teacher> addTestOwnerCommand = null!;
         public RelayCommand<Models.Teacher> AddTestOwnerCommand
         {
-            get => addTestOwnerCommand ??= new((teacherToBeAdded) =>
-            {
-                if (!teacherToBeAdded!.OwnedTests.Contains(Test))
-                    Test.OwnerTeachers.Add(teacherToBeAdded);
-            }, 
-            (teacherToBeAdded) => teacherToBeAdded is not null && !IsTeacherOwnerOfTest(teacherToBeAdded));
+            get => addTestOwnerCommand ??= new(
+                (teacherToBeAdded) => OwnerTeachers.Add(teacherToBeAdded!), 
+                (teacherToBeAdded) => teacherToBeAdded is not null && !IsTeacherOwnerOfTest(teacherToBeAdded));
         }
 
         private RelayCommand<Models.Teacher> removeTestOwnerCommand = null!;
         public RelayCommand<Models.Teacher> RemoveTestOwnerCommand
         {
             get => removeTestOwnerCommand ??= new(
-                (testOwner) => Test.OwnerTeachers.Remove(testOwner!),
+                (testOwner) => OwnerTeachers.Remove(testOwner!),
                 (testOwner) => testOwner is not null && AreOwnerTeachersMoreThanOne());
         }
 
