@@ -1,6 +1,4 @@
 ﻿using System.Windows.Controls;
-using System.Windows.Input;
-
 namespace TestingSystem.Views.Teacher
 {
     /// <summary>
@@ -12,16 +10,5 @@ namespace TestingSystem.Views.Teacher
         {
             InitializeComponent();
         }
-
-        private void OnReferenceElementMouseEnter(object sender, MouseEventArgs e)
-        {
-            Mouse.OverrideCursor = Cursors.Hand;
-        }
-
-        private void OnReferenceElementMouseLeave(object sender, MouseEventArgs e)
-        {
-            Mouse.OverrideCursor = Cursors.Arrow;
-        }
-
     }
 }
