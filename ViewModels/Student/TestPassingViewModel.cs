@@ -7,24 +7,43 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Windows.Navigation;
 using TestingSystem.Constants.Student;
 using TestingSystem.Helpers.Comparers;
 using TestingSystem.Helpers.CustomNavigationArgs;
 using TestingSystem.Models;
+using TestingSystem.Models.Contexts;
 
 namespace TestingSystem.ViewModels.Student
 {
     public class TestPassingViewModel : NavigationViewModelBase
     {
+        private readonly static IComparer<Question> questionComparer = new QuestionBySerialNumberComparer();
+        private readonly static IComparer<AnswerOption> answerOptionComparer = new AnswerOptionBySerialNumberComparer();
+        
         private readonly Test test = null!;
         private readonly Models.Student student = null!;
 
         #region Test
-        public ImmutableSortedSet<Question> Questions { get; private set; } = null!;
+        private ImmutableSortedSet<Question> questions = null!;
+        public ImmutableSortedSet<Question> Questions 
+        {
+            get => questions; 
+            private set
+            {
+                if (questions != value)
+                {
+                    if (value.KeyComparer != questionComparer)
+                        value = value.WithComparer(questionComparer);
+
+                    questions = value;
+                }
+            }
+        }
         private IEnumerator<Question> questionsEnumerator = null!;
 
         private DateTime? testStartTime = null;
-        private DateTime? testCompletionTime = null;
+        private TimeSpan? testCompletionTime = null;
         private List<TimeSpan> questionAnswerTimes = null!;
 
         private ushort correctAnswersCounter;
@@ -71,6 +90,9 @@ namespace TestingSystem.ViewModels.Student
             {
                 if (currentQuestionAnswerOptions != value)
                 {
+                    if (value.KeyComparer != questionComparer)
+                        value = value.WithComparer(answerOptionComparer);
+
                     currentQuestionAnswerOptions = value;
                     OnPropertyChanged(nameof(CurrentQuestionAnswerOptions));
                 }
@@ -116,6 +138,7 @@ namespace TestingSystem.ViewModels.Student
         #endregion
 
         public BackgroundWorker InitialLoaderBackgroundWorker { get; init; } = new();
+        public BackgroundWorker TestCompleterBackgroundWorker { get; init; } = new();
 
         public TestPassingViewModel(INavigationManager navigationManager, Test test, Models.Student student) : base(navigationManager)
         {
@@ -128,22 +151,51 @@ namespace TestingSystem.ViewModels.Student
 
         private void SetupBackgroundWorkers()
         {
-            InitialLoaderBackgroundWorker.DoWork = () =>
+            InitialLoaderBackgroundWorker.DoWork = async () =>
             {
-                return Task.Run(() =>
+                Questions = await Task.Run(() => test.Questions.ToImmutableSortedSet(questionComparer));
+                questionsEnumerator = await Task.Run(() => Questions.GetEnumerator());
+                questionAnswerTimes = new List<TimeSpan>(Questions.Count);
+                SelectedAnswerOptions = new List<AnswerOption>();
+
+                testStartTime = DateTime.Now;
+                if (test.NumberOfSecondsToComplete.HasValue)
+                    _ = testTimerBackgroundWorker.RunWorkerAsync(test.NumberOfSecondsToComplete.Value);
+
+                lock (currentQuestionLocker)
+                    MoveToNextQuestion();
+            };
+
+            TestCompleterBackgroundWorker.DoWork = async () =>
+            {
+                TestResult testResult = await CalculateTestResultAsync();
+
+                try
                 {
-                    Questions = test.Questions.ToImmutableSortedSet(new QuestionBySerialNumberComparer());
-                    questionsEnumerator = Questions.GetEnumerator();
-                    questionAnswerTimes = new(Questions.Count);
-                    SelectedAnswerOptions = new List<AnswerOption>();
+                    using (TestingSystemStudentContext context = new())
+                    {
+                        Test? testEntity = await context.FindAsync<Test>(test.Id);
+                        Models.Student? studentEntity = await context.FindAsync<Models.Student>(student.Id);
 
-                    testStartTime = DateTime.Now;
-                    if (test.NumberOfSecondsToComplete.HasValue)
-                        _ = testTimerBackgroundWorker.RunWorkerAsync(test.NumberOfSecondsToComplete.Value);
+                        if (testEntity is null)
+                            throw new NullReferenceException("Во время прохождения теста он был параллельно удаленён учителем или системой");
+                        if (studentEntity is null)
+                            throw new NullReferenceException("Во время прохождения теста Ваша учётная запись по какой-то причине была удалена системой");
 
-                    lock (currentQuestionLocker)
-                        MoveToNextQuestion();
-                });
+                        await context.Entry(testEntity).Collection(test => test.Questions).LoadAsync();
+                        testResult.Test = testEntity;
+                        testResult.Student = studentEntity;
+                        await context.TestResults.AddAsync(testResult);
+                        await context.SaveChangesAsync();
+                    }
+                }
+                catch (Exception exception)
+                {
+                    OccurCriticalErrorMessage(exception);
+                    return;
+                }
+
+                MoveToTestResults(new TestCompletedNavigationArgs(lastViewModelNavigatedFrom, testResult));
             };
 
             testTimerBackgroundWorker.DoWork = async (parameters) =>
@@ -164,8 +216,7 @@ namespace TestingSystem.ViewModels.Student
                     TestTimeLeft = TestTimeLeft.Value.AddSeconds(-1);
                 }
 
-                TestResult testResults = FinishTest();
-                MoveToTestResults(new TestCompletedNavigationArgs(lastViewModelNavigatedFrom, testResults));
+                _ = FinishTestAsync();
             };
 
             currentQuestionTimerBackgroundWorker.DoWork = async (parameters) =>
@@ -200,27 +251,30 @@ namespace TestingSystem.ViewModels.Student
         {
             if (CurrentQuestion is not null)
             {
-                IEnumerable<AnswerOption> correctAnswerOptions = currentQuestionAnswerOptions.Where(answerOption => answerOption.IsCorrect);
-                if (SelectedAnswerOptions.SequenceEqual(correctAnswerOptions))
+                if (SelectedAnswerOptions.All(answerOption => answerOption.IsCorrect))
                 {
-                    scoreAccumulator += CurrentQuestion.PointsCost;
-                    correctAnswersCounter++;
-                }
-                else if (test.IsAccountingForIncompleteAnswersEnabled)
-                {
-                    double oneAnswerOptionCost = CurrentQuestion.PointsCost / CurrentQuestion.NumberOfAnswerOptions;
-                    bool hasCorrectAnswerOptions = false;
-                    foreach (AnswerOption selectedAnswerOption in SelectedAnswerOptions)
+                    IEnumerable<AnswerOption> correctAnswerOptions = currentQuestionAnswerOptions.Where(answerOption => answerOption.IsCorrect);
+                    if (SelectedAnswerOptions.SequenceEqual(correctAnswerOptions))
                     {
-                        if (correctAnswerOptions.Contains(selectedAnswerOption))
-                        {
-                            scoreAccumulator += oneAnswerOptionCost;
-                            hasCorrectAnswerOptions = true;
-                        }
-                    }
-                    
-                    if (hasCorrectAnswerOptions)
+                        scoreAccumulator += CurrentQuestion.PointsCost;
                         correctAnswersCounter++;
+                    }
+                    else if (test.IsAccountingForIncompleteAnswersEnabled)
+                    {
+                        double oneAnswerOptionCost = CurrentQuestion.PointsCost / correctAnswerOptions.Count();
+                        bool hasCorrectAnswerOptions = false;
+                        foreach (AnswerOption selectedAnswerOption in SelectedAnswerOptions)
+                        {
+                            if (correctAnswerOptions.Contains(selectedAnswerOption))
+                            {
+                                scoreAccumulator += oneAnswerOptionCost;
+                                hasCorrectAnswerOptions = true;
+                            }
+                        }
+
+                        if (hasCorrectAnswerOptions)
+                            correctAnswersCounter++;
+                    }
                 }
             }
 
@@ -234,7 +288,7 @@ namespace TestingSystem.ViewModels.Student
             if (questionsEnumerator.MoveNext())
             {
                 CurrentQuestion = questionsEnumerator.Current;
-                var sortedAnswerOptions = CurrentQuestion.AnswerOptions.ToImmutableSortedSet(new AnswerOptionBySerialNumberComparer());
+                ImmutableSortedSet<AnswerOption> sortedAnswerOptions = CurrentQuestion.AnswerOptions.ToImmutableSortedSet(answerOptionComparer);
                 CurrentQuestionAnswerOptions = sortedAnswerOptions;
                 if (CurrentQuestion.NumberOfSecondsToAnswer.HasValue)
                     _ = currentQuestionTimerBackgroundWorker.RunWorkerAsync(CurrentQuestion.NumberOfSecondsToAnswer.Value);
@@ -242,22 +296,31 @@ namespace TestingSystem.ViewModels.Student
             }
             else
             {
-                TestResult testResults = FinishTest();
-                MoveToTestResults(new TestCompletedNavigationArgs(lastViewModelNavigatedFrom, testResults));
+                _ = FinishTestAsync();
             }
+
         }
 
-        private TestResult FinishTest()
+        private Task<TestResult> CalculateTestResultAsync()
         {
-            testCompletionTime = DateTime.Now;
+            return Task.Run(() =>
+            {
+                testCompletionTime = DateTime.Now - testStartTime!.Value;
+                ushort score = Convert.ToUInt16(scoreAccumulator);
+                ushort numberOfIncorrectAnswers = (ushort) (test.NumberOfQuestions - correctAnswersCounter);
+                TimeSpan averageAnswerTime = TimeSpan.FromSeconds(questionAnswerTimes.Average(timeSpan => timeSpan.TotalSeconds));
 
-            ushort score = Convert.ToUInt16(scoreAccumulator);
-            ushort numberOfIncorrectAnswers = (ushort) (test.NumberOfQuestions - correctAnswersCounter);
-            TimeSpan averageAnswerTime = TimeSpan.FromSeconds(questionAnswerTimes.Average(timeSpan => timeSpan.TotalSeconds));
-
-             return new TestResult(test, student, score, correctAnswersCounter, numberOfIncorrectAnswers,
-                testCompletionTime.Value - testStartTime!.Value, averageAnswerTime, DateTime.Now);
+                return new TestResult(score, correctAnswersCounter, numberOfIncorrectAnswers,
+                   testCompletionTime.Value, averageAnswerTime, DateTime.Now);
+            });
         }
+
+        private async Task FinishTestAsync()
+        {
+            if (!TestCompleterBackgroundWorker.IsBusy)
+                await TestCompleterBackgroundWorker.RunWorkerAsync();
+        }
+
         private void MoveToTestResults(TestCompletedNavigationArgs navigationArgs)
         {
             navigationManager.Navigate(NavigationKeys.TestResults, navigationArgs);
