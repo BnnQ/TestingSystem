@@ -8,6 +8,7 @@
              xmlns:ag="clr-namespace:WpfAutoGrid;assembly=WpfAutoGrid.Core"
              xmlns:ap="http://schemas.nishy-software.com/xaml/attached-properties"
              xmlns:st="http://schemas.spicytaco.io/"
+             xmlns:busyIndicator="https://github.com/Peoky/BusyIndicator"
              xmlns:converters="clr-namespace:TestingSystem.Views.Converters"
              TextElement.Foreground="{DynamicResource MaterialDesignBody}"
              TextElement.FontWeight="Regular"
@@ -17,21 +18,23 @@
              FontFamily="{DynamicResource MaterialDesignFont}"
              Background="{DynamicResource MaterialDesignPaper}"
              d:DesignHeight="450" d:DesignWidth="800">
-    <ag:AutoGrid Rows="2*, 1*, 6*, 1*" Columns="1*">
-        <Grid.Resources>
-            <converters:BoolByDoesQuestionOnlyHaveOneCorrectAnswerToStringConverter x:Key="boolByDoesQuestionOnlyHaveOneCorrectAnswerToStringConverter"/>
-            <converters:NullableDateTimeToNullableShortTimeStringConverter x:Key="nullableDateTimeToNullableShortTimeStringConverter"/>
-            <converters:OneWayNullableDateTimeToBrushConverter x:Key="oneWayNullableDateTimeToBrushConverter"/>
+    <busyIndicator:BusyMask IsBusy="{Binding TestCompleterBackgroundWorker.IsBusy, Mode=OneWay}" BusyContent="Завершение теста..."
+                            IndicatorType="{StaticResource BusyMaskDefaultIndicatorType}" Background="{StaticResource BusyMaskDefaultBackground}">
+        <ag:AutoGrid Rows="2*, 1*, 6*, 1*" Columns="1*">
+            <Grid.Resources>
+                <converters:BoolByDoesQuestionOnlyHaveOneCorrectAnswerToStringConverter x:Key="boolByDoesQuestionOnlyHaveOneCorrectAnswerToStringConverter"/>
+                <converters:NullableDateTimeToNullableShortTimeStringConverter x:Key="nullableDateTimeToNullableShortTimeStringConverter"/>
+                <converters:OneWayNullableDateTimeToBrushConverter x:Key="oneWayNullableDateTimeToBrushConverter"/>
 
-            <Style TargetType="TextBlock" BasedOn="{StaticResource MainTextBlockStyle}"/>
-            <Style TargetType="ListView" BasedOn="{StaticResource ListViewCardPanelStyle}"/>
-            <Style x:Key="AnswerOptionButtonStyle" TargetType="Button" BasedOn="{StaticResource RectangularButtonStyle}">
-                <Setter Property="md:ButtonAssist.CornerRadius" Value="15"/>
-                <Setter Property="Padding" Value="5"/>
-            </Style>
-        </Grid.Resources>
-        <Viewbox StretchDirection="DownOnly">
-            <TextBlock FontSize="23" FontWeight="Medium">
+                <Style TargetType="TextBlock" BasedOn="{StaticResource MainTextBlockStyle}"/>
+                <Style TargetType="ListView" BasedOn="{StaticResource ListViewCardPanelStyle}"/>
+                <Style x:Key="AnswerOptionButtonStyle" TargetType="Button" BasedOn="{StaticResource RectangularButtonStyle}">
+                    <Setter Property="md:ButtonAssist.CornerRadius" Value="15"/>
+                    <Setter Property="Padding" Value="5"/>
+                </Style>
+            </Grid.Resources>
+            <Viewbox StretchDirection="DownOnly">
+                <TextBlock FontSize="23" FontWeight="Medium">
             <Run Text="{Binding CurrentQuestion.SerialNumberInTest}"/><Run Text="-й вопрос:"/>
             <Run Text="{Binding CurrentQuestion.Content}"/>
             <Run Text="("/><Run Text="{Binding DoesCurrentQuestionOnlyHaveOneCorrectAnswer, 
@@ -55,27 +58,27 @@
                    TextAlignment="Right" VerticalAlignment="Center" FontSize="20" FontWeight="Medium"/>
             </Grid>
 
-        <ListView ItemsSource="{Binding CurrentQuestionAnswerOptions}" ap:ScrollViewerProperties.MouseWheelHandlingMode="OnlyScrollable"
+            <ListView ItemsSource="{Binding CurrentQuestionAnswerOptions}" ap:ScrollViewerProperties.MouseWheelHandlingMode="OnlyScrollable"
                   ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto"
                   md:ScrollViewerAssist.IsAutoHideEnabled="False" md:ScrollViewerAssist.SupportHorizontalScroll="False">
-            <ListView.ItemContainerStyle>
+                <ListView.ItemContainerStyle>
                     <Style TargetType="ListViewItem" BasedOn="{StaticResource ListViewCardPanelItemStyle}">
-                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                    <Setter Property="VerticalContentAlignment" Value="Stretch"/>
-                    <Setter Property="st:StackPanel.Fill" Value="Fill"/>
-                </Style>
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                        <Setter Property="VerticalContentAlignment" Value="Stretch"/>
+                        <Setter Property="st:StackPanel.Fill" Value="Fill"/>
+                    </Style>
                 </ListView.ItemContainerStyle>
                 <ListView.ItemTemplate>
                     <DataTemplate>
-                    <Button Click="OnAnswerOptionButtonClick" Style="{StaticResource AnswerOptionButtonStyle}"
+                        <Button Click="OnAnswerOptionButtonClick" Style="{StaticResource AnswerOptionButtonStyle}"
                             Tag="{Binding SerialNumberInQuestion, Mode=OneWay}">
-                        <Viewbox StretchDirection="DownOnly">
-                            <TextBlock TextWrapping="Wrap">
+                            <Viewbox StretchDirection="DownOnly">
+                                <TextBlock TextWrapping="Wrap">
                             <Run Text="{Binding SerialNumberInQuestion, Mode=OneWay}"/><Run Text="."/>
                             <Run Text="{Binding Content, Mode=OneWay}"/>
-                            </TextBlock>
-                        </Viewbox>
-                    </Button>
+                                </TextBlock>
+                            </Viewbox>
+                        </Button>
                     </DataTemplate>
                 </ListView.ItemTemplate>
                 <ListView.ItemsPanel>
@@ -89,4 +92,5 @@
                 <TextBlock Text="Подтвердить ответ"/>
             </Button>
         </ag:AutoGrid>
+    </busyIndicator:BusyMask>
 </UserControl>
