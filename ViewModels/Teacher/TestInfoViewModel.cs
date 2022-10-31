@@ -5,9 +5,7 @@ using Microsoft.EntityFrameworkCore.ChangeTracking;
 using MvvmBaseViewModels.Common;
 using Ookii.Dialogs.Wpf;
 using System;
-using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
@@ -20,6 +18,10 @@ namespace TestingSystem.ViewModels.Teacher
 {
     public class TestInfoViewModel : ViewModelBase
     {
+        private readonly Models.Teacher teacher = null!;
+        public bool IsTeacherOwner => Test.OwnerTeachers.Any(t => t.Id == teacher.Id);
+
+
         private Test test = null!;
         public Test Test
         {
@@ -34,7 +36,8 @@ namespace TestingSystem.ViewModels.Teacher
             }
         }
         
-        private readonly Models.Teacher teacher = null!;
+        
+
         public BackgroundWorker TestUpdaterFromDatabaseBackgroundWorker { get; init; } = new();
 
         public TestInfoViewModel(Test test, Models.Teacher teacher)
@@ -52,7 +55,7 @@ namespace TestingSystem.ViewModels.Teacher
             TestUpdaterFromDatabaseBackgroundWorker.DoWork = async () => await UpdateTestFromDatabaseAsync();
             TestUpdaterFromDatabaseBackgroundWorker.OnWorkCompleted = () => CommandManager.InvalidateRequerySuggested();
 
-            textToFileWriterBackgroundWorker.OnWorkStarting = () => Mouse.OverrideCursor = Cursors.AppStarting;
+            textToFileWriterBackgroundWorker.OnWorkStarting = () => CursorOverrider.OverrideCursorCommand.Execute(Cursors.AppStarting);
             textToFileWriterBackgroundWorker.DoWork = async (parameters) =>
             {
                 if (parameters is null || parameters.Length < 1)
@@ -71,7 +74,7 @@ namespace TestingSystem.ViewModels.Teacher
                     return;
                 }
             };
-            textToFileWriterBackgroundWorker.OnWorkCompleted = () => Mouse.OverrideCursor = Cursors.Arrow;
+            textToFileWriterBackgroundWorker.OnWorkCompleted = () => CursorOverrider.OverrideCursorCommand.Execute(Cursors.Arrow);
         }
 
         private async Task UpdateTestFromDatabaseAsync()
@@ -91,6 +94,8 @@ namespace TestingSystem.ViewModels.Teacher
                         await context.Entry(question).Collection(question => question.AnswerOptions).LoadAsync();
                     
                     await testEntry.Collection(test => test.OwnerTeachers).LoadAsync();
+
+                    OnPropertyChanged(nameof(IsTeacherOwner));
                 }
             }
             catch (Exception exception)
@@ -102,11 +107,6 @@ namespace TestingSystem.ViewModels.Teacher
 
 
         #region Commands
-        private bool IsTeacherOwner()
-        {
-            return Test.OwnerTeachers.Any(t => t.Id == teacher.Id);
-        }
-
         private AsyncRelayCommand updateTestFromDatabaseAsyncCommand = null!;
         public AsyncRelayCommand UpdateTestFromDatabaseAsyncCommand
         {
@@ -123,7 +123,7 @@ namespace TestingSystem.ViewModels.Teacher
             get => editTestAsyncCommand ??= new(async () =>
             {
                 bool? editViewDialogResult = default;
-                Application.Current.Dispatcher.Invoke(() =>
+                Application.Current?.Dispatcher.Invoke(() =>
                 {
                     TestEditView testEditView = new(Test!);
                     editViewDialogResult = testEditView.ShowDialog();
@@ -131,7 +131,7 @@ namespace TestingSystem.ViewModels.Teacher
 
                 if (editViewDialogResult == true)
                     await UpdateTestFromDatabaseAsyncCommand.ExecuteAsync(null);
-            }, () => !isRemoveLocked && Test is not null && IsTeacherOwner());
+            }, () => !isRemoveLocked && Test is not null && IsTeacherOwner);
         }
 
         private bool isRemoveLocked = false;
@@ -168,7 +168,7 @@ namespace TestingSystem.ViewModels.Teacher
                     }
                 }
 
-            }, () => !isRemoveLocked && Test is not null && IsTeacherOwner());
+            }, () => !isRemoveLocked && Test is not null && IsTeacherOwner);
         }
 
         #region PopupBox
@@ -181,6 +181,7 @@ namespace TestingSystem.ViewModels.Teacher
             saveFileDialog.CheckPathExists = true;
             saveFileDialog.OverwritePrompt = true;
             saveFileDialog.Title = "Сохранение теста в текстовый файл";
+            saveFileDialog.FileName = Test.Name;
 
             bool? saveFileDialogResult = default;
             Application.Current?.Dispatcher.Invoke(() => saveFileDialogResult = saveFileDialog.ShowDialog());
@@ -202,7 +203,7 @@ namespace TestingSystem.ViewModels.Teacher
         {
             get => saveTestWithAnswersToTextFileCommand ??= new(
                 async () => await SaveTestToTextFileAsync(true),
-                () => IsTeacherOwner());
+                () => IsTeacherOwner);
         }
         #endregion
         #endregion
