@@ -55,7 +55,7 @@
             </TextBlock>
         </Button>
 
-        <busyIndicator:BusyMask IsBusy="{Binding AuthenticationBackgroundWorker.IsBusy}" BusyContent="Аутентификация..."
+        <busyIndicator:BusyMask IsBusy="{Binding AuthenticationBackgroundWorker.IsBusy}" BusyContent="Вход..."
                                 IndicatorType="{StaticResource BusyMaskDefaultIndicatorType}" Background="{StaticResource BusyMaskDefaultBackground}">
             <ag:AutoGrid Rows="1*, 1*, 1*" Columns="1*">
                 <TextBox Text="{Binding Username}" md:HintAssist.Hint="Имя пользователя"

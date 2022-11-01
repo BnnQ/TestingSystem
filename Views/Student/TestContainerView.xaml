@@ -7,9 +7,10 @@
         xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
         mc:Ignorable="d"
         WindowStartupLocation="CenterScreen"
-        Title="Тест" Width="900" Height="600" MinWidth="900" MinHeight="600">
+        Title="Тест" Width="1000" Height="700" MinWidth="900" MinHeight="600">
     <Window.Icon>
-        <BitmapImage UriSource="https://img.icons8.com/external-vitaliy-gorbachev-lineal-color-vitaly-gorbachev/100/000000/external-test-online-learning-vitaliy-gorbachev-lineal-color-vitaly-gorbachev.pnghttps://img.icons8.com/external-vitaliy-gorbachev-lineal-color-vitaly-gorbachev/100/000000/external-test-online-learning-vitaliy-gorbachev-lineal-color-vitaly-gorbachev.png">
+        <BitmapImage UriSource="https://img.icons8.com/external-vitaliy-gorbachev-lineal-color-vitaly-gorbachev/100/000000/external-test-online-learning-vitaliy-gorbachev-lineal-color-vitaly-gorbachev.pnghttps://img.icons8.com/external-vitaliy-gorbachev-lineal-color-vitaly-gorbachev/100/000000/external-test-online-learning-vitaliy-gorbachev-lineal-color-vitaly-gorbachev.png"
+                     CacheOption="None">
             <b:Interaction.Triggers>
                 <b:EventTrigger EventName="DownloadFailed">
                     <b:ChangePropertyAction TargetObject="{Binding RelativeSource={RelativeSource AncestorType=Window}}" PropertyName="Icon" Value="{x:Null}"/>

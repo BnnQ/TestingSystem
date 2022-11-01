@@ -4,8 +4,6 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:ag="clr-namespace:WpfAutoGrid;assembly=WpfAutoGrid.Core"
-        xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
-        xmlns:converters="clr-namespace:TestingSystem.Views.Converters"
         xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
         mc:Ignorable="d"
         WindowStartupLocation="CenterScreen"
@@ -16,9 +14,9 @@
         TextOptions.TextRenderingMode="Auto"
         FontFamily="{DynamicResource MaterialDesignFont}"
         Background="{DynamicResource MaterialDesignPaper}"
-        Title="Редактор варианта ответа" Width="500" Height="400" MinWidth="350" MinHeight="400">
+        Title="Редактор варианта ответа" Width="500" Height="400" MinWidth="350" MinHeight="400" Loaded="OnLoaded">
     <Window.Icon>
-        <BitmapImage UriSource="https://img.icons8.com/external-vitaliy-gorbachev-lineal-color-vitaly-gorbachev/100/000000/external-test-online-learning-vitaliy-gorbachev-lineal-color-vitaly-gorbachev.pnghttps://img.icons8.com/external-vitaliy-gorbachev-lineal-color-vitaly-gorbachev/100/000000/external-test-online-learning-vitaliy-gorbachev-lineal-color-vitaly-gorbachev.png">
+        <BitmapImage CacheOption="None" UriSource="https://img.icons8.com/external-vitaliy-gorbachev-lineal-color-vitaly-gorbachev/100/000000/external-test-online-learning-vitaliy-gorbachev-lineal-color-vitaly-gorbachev.pnghttps://img.icons8.com/external-vitaliy-gorbachev-lineal-color-vitaly-gorbachev/100/000000/external-test-online-learning-vitaliy-gorbachev-lineal-color-vitaly-gorbachev.png">
             <b:Interaction.Triggers>
                 <b:EventTrigger EventName="DownloadFailed">
                     <b:ChangePropertyAction TargetObject="{Binding RelativeSource={RelativeSource AncestorType=Window}}" PropertyName="Icon" Value="{x:Null}"/>
@@ -41,7 +39,7 @@
         </Grid.Resources>
 
         <TextBlock Text="*Вариант ответа:"/>
-        <TextBox Text="{Binding Content}"/>
+        <TextBox x:Name="firstTextBox" Text="{Binding Content}"/>
 
         <TextBlock Text="Порядковый номер варианта ответа в вопросе:"/>
         <TextBox Text="{Binding SerialNumberInQuestion, Converter={StaticResource ushortToStringConverter}}"

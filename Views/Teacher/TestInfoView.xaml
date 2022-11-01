@@ -19,7 +19,8 @@
         Background="{DynamicResource MaterialDesignPaper}"
         Title="Просмотр и управление тестом" Width="1000" Height="850" MinWidth="550" MinHeight="650" Loaded="OnWindowLoaded">
     <Window.Icon>
-        <BitmapImage UriSource="https://img.icons8.com/external-vitaliy-gorbachev-lineal-color-vitaly-gorbachev/100/000000/external-test-online-learning-vitaliy-gorbachev-lineal-color-vitaly-gorbachev.pnghttps://img.icons8.com/external-vitaliy-gorbachev-lineal-color-vitaly-gorbachev/100/000000/external-test-online-learning-vitaliy-gorbachev-lineal-color-vitaly-gorbachev.png">
+        <BitmapImage UriSource="https://img.icons8.com/external-vitaliy-gorbachev-lineal-color-vitaly-gorbachev/100/000000/external-test-online-learning-vitaliy-gorbachev-lineal-color-vitaly-gorbachev.pnghttps://img.icons8.com/external-vitaliy-gorbachev-lineal-color-vitaly-gorbachev/100/000000/external-test-online-learning-vitaliy-gorbachev-lineal-color-vitaly-gorbachev.png"
+                     CacheOption="None">
             <b:Interaction.Triggers>
                 <b:EventTrigger EventName="DownloadFailed">
                     <b:ChangePropertyAction TargetObject="{Binding RelativeSource={RelativeSource AncestorType=Window}}" PropertyName="Icon" Value="{x:Null}"/>

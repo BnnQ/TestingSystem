@@ -38,5 +38,19 @@ namespace TestingSystem.Views.Teacher
                     viewModel?.Close();
             };
         }
+
+        private void OnLoaded(object sender, RoutedEventArgs e)
+        {
+            Application.Current?.Dispatcher.Invoke(() =>
+            {
+                if (Width > SystemParameters.PrimaryScreenWidth)
+                    Width = SystemParameters.PrimaryScreenWidth;
+                if (Height > SystemParameters.PrimaryScreenHeight)
+                    Height = SystemParameters.PrimaryScreenHeight;
+
+                firstTextBox.Focus();
+            });
+        }
+
     }
 }

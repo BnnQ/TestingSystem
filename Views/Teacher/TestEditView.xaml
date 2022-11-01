@@ -18,9 +18,10 @@
         TextOptions.TextRenderingMode="Auto"
         FontFamily="{DynamicResource MaterialDesignFont}"
         Background="{DynamicResource MaterialDesignPaper}"
-        Title="Редактор теста" Width="1000" Height="950" MinWidth="750" MinHeight="850">
+        Title="Редактор теста" Width="1000" Height="1000" MinWidth="750" MinHeight="850" Loaded="OnLoaded">
     <Window.Icon>
-        <BitmapImage UriSource="https://img.icons8.com/external-vitaliy-gorbachev-lineal-color-vitaly-gorbachev/100/000000/external-test-online-learning-vitaliy-gorbachev-lineal-color-vitaly-gorbachev.pnghttps://img.icons8.com/external-vitaliy-gorbachev-lineal-color-vitaly-gorbachev/100/000000/external-test-online-learning-vitaliy-gorbachev-lineal-color-vitaly-gorbachev.png">
+        <BitmapImage UriSource="https://img.icons8.com/external-vitaliy-gorbachev-lineal-color-vitaly-gorbachev/100/000000/external-test-online-learning-vitaliy-gorbachev-lineal-color-vitaly-gorbachev.pnghttps://img.icons8.com/external-vitaliy-gorbachev-lineal-color-vitaly-gorbachev/100/000000/external-test-online-learning-vitaliy-gorbachev-lineal-color-vitaly-gorbachev.png"
+                     CacheOption="None">
             <b:Interaction.Triggers>
                 <b:EventTrigger EventName="DownloadFailed">
                     <b:ChangePropertyAction TargetObject="{Binding RelativeSource={RelativeSource AncestorType=Window}}" PropertyName="Icon" Value="{x:Null}"/>
@@ -52,7 +53,7 @@
                 </Grid.Resources>
 
                 <TextBlock Text="*Название:"/>
-                <TextBox Text="{Binding Name}" Padding="5"/>
+                <TextBox x:Name="firstTextBox" Text="{Binding Name}" Padding="5"/>
 
                 <TextBlock Text="*Категория:"/>
                 <accb:AutoCompleteComboBox ItemsSource="{Binding Categories}" TextSearch.TextPath="Name"

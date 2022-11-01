@@ -16,9 +16,10 @@
         TextOptions.TextRenderingMode="Auto"
         FontFamily="{DynamicResource MaterialDesignFont}"
         Background="{DynamicResource MaterialDesignPaper}"
-        Title="Редактор вопроса" Width="650" Height="700" MinWidth="550" MinHeight="650">
+        Title="Редактор вопроса" Width="650" Height="900" MinWidth="550" MinHeight="650" Loaded="OnLoaded">
     <Window.Icon>
-        <BitmapImage UriSource="https://img.icons8.com/external-vitaliy-gorbachev-lineal-color-vitaly-gorbachev/100/000000/external-test-online-learning-vitaliy-gorbachev-lineal-color-vitaly-gorbachev.pnghttps://img.icons8.com/external-vitaliy-gorbachev-lineal-color-vitaly-gorbachev/100/000000/external-test-online-learning-vitaliy-gorbachev-lineal-color-vitaly-gorbachev.png">
+        <BitmapImage UriSource="https://img.icons8.com/external-vitaliy-gorbachev-lineal-color-vitaly-gorbachev/100/000000/external-test-online-learning-vitaliy-gorbachev-lineal-color-vitaly-gorbachev.pnghttps://img.icons8.com/external-vitaliy-gorbachev-lineal-color-vitaly-gorbachev/100/000000/external-test-online-learning-vitaliy-gorbachev-lineal-color-vitaly-gorbachev.png"
+                     CacheOption="None">
             <b:Interaction.Triggers>
                 <b:EventTrigger EventName="DownloadFailed">
                     <b:ChangePropertyAction TargetObject="{Binding RelativeSource={RelativeSource AncestorType=Window}}" PropertyName="Icon" Value="{x:Null}"/>
@@ -42,7 +43,7 @@
         </Grid.Resources>
 
         <TextBlock Text="*Вопрос:"/>
-        <TextBox Text="{Binding Content}" Padding="5"/>
+        <TextBox x:Name="firstTextBox" Text="{Binding Content}" Padding="5" AcceptsReturn="True" ScrollViewer.VerticalScrollBarVisibility="Auto"/>
 
         <TextBlock Text="*Стоимость в баллах:"/>
         <TextBox Text="{Binding PointsCost, Converter={StaticResource doubleOneDecimalToStringConverter}}" 
