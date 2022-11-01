@@ -24,6 +24,7 @@
             <Grid.Resources>
                 <converters:BoolByDoesQuestionOnlyHaveOneCorrectAnswerToStringConverter x:Key="boolByDoesQuestionOnlyHaveOneCorrectAnswerToStringConverter"/>
                 <converters:NullableDateTimeToNullableShortTimeStringConverter x:Key="nullableDateTimeToNullableShortTimeStringConverter"/>
+                <converters:NullableDateTimeToNullableLongTimeStringConverter x:Key="nullableDateTimeToNullableLongTimeStringConverter"/>
                 <converters:OneWayNullableDateTimeToBrushConverter x:Key="oneWayNullableDateTimeToBrushConverter"/>
 
                 <Style TargetType="TextBlock" BasedOn="{StaticResource MainTextBlockStyle}"/>
@@ -53,7 +54,7 @@
                    Foreground="{Binding CurrentQuestionTimeLeft, Converter={StaticResource oneWayNullableDateTimeToBrushConverter}, Mode=OneWay}"
                    TextAlignment="Left" VerticalAlignment="Center" FontSize="20" FontWeight="Medium"/>
                 <TextBlock Grid.Column="1" Visibility="{Binding TestTimeLeft, Converter={StaticResource NullableToVisibilityConverter}, Mode=OneWay}"
-                   Text="{Binding TestTimeLeft, Converter={StaticResource nullableDateTimeToNullableShortTimeStringConverter}, Mode=OneWay}"
+                   Text="{Binding TestTimeLeft, Converter={StaticResource nullableDateTimeToNullableLongTimeStringConverter}, Mode=OneWay}"
                    Foreground="{Binding TestTimeLeft, Converter={StaticResource oneWayNullableDateTimeToBrushConverter}, Mode=OneWay}"
                    TextAlignment="Right" VerticalAlignment="Center" FontSize="20" FontWeight="Medium"/>
             </Grid>
