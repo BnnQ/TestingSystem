@@ -41,7 +41,7 @@
         </Image>
 
         <TextBlock Text="Testing System" FontWeight="Medium" FontSize="30"/>
-        <TextBlock Text="1.0.0" FontSize="25"/>
+        <TextBlock Text="{Binding ProgramVersion, Mode=OneTime}" FontSize="25"/>
 
         <TextBlock Text="Developed by Zaporozhets Y. I. (BnnQ)"/>
         <TextBlock>
