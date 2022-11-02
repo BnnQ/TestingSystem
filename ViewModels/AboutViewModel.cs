@@ -2,8 +2,7 @@
 using MvvmBaseViewModels.Common;
 using System;
 using System.Diagnostics;
-using System.Windows;
-using System.Windows.Input;
+using System.Reflection;
 
 namespace TestingSystem.ViewModels
 {
@@ -12,12 +11,14 @@ namespace TestingSystem.ViewModels
         public Uri GithubUrl { get; init; }
         public Uri IconUrl { get; init; }
         public Uri DesignLibraryUrl { get; init; }
+        public string ProgramVersion { get; init; }
 
         public AboutViewModel()
         {
             GithubUrl = new Uri("https://github.com/BnnQ/TestingSystem", UriKind.Absolute);
             IconUrl = new Uri("https://icons8.com/icon/GGgmJKaq5zTO/test", UriKind.Absolute);
             DesignLibraryUrl = new Uri("https://github.com/ButchersBoy/MaterialDesignInXamlToolkit", UriKind.Absolute);
+            ProgramVersion = (FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).ProductVersion)!;
         }
 
         #region Commands
