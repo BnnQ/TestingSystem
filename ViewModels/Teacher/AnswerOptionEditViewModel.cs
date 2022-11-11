@@ -61,7 +61,7 @@ namespace TestingSystem.ViewModels.Teacher
             SetupValidator();
         }
 
-        #region Validaiton setup
+        #region Validation setup
         ValidationState contentValidationState = ValidationState.Disabled;
         protected override void SetupValidator()
         {
