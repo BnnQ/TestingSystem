@@ -245,7 +245,7 @@ namespace TestingSystem.Migrations
                     b.Property<DateTime>("CompletionDate")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime2")
-                        .HasDefaultValue(new DateTime(2022, 10, 31, 3, 20, 3, 148, DateTimeKind.Local).AddTicks(2287));
+                        .HasDefaultValue(new DateTime(2022, 12, 2, 15, 37, 36, 519, DateTimeKind.Local).AddTicks(1646));
 
                     b.Property<int>("NumberOfCorrectAnswers")
                         .HasColumnType("int");
